@@ -83,8 +83,9 @@ public class ErService {
             byte[] svgBytes = exportService.exportSvg(mermaidCode);
             String svgContent = new String(svgBytes);
             
-            // 5. 导出 PNG（Base64）
-            byte[] pngBytes = exportService.exportPng(mermaidCode, 1920, 1080);
+            // 5. 导出 PNG（Base64）- 根据表数量动态计算尺寸
+            int[] dimensions = calculatePngDimensions(databaseModel.getTables().size());
+            byte[] pngBytes = exportService.exportPng(mermaidCode, dimensions[0], dimensions[1]);
             String pngBase64 = "data:image/png;base64," + 
                 java.util.Base64.getEncoder().encodeToString(pngBytes);
             
@@ -193,8 +194,9 @@ public class ErService {
             byte[] svgBytes = exportService.exportSvg(mermaidCode);
             String svgContent = new String(svgBytes);
             
-            // 4. 导出 PNG（Base64）
-            byte[] pngBytes = exportService.exportPng(mermaidCode, 1920, 1080);
+            // 4. 导出 PNG（Base64）- 根据表数量动态计算尺寸
+            int[] dimensions = calculatePngDimensions(databaseModel.getTables().size());
+            byte[] pngBytes = exportService.exportPng(mermaidCode, dimensions[0], dimensions[1]);
             String pngBase64 = "data:image/png;base64," + 
                 java.util.Base64.getEncoder().encodeToString(pngBytes);
             
@@ -307,5 +309,41 @@ public class ErService {
             log.error("异步任务失败", e);
             return java.util.concurrent.CompletableFuture.failedFuture(e);
         }
+    }
+    
+    /**
+     * 根据表数量动态计算 PNG 导出尺寸
+     * 表越多，需要的尺寸越大，以保证清晰度
+     * 
+     * @param tableCount 表数量
+     * @return [width, height]
+     */
+    private int[] calculatePngDimensions(int tableCount) {
+        int width, height;
+        
+        if (tableCount <= 5) {
+            // 小型图表：1920x1080
+            width = 1920;
+            height = 1080;
+        } else if (tableCount <= 10) {
+            // 中型图表：2560x1440
+            width = 2560;
+            height = 1440;
+        } else if (tableCount <= 20) {
+            // 大型图表：3840x2160 (4K)
+            width = 3840;
+            height = 2160;
+        } else if (tableCount <= 30) {
+            // 超大型图表：5120x2880 (5K)
+            width = 5120;
+            height = 2880;
+        } else {
+            // 巨型图表：7680x4320 (8K)
+            width = 7680;
+            height = 4320;
+        }
+        
+        log.debug("表数量: {}, 计算PNG尺寸: {}x{}", tableCount, width, height);
+        return new int[]{width, height};
     }
 }

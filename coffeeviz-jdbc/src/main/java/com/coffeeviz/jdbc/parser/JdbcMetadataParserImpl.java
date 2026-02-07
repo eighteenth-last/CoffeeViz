@@ -140,11 +140,20 @@ public class JdbcMetadataParserImpl implements JdbcMetadataParser {
             ResultSet columns = metaData.getColumns(catalog, schema, tableName, "%");
             
             while (columns.next()) {
+                String typeName = columns.getString("TYPE_NAME");
+                int columnSize = columns.getInt("COLUMN_SIZE");
+                int decimalDigits = columns.getInt("DECIMAL_DIGITS");
+                
+                // 构建完整的类型字符串
+                String fullType = buildFullTypeString(typeName, columnSize, decimalDigits);
+                
                 ColumnModel column = ColumnModel.builder()
                         .name(columns.getString("COLUMN_NAME"))
-                        .type(columns.getString("TYPE_NAME"))
-                        .rawType(columns.getString("TYPE_NAME"))
-                        .length(columns.getInt("COLUMN_SIZE"))
+                        .type(fullType)  // 完整类型（包含长度）
+                        .rawType(typeName)  // 原始类型名
+                        .length(columnSize)
+                        .precision(decimalDigits > 0 ? columnSize : null)
+                        .scale(decimalDigits > 0 ? decimalDigits : null)
                         .nullable(columns.getInt("NULLABLE") == DatabaseMetaData.columnNullable)
                         .defaultValue(columns.getString("COLUMN_DEF"))
                         .comment(columns.getString("REMARKS"))
@@ -156,6 +165,45 @@ public class JdbcMetadataParserImpl implements JdbcMetadataParser {
         } catch (SQLException e) {
             warnings.add("解析表 " + tableName + " 的列信息失败：" + e.getMessage());
         }
+    }
+    
+    /**
+     * 构建完整的类型字符串（包含长度/精度）
+     */
+    private String buildFullTypeString(String typeName, int columnSize, int decimalDigits) {
+        // 不需要长度的类型
+        Set<String> noLengthTypes = Set.of(
+            "INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT",
+            "DATE", "DATETIME", "TIMESTAMP", "TIME",
+            "TEXT", "LONGTEXT", "MEDIUMTEXT", "TINYTEXT",
+            "BLOB", "LONGBLOB", "MEDIUMBLOB", "TINYBLOB",
+            "BOOLEAN", "BOOL"
+        );
+        
+        String upperTypeName = typeName.toUpperCase();
+        
+        // 如果是不需要长度的类型，直接返回
+        if (noLengthTypes.contains(upperTypeName)) {
+            return typeName;
+        }
+        
+        // DECIMAL/NUMERIC 类型需要精度和小数位
+        if (upperTypeName.contains("DECIMAL") || upperTypeName.contains("NUMERIC")) {
+            if (decimalDigits > 0) {
+                return typeName + "(" + columnSize + "," + decimalDigits + ")";
+            } else if (columnSize > 0) {
+                return typeName + "(" + columnSize + ")";
+            }
+        }
+        
+        // VARCHAR/CHAR 等字符类型需要长度
+        if (upperTypeName.contains("CHAR") || upperTypeName.contains("BINARY")) {
+            if (columnSize > 0) {
+                return typeName + "(" + columnSize + ")";
+            }
+        }
+        
+        return typeName;
     }
     
     /**

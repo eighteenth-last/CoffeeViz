@@ -35,23 +35,50 @@
         </button>
       </div>
 
-      <!-- Form: Phone (Placeholder) -->
+      <!-- Form: Phone -->
       <div v-if="activeTab === 'phone'" class="space-y-4 relative z-10 animate-fade-in">
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">手机号</label>
           <div class="flex bg-black border border-neutral-800 rounded-xl overflow-hidden focus-within:border-amber-600 transition-all">
             <span class="px-3 py-3 text-neutral-500 text-sm border-r border-neutral-900">+86</span>
-            <input type="tel" class="flex-1 bg-transparent px-3 py-3 text-sm text-white outline-none" placeholder="138 0000 0000">
+            <input 
+              v-model="phoneFormData.phone"
+              type="tel" 
+              class="flex-1 bg-transparent px-3 py-3 text-sm text-white outline-none" 
+              placeholder="138 0000 0000"
+              maxlength="11"
+              @keyup.enter="handlePhoneLogin"
+            >
           </div>
         </div>
         <div class="space-y-1">
           <label class="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">验证码</label>
           <div class="flex space-x-3">
-            <input type="text" class="flex-1 bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-600 transition-all" placeholder="6-digit code">
-            <button class="px-4 py-2 bg-neutral-900 border border-neutral-800 rounded-xl text-xs font-bold text-amber-500 hover:bg-neutral-800 transition-all whitespace-nowrap">获取验证码</button>
+            <input 
+              v-model="phoneFormData.code"
+              type="text" 
+              class="flex-1 bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-600 transition-all" 
+              placeholder="6位验证码"
+              maxlength="6"
+              @keyup.enter="handlePhoneLogin"
+            >
+            <button 
+              @click="handleSendCode" 
+              :disabled="sendingCode || codeCountdown > 0"
+              class="px-4 py-2 bg-amber-600 hover:bg-amber-700 border border-amber-700 rounded-xl text-xs font-bold text-white transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ codeCountdown > 0 ? `${codeCountdown}s` : '获取验证码' }}
+            </button>
           </div>
         </div>
-        <button @click="message.info('演示功能：请使用账号登录')" class="btn-amber w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg mt-4">登录 / 注册</button>
+        <button 
+          @click="handlePhoneLogin" 
+          :disabled="phoneLoading"
+          class="w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg mt-4 flex items-center justify-center bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <i v-if="phoneLoading" class="fas fa-spinner fa-spin mr-2"></i>
+          登录 / 注册
+        </button>
       </div>
 
       <!-- Form: QR (WeChat Login) -->
@@ -111,7 +138,7 @@
         <button 
           @click="handleLogin" 
           :disabled="loading"
-          class="btn-amber w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg mt-4 flex items-center justify-center"
+          class="w-full py-3 rounded-xl text-white font-bold text-sm shadow-lg mt-4 flex items-center justify-center bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
           {{ isRegisterMode ? '注册并登录' : '登录' }}
@@ -147,6 +174,16 @@ const formData = reactive({
   username: '',
   password: ''
 })
+
+// Phone verification state
+const phoneFormData = reactive({
+  phone: '',
+  code: ''
+})
+const phoneLoading = ref(false)
+const sendingCode = ref(false)
+const codeCountdown = ref(0)
+let codeCountdownInterval = null
 
 // WeChat QR Code state
 const qrCanvas = ref(null)
@@ -292,10 +329,93 @@ watch(activeTab, (newTab) => {
   }
 })
 
+// Phone verification: Send code
+const handleSendCode = async () => {
+  // Validate phone number
+  if (!phoneFormData.phone) {
+    message.warning('请输入手机号')
+    return
+  }
+  
+  // Simple Chinese mobile number validation
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (!phoneRegex.test(phoneFormData.phone)) {
+    message.warning('请输入有效的手机号')
+    return
+  }
+  
+  sendingCode.value = true
+  try {
+    await userStore.sendSmsCode(phoneFormData.phone)
+    message.success('验证码已发送，请查收短信')
+    
+    // Start countdown
+    codeCountdown.value = 60
+    startCodeCountdown()
+  } catch (error) {
+    message.error(error.message || '发送验证码失败')
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+// Phone verification: Login
+const handlePhoneLogin = async () => {
+  if (!phoneFormData.phone) {
+    message.warning('请输入手机号')
+    return
+  }
+  
+  if (!phoneFormData.code) {
+    message.warning('请输入验证码')
+    return
+  }
+  
+  // Validate phone number
+  const phoneRegex = /^1[3-9]\d{9}$/
+  if (!phoneRegex.test(phoneFormData.phone)) {
+    message.warning('请输入有效的手机号')
+    return
+  }
+  
+  phoneLoading.value = true
+  try {
+    await userStore.loginWithSms(phoneFormData.phone, phoneFormData.code)
+    message.success('登录成功')
+    
+    const redirect = route.query.redirect || '/dashboard'
+    router.push(redirect)
+  } catch (error) {
+    message.error(error.message || '登录失败')
+  } finally {
+    phoneLoading.value = false
+  }
+}
+
+// Code countdown timer
+const startCodeCountdown = () => {
+  stopCodeCountdown()
+  
+  codeCountdownInterval = setInterval(() => {
+    codeCountdown.value--
+    if (codeCountdown.value <= 0) {
+      stopCodeCountdown()
+    }
+  }, 1000)
+}
+
+const stopCodeCountdown = () => {
+  if (codeCountdownInterval) {
+    clearInterval(codeCountdownInterval)
+    codeCountdownInterval = null
+  }
+}
+
 // Cleanup on unmount
 onUnmounted(() => {
   stopQrCodePolling()
   stopCountdown()
+  stopCodeCountdown()
 })
 </script>
 

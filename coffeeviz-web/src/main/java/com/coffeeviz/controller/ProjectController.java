@@ -54,6 +54,7 @@ public class ProjectController {
             project.setProjectName(request.getProjectName());
             project.setDescription(request.getDescription());
             project.setMermaidCode(request.getMermaidCode());
+            project.setSourceType("SQL"); // 设置默认来源类型
             project.setStatus("active");
             
             // 4. 构建项目配置

@@ -23,6 +23,35 @@ import java.util.UUID;
 @Service
 public class ExportServiceImpl implements ExportService {
     
+    private static final String MMDC_COMMAND = getMmdcCommand();
+    
+    /**
+     * 获取 mmdc 命令路径
+     * Windows 需要使用 mmdc.cmd，Linux/Mac 使用 mmdc
+     */
+    private static String getMmdcCommand() {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            // Windows 系统，尝试找到 mmdc.cmd 的完整路径
+            try {
+                Process process = Runtime.getRuntime().exec("where.exe mmdc.cmd");
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream())
+                );
+                String path = reader.readLine();
+                if (path != null && !path.isEmpty()) {
+                    log.info("找到 Mermaid CLI 路径: {}", path);
+                    return path;
+                }
+            } catch (Exception e) {
+                log.warn("无法自动检测 mmdc 路径，使用默认值: {}", e.getMessage());
+            }
+            return "mmdc.cmd";
+        } else {
+            return "mmdc";
+        }
+    }
+    
     @Override
     public byte[] exportSvg(String mermaidCode) throws ExportException {
         log.debug("开始导出 SVG，Mermaid 代码长度: {}", mermaidCode.length());
@@ -38,7 +67,7 @@ public class ExportServiceImpl implements ExportService {
                 
                 // 调用 Mermaid CLI
                 ProcessBuilder pb = new ProcessBuilder(
-                    "mmdc",
+                    MMDC_COMMAND,
                     "-i", tempMmdFile.toString(),
                     "-o", tempSvgFile.toString(),
                     "-t", "default"
@@ -95,13 +124,14 @@ public class ExportServiceImpl implements ExportService {
                 // 写入 Mermaid 代码
                 Files.writeString(tempMmdFile, mermaidCode, StandardCharsets.UTF_8);
                 
-                // 调用 Mermaid CLI
+                // 调用 Mermaid CLI，添加缩放参数提高清晰度
                 ProcessBuilder pb = new ProcessBuilder(
-                    "mmdc",
+                    MMDC_COMMAND,
                     "-i", tempMmdFile.toString(),
                     "-o", tempPngFile.toString(),
                     "-w", String.valueOf(width),
                     "-H", String.valueOf(height),
+                    "-s", "2",  // 缩放因子 2x，提高清晰度
                     "-t", "default"
                 );
                 

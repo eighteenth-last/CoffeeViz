@@ -177,19 +177,16 @@ public class WechatService {
             user = new User();
             user.setUsername("wx_" + openId);
             user.setPassword(""); // 微信登录不需要密码
-            user.setDisplayName(nickname != null ? nickname : "微信用户");
+            user.setDisplayName(generateDefaultDisplayName()); // 使用默认显示名称
             user.setAvatarUrl(avatarUrl);
             user.setStatus(1);
             user.setCreateTime(LocalDateTime.now());
             user.setUpdateTime(LocalDateTime.now());
             
             userMapper.insert(user);
-            log.info("创建微信用户: userId={}, openId={}", user.getId(), openId);
+            log.info("创建微信用户: userId={}, openId={}, 显示名称: {}", user.getId(), openId, user.getDisplayName());
         } else {
-            // 更新用户信息
-            if (nickname != null) {
-                user.setDisplayName(nickname);
-            }
+            // 更新用户信息（只更新头像，不更新显示名称）
             if (avatarUrl != null) {
                 user.setAvatarUrl(avatarUrl);
             }
@@ -198,6 +195,17 @@ public class WechatService {
         }
         
         return user;
+    }
+    
+    /**
+     * 生成默认显示名称：神阁绘+10位UUID
+     * 
+     * @return 默认显示名称
+     */
+    private String generateDefaultDisplayName() {
+        // 生成10位UUID（使用UUID的前10位）
+        String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        return "神阁绘" + uuid;
     }
     
     /**

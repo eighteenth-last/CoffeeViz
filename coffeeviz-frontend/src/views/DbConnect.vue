@@ -97,10 +97,16 @@ const selectDb = (type) => {
 }
 
 const handleTestConnection = async () => {
+  if (!selectedDb.value) {
+    message.warning('请先选择数据库类型')
+    return
+  }
+  
   testing.value = true
   try {
     // 调用 Store action 进行测试
     await projectStore.testJdbcConnection({
+      dbType: selectedDb.value,
       jdbcUrl: formData.jdbcUrl,
       username: formData.username,
       password: formData.password,
@@ -115,15 +121,20 @@ const handleTestConnection = async () => {
 }
 
 const handleConnect = async () => {
+  if (!selectedDb.value) {
+    message.warning('请先选择数据库类型')
+    return
+  }
+  
   connecting.value = true
   try {
     // 调用 Store action 建立连接并生成架构
     await projectStore.generateFromJdbc({
+      dbType: selectedDb.value,
       jdbcUrl: formData.jdbcUrl,
       username: formData.username,
       password: formData.password,
-      schema: formData.schema,
-      dbType: selectedDb.value
+      schema: formData.schema
     })
     message.success('数据库连接成功，正在解析架构...')
     

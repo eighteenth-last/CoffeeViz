@@ -73,28 +73,95 @@ public class MermaidErRenderer implements MermaidRenderer {
         
         for (ColumnModel column : columns) {
             sb.append("        ");
-            sb.append(column.getType()).append(" ");
+            
+            // 完整的数据类型（包含长度/精度）
+            String fullType = buildFullType(column);
+            sb.append(fullType).append(" ");
+            
             sb.append(column.getName());
             
-            // 主键标记
+            // 主键标记（使用 PK 关键字）
+            // 注意：如果字段既是主键又是外键，只显示 PK（Mermaid 语法限制）
             if (column.isPrimaryKeyPart()) {
                 sb.append(" PK");
             }
-            
-            // 非空标记
-            if (!column.isNullable()) {
-                sb.append(" NOT NULL");
+            // 外键标记（使用 FK 关键字）- 仅当不是主键时才添加
+            else if (isForeignKeyColumn(table, column.getName())) {
+                sb.append(" FK");
             }
             
-            // 注释
-            if (column.getComment() != null && options.isShowComments()) {
-                sb.append(" \"").append(column.getComment()).append("\"");
+            // 构建注释内容（合并约束信息和字段注释）
+            String commentText = buildCommentText(column, options);
+            if (commentText != null && !commentText.isEmpty()) {
+                sb.append(" \"").append(commentText).append("\"");
             }
             
             sb.append("\n");
         }
         
         sb.append("    }\n");
+    }
+    
+    /**
+     * 构建注释文本（合并约束信息和字段注释）
+     */
+    private String buildCommentText(ColumnModel column, RenderOptions options) {
+        StringBuilder comment = new StringBuilder();
+        
+        // 添加约束信息
+        if (!column.isNullable() && !column.isPrimaryKeyPart()) {
+            comment.append("NOT NULL");
+        }
+        
+        // 添加字段注释
+        if (column.getComment() != null && !column.getComment().isEmpty() && options.isShowComments()) {
+            if (comment.length() > 0) {
+                comment.append(", ");
+            }
+            comment.append(escapeComment(column.getComment()));
+        }
+        
+        return comment.toString();
+    }
+    
+    /**
+     * 构建完整的数据类型（包含长度/精度）
+     * 注意：Mermaid ER 图语法不支持类型定义中的逗号，因此 DECIMAL(10,2) 需要改为 DECIMAL(10_2)
+     */
+    private String buildFullType(ColumnModel column) {
+        String rawType = column.getRawType() != null ? column.getRawType() : column.getType();
+        
+        // 如果已经包含长度信息，直接返回（但需要处理逗号）
+        if (column.getType() != null && column.getType().contains("(")) {
+            // 替换逗号为下划线，避免 Mermaid 解析错误
+            return column.getType().replace(",", "_");
+        }
+        
+        // 根据长度/精度构建完整类型
+        if (column.getPrecision() != null && column.getScale() != null) {
+            // DECIMAL(10_2) 类型 - 使用下划线代替逗号
+            return rawType + "(" + column.getPrecision() + "_" + column.getScale() + ")";
+        } else if (column.getLength() != null && column.getLength() > 0) {
+            // VARCHAR(255) 类型
+            return rawType + "(" + column.getLength() + ")";
+        }
+        
+        return rawType;
+    }
+    
+    /**
+     * 判断是否为外键列
+     */
+    private boolean isForeignKeyColumn(TableModel table, String columnName) {
+        return table.getForeignKeys().stream()
+                .anyMatch(fk -> fk.getFromColumns().contains(columnName));
+    }
+    
+    /**
+     * 转义注释中的特殊字符
+     */
+    private String escapeComment(String comment) {
+        return comment.replace("\"", "'").replace("\n", " ").trim();
     }
     
     /**

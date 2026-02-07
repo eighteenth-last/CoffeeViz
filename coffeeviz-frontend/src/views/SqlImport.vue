@@ -61,11 +61,11 @@ CREATE TABLE orders (
           <div class="flex-1 bg-[#0a0a0a] border border-neutral-800 rounded-2xl canvas-dots relative overflow-hidden group flex flex-col min-h-0">
             <!-- Canvas Controls -->
             <div class="absolute top-4 right-4 z-10 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button title="放大" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center"><i class="fas fa-plus"></i></button>
-              <button title="缩小" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center"><i class="fas fa-minus"></i></button>
-              <button title="自适应" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center"><i class="fas fa-expand"></i></button>
+              <button @click="handleZoomIn" title="放大" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center transition-all"><i class="fas fa-plus"></i></button>
+              <button @click="handleZoomOut" title="缩小" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center transition-all"><i class="fas fa-minus"></i></button>
+              <button @click="handleFullscreen" title="全屏显示" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center transition-all"><i class="fas fa-expand"></i></button>
               <div class="h-[1px] bg-neutral-800"></div>
-              <button @click="handleSaveProject" title="保存" class="w-10 h-10 bg-amber-600 rounded-xl text-white flex items-center justify-center shadow-lg"><i class="fas fa-save"></i></button>
+              <button @click="handleDownload" title="下载到本地" class="w-10 h-10 bg-amber-600 rounded-xl text-white flex items-center justify-center shadow-lg hover:bg-amber-700 transition-all"><i class="fas fa-download"></i></button>
             </div>
 
             <div id="diagram-view" class="w-full h-full flex items-center justify-center p-10 overflow-auto">
@@ -88,13 +88,16 @@ CREATE TABLE orders (
 <script setup>
 import { ref, reactive } from 'vue'
 import { useProjectStore } from '@/store/project'
-import { useMessage } from 'naive-ui'
+import { useMessage, useDialog } from 'naive-ui'
 
 const projectStore = useProjectStore()
 const message = useMessage()
+const dialog = useDialog()
 
 const sqlText = ref('')
 const logs = ref([])
+const diagramScale = ref(1)
+const diagramTransform = ref({ x: 0, y: 0 })
 
 const parseOptions = reactive({
   viewMode: 'PHYSICAL',
@@ -112,7 +115,7 @@ const addLog = (type, messageText) => {
   })
   // Auto scroll to bottom
   setTimeout(() => {
-    const consoleEl = document.querySelector('#parse-console').parentElement
+    const consoleEl = document.querySelector('#parse-console')?.parentElement
     if (consoleEl) consoleEl.scrollTop = consoleEl.scrollHeight
   }, 10)
 }
@@ -137,20 +140,171 @@ const handleParse = async () => {
     // 调用 Store action
     await projectStore.generateFromSql(sqlText.value, parseOptions)
     
-    addLog('success', 'Parsing completed successfully')
+    addLog('success', `Parsing completed successfully (${projectStore.diagramData.tableCount} tables, ${projectStore.diagramData.relationCount} relations)`)
     
     if (projectStore.diagramData.warnings?.length) {
       projectStore.diagramData.warnings.forEach(w => addLog('warning', w))
     }
+    
+    // 重置缩放
+    diagramScale.value = 1
+    message.success(`解析成功！共 ${projectStore.diagramData.tableCount} 张表`)
   } catch (error) {
     addLog('error', `Parsing failed: ${error.message}`)
     message.error(error.message || '解析失败')
   }
 }
 
-const handleSaveProject = () => {
-  // Logic to save project
-  message.success('项目保存成功')
+// 放大
+const handleZoomIn = () => {
+  if (diagramScale.value < 3) {
+    diagramScale.value = Math.min(3, diagramScale.value + 0.2)
+    applyTransform()
+    addLog('info', `Zoom in: ${Math.round(diagramScale.value * 100)}%`)
+  } else {
+    message.info('已达到最大缩放比例')
+  }
+}
+
+// 缩小
+const handleZoomOut = () => {
+  if (diagramScale.value > 0.3) {
+    diagramScale.value = Math.max(0.3, diagramScale.value - 0.2)
+    applyTransform()
+    addLog('info', `Zoom out: ${Math.round(diagramScale.value * 100)}%`)
+  } else {
+    message.info('已达到最小缩放比例')
+  }
+}
+
+// 全屏显示
+const handleFullscreen = () => {
+  const diagramContainer = document.querySelector('#diagram-view')
+  if (!diagramContainer) return
+
+  if (!document.fullscreenElement) {
+    diagramContainer.requestFullscreen().then(() => {
+      addLog('info', 'Entered fullscreen mode')
+      message.success('已进入全屏模式，按 ESC 退出')
+    }).catch(err => {
+      addLog('error', `Fullscreen failed: ${err.message}`)
+      message.error('全屏失败')
+    })
+  } else {
+    document.exitFullscreen().then(() => {
+      addLog('info', 'Exited fullscreen mode')
+    })
+  }
+}
+
+// 应用变换
+const applyTransform = () => {
+  const diagramView = document.querySelector('#diagram-view > div:last-child')
+  if (diagramView) {
+    diagramView.style.transform = `scale(${diagramScale.value}) translate(${diagramTransform.value.x}px, ${diagramTransform.value.y}px)`
+    diagramView.style.transformOrigin = 'center center'
+    diagramView.style.transition = 'transform 0.3s ease'
+  }
+}
+
+// 下载到本地
+const handleDownload = () => {
+  if (!projectStore.diagramData.mermaidCode) {
+    message.warning('请先生成图表')
+    return
+  }
+
+  // 创建下载选项对话框
+  const downloadType = prompt('请选择下载格式：\n1. Mermaid 源码 (.mmd)\n2. SVG 图片 (.svg)\n3. PNG 图片 (.png)\n\n请输入数字 1-3：', '1')
+  
+  if (!downloadType) return
+
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+  const filename = `coffeeviz-diagram-${timestamp}`
+
+  try {
+    switch (downloadType) {
+      case '1':
+        // 下载 Mermaid 源码
+        downloadFile(projectStore.diagramData.mermaidCode, `${filename}.mmd`, 'text/plain')
+        addLog('success', `Downloaded: ${filename}.mmd`)
+        message.success('Mermaid 源码下载成功')
+        break
+      
+      case '2':
+        // 下载 SVG
+        if (projectStore.diagramData.svgContent) {
+          downloadFile(projectStore.diagramData.svgContent, `${filename}.svg`, 'image/svg+xml')
+          addLog('success', `Downloaded: ${filename}.svg`)
+          message.success('SVG 图片下载成功')
+        } else {
+          message.warning('SVG 内容不可用')
+        }
+        break
+      
+      case '3':
+        // 下载 PNG
+        if (projectStore.diagramData.pngBase64) {
+          // 检查是否包含 data URL 前缀
+          const base64Data = projectStore.diagramData.pngBase64.includes('base64,')
+            ? projectStore.diagramData.pngBase64.split('base64,')[1]
+            : projectStore.diagramData.pngBase64
+          
+          downloadBase64File(base64Data, `${filename}.png`, 'image/png')
+          addLog('success', `Downloaded: ${filename}.png`)
+          message.success('PNG 图片下载成功')
+        } else {
+          message.warning('PNG 内容不可用，可能后端未安装 Mermaid CLI')
+        }
+        break
+      
+      default:
+        message.warning('无效的选项')
+    }
+  } catch (error) {
+    addLog('error', `Download failed: ${error.message}`)
+    message.error('下载失败')
+  }
+}
+
+// 下载文件辅助函数
+const downloadFile = (content, filename, mimeType) => {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// 下载 Base64 文件
+const downloadBase64File = (base64Data, filename, mimeType) => {
+  try {
+    // Base64 数据已经是纯净的（前端已经处理过前缀）
+    const byteCharacters = atob(base64Data)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: mimeType })
+    
+    // 创建下载链接
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Base64 decode error:', error)
+    throw new Error('PNG 数据格式错误，可能后端未正确生成')
+  }
 }
 </script>
 

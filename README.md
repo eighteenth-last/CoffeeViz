@@ -8,11 +8,13 @@ CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚�
 
 - 🔍 **多源解析**：支持 SQL 脚本解析、JDBC 数据库连接、AI 辅助生成
 - 🎨 **可视化渲染**：基于 Mermaid 生成清晰的 ER 图
-- 📦 **多格式导出**：支持 SVG、PNG、Mermaid 源码导出
-- 🔐 **用户系统**：完整的用户认证、项目管理、版本控制
+- 📦 **多格式导出**：支持 SVG、PNG、Mermaid 源码导出（支持动态分辨率）
+- 🔐 **用户系统**：完整的用户认证（账号/手机验证码/微信扫码）、项目管理、版本控制
 - 🚀 **高性能**：Redis 缓存、异步处理、API 限流
 - 🎯 **智能推断**：自动识别表关系、外键约束
 - 📱 **现代化 UI**：基于 Vue 3 + Naive UI 的响应式界面
+- 🔧 **完整字段信息**：显示字段类型、长度、精度、约束、注释
+- 📊 **智能缩放**：ER 图默认 80% 缩放，支持自定义缩放和回到顶部
 
 ## 🏗️ 技术架构
 
@@ -173,7 +175,7 @@ npm run dev
 
 ### 认证接口
 
-#### 用户登录
+#### 用户登录（账号密码）
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -182,6 +184,37 @@ Content-Type: application/json
   "username": "admin",
   "password": "admin123"
 }
+```
+
+#### 发送短信验证码
+```http
+POST /api/auth/sms/send
+Content-Type: application/json
+
+{
+  "phone": "13800138000"
+}
+```
+
+#### 短信验证码登录
+```http
+POST /api/auth/sms/login
+Content-Type: application/json
+
+{
+  "phone": "13800138000",
+  "code": "123456"
+}
+```
+
+#### 生成微信登录二维码
+```http
+GET /api/auth/wechat/qrcode
+```
+
+#### 检查微信扫码状态
+```http
+GET /api/auth/wechat/check/{qrCodeId}
 ```
 
 #### 用户注册
@@ -194,6 +227,12 @@ Content-Type: application/json
   "password": "password123",
   "email": "user@example.com"
 }
+```
+
+#### 获取当前用户信息
+```http
+GET /api/auth/userinfo
+Authorization: {token}
 ```
 
 ### ER 图生成接口
@@ -330,11 +369,25 @@ mybatis-plus:
 系统配置存储在 `sys_config` 表中，可通过管理界面修改：
 
 - `openai.api.key`: OpenAI API 密钥（AI 生成功能）
+- `openai.api.base_url`: OpenAI API 基础 URL
+- `openai.model.name`: OpenAI 模型名称
 - `mermaid.cli.path`: Mermaid CLI 路径
 - `export.max.size`: 导出文件最大大小
 - `sql.max.length`: SQL 文本最大长度
 - `jdbc.connection.timeout`: JDBC 连接超时时间
 - `rate.limit.per.second`: API 限流配置
+
+### 用户默认配置
+
+新注册用户的默认显示名称格式：**神阁绘 + 10位UUID**
+
+示例：`神阁绘a1b2c3d4e5`
+
+用户可以在"系统参数"页面修改个人资料，包括：
+- 显示名称
+- 电子邮箱
+- 手机号码
+- 密码
 
 ## 🎨 渲染选项
 
@@ -446,6 +499,34 @@ A: 需要安装 Mermaid CLI (`npm install -g @mermaid-js/mermaid-cli`)。
 **Q: Redis 连接失败？**
 A: Redis 是可选的，如果不使用缓存功能，可以注释掉 Redis 相关配置。
 
+**Q: ER 图显示不完整或被截断？**
+A: 使用页面右下角的缩放控制按钮调整显示比例，或点击"回到顶部"按钮查看完整内容。
+
+**Q: 字段类型显示不完整（如 VARCHAR 没有长度）？**
+A: 已修复，现在会正确显示完整类型信息（如 VARCHAR(100)、DECIMAL(10,2)）。
+
+**Q: 短信验证码登录提示"未登录或登录已过期"？**
+A: 确保后端已重启，SMS 相关接口已添加到 Sa-Token 白名单。
+
+**Q: 用户信息显示为邮箱地址而不是友好名称？**
+A: 执行 `UPDATE_DISPLAY_NAME.sql` 更新现有用户的 displayName 字段。
+
+### 已知问题修复记录
+
+#### v1.1.0 (2026-02-07)
+- ✅ 修复字段类型不显示长度和精度的问题
+- ✅ 修复 Mermaid 语法错误（DECIMAL 逗号、多注释字符串、PK+FK 冲突）
+- ✅ 修复 ER 图顶部内容被截断的问题
+- ✅ 添加智能缩放功能（默认 80%）和回到顶部按钮
+- ✅ 修复数据库连接缺少 dbType 参数的问题
+- ✅ 优化 PNG 导出质量（动态分辨率，最高支持 8K）
+- ✅ 修复用户信息刷新后丢失的问题（localStorage 持久化）
+- ✅ 修复登录按钮样式问题
+- ✅ 实现手机验证码登录功能（演示版本）
+- ✅ 统一新用户默认显示名称为"神阁绘+UUID"格式
+- ✅ 修复系统参数页面数据显示错误
+- ✅ 优化用户信息弹窗显示
+
 ### 日志查看
 
 ```bash
@@ -478,7 +559,41 @@ eighteenthstuai@gmail.com
 
 - 项目主页: https://github.com/yourusername/coffeeviz
 - 问题反馈: https://github.com/yourusername/coffeeviz/issues
-- 邮箱: support@coffeeviz.com
+- 邮箱: eighteenthstuai@gmail.com
+
+## 📋 更新日志
+
+### v1.1.0 (2026-02-07)
+
+**新功能**
+- 🎉 新增手机验证码登录功能（演示版本，支持自动注册）
+- 🎉 新增微信扫码登录支持
+- 🎉 新增 ER 图智能缩放功能（默认 80%，支持自定义）
+- 🎉 新增"回到顶部"按钮
+- 🎉 新增用户信息弹窗快捷操作（设置、退出）
+
+**优化改进**
+- ✨ 优化字段类型显示，完整显示长度和精度（VARCHAR(100)、DECIMAL(10,2)）
+- ✨ 优化 PNG 导出质量，支持动态分辨率（最高 8K）
+- ✨ 统一新用户默认显示名称为"神阁绘+10位UUID"格式
+- ✨ 优化系统参数页面，支持修改显示名称
+- ✨ 优化用户信息持久化，刷新页面不丢失
+- ✨ 优化登录按钮样式
+
+**问题修复**
+- 🐛 修复 Mermaid 语法错误（DECIMAL 逗号、多注释字符串、PK+FK 冲突）
+- 🐛 修复 ER 图顶部内容被截断的问题
+- 🐛 修复数据库连接缺少 dbType 参数
+- 🐛 修复用户信息刷新后显示为"User"的问题
+- 🐛 修复系统参数页面数据显示错误
+- 🐛 修复用户信息弹窗显示不全的问题
+
+**技术改进**
+- 🔧 添加 SMS 相关接口到 Sa-Token 白名单
+- 🔧 优化 UserService，支持短信验证码登录
+- 🔧 优化 WechatService，统一用户创建逻辑
+- 🔧 添加 localStorage 持久化用户信息
+- 🔧 优化前端响应式布局
 
 ---
 

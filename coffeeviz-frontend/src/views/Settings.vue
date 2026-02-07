@@ -37,11 +37,13 @@
 
           <div class="space-y-5">
             <div>
-              <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">用户名</label>
-              <div class="w-full bg-neutral-900/50 border border-neutral-800 rounded-xl px-4 py-3 text-neutral-400 cursor-not-allowed">
-                {{ profileForm.username || 'Not set' }}
-                <i class="fas fa-lock float-right mt-1 text-xs opacity-50"></i>
-              </div>
+              <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">显示名称</label>
+              <input 
+                v-model="profileForm.displayName"
+                type="text" 
+                class="w-full bg-black/40 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition-all placeholder-neutral-700"
+                placeholder="神阁绘XXXXXXXXXX"
+              >
             </div>
             
             <div>
@@ -262,7 +264,7 @@ const apiLoading = ref(false)
 const showApiKey = ref(false)
 
 const profileForm = reactive({
-  username: '',
+  displayName: '',
   email: '',
   phone: ''
 })
@@ -284,7 +286,7 @@ const apiForm = reactive({
 const loadUserInfo = async () => {
   try {
     await userStore.fetchUserInfo()
-    profileForm.username = userStore.userInfo?.username || ''
+    profileForm.displayName = userStore.userInfo?.displayName || ''
     profileForm.email = userStore.userInfo?.email || ''
     profileForm.phone = userStore.userInfo?.phone || ''
   } catch (error) {
@@ -315,6 +317,7 @@ const handleSaveProfile = async () => {
   profileLoading.value = true
   try {
     await userStore.updateUserInfo({
+      displayName: profileForm.displayName,
       email: profileForm.email,
       phone: profileForm.phone
     })

@@ -6,6 +6,8 @@ import com.coffeeviz.dto.LoginRequest;
 import com.coffeeviz.dto.LoginResponse;
 import com.coffeeviz.dto.QrCodeResponse;
 import com.coffeeviz.dto.RegisterRequest;
+import com.coffeeviz.dto.SmsCodeRequest;
+import com.coffeeviz.dto.SmsLoginRequest;
 import com.coffeeviz.dto.WechatLoginRequest;
 import com.coffeeviz.entity.User;
 import com.coffeeviz.service.UserService;
@@ -217,6 +219,68 @@ public class AuthController {
         } catch (Exception e) {
             log.error("微信登录失败", e);
             return Result.error("微信登录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 发送短信验证码
+     */
+    @PostMapping("/sms/send")
+    public Result<String> sendSmsCode(@RequestBody SmsCodeRequest request) {
+        log.info("发送短信验证码: phone={}", request.getPhone());
+        
+        try {
+            String code = userService.sendSmsCode(request.getPhone());
+            
+            // 演示环境返回验证码（生产环境不应返回）
+            log.info("【演示模式】验证码已生成: {}", code);
+            
+            return Result.success("验证码已发送", null);
+            
+        } catch (Exception e) {
+            log.error("发送验证码失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 短信验证码登录
+     */
+    @PostMapping("/sms/login")
+    public Result<LoginResponse> loginWithSms(@RequestBody SmsLoginRequest request) {
+        log.info("短信验证码登录: phone={}", request.getPhone());
+        
+        try {
+            // 1. 验证验证码并登录
+            User user = userService.loginWithSmsCode(request.getPhone(), request.getCode());
+            
+            if (user == null) {
+                return Result.error(401, "验证码错误");
+            }
+            
+            // 2. 登录成功，生成 Token
+            StpUtil.login(user.getId());
+            String token = StpUtil.getTokenValue();
+            
+            // 3. 构建响应
+            LoginResponse response = new LoginResponse();
+            response.setToken(token);
+            
+            LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
+            userInfo.setId(user.getId());
+            userInfo.setUsername(user.getUsername());
+            userInfo.setDisplayName(user.getDisplayName());
+            userInfo.setEmail(user.getEmail());
+            userInfo.setPhone(user.getPhone());
+            userInfo.setAvatarUrl(user.getAvatarUrl());
+            response.setUserInfo(userInfo);
+            
+            log.info("短信验证码登录成功: userId={}, phone={}", user.getId(), request.getPhone());
+            return Result.success("登录成功", response);
+            
+        } catch (Exception e) {
+            log.error("短信验证码登录失败", e);
+            return Result.error(e.getMessage());
         }
     }
 }

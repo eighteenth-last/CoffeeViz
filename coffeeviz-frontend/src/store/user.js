@@ -4,7 +4,7 @@ import api from '@/api'
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: localStorage.getItem('token') || '',
-    userInfo: null
+    userInfo: JSON.parse(localStorage.getItem('userInfo') || 'null')
   }),
   
   getters: {
@@ -20,6 +20,7 @@ export const useUserStore = defineStore('user', {
         this.token = res.data.token
         this.userInfo = res.data.userInfo
         localStorage.setItem('token', this.token)
+        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         return res
       } catch (error) {
         throw error
@@ -43,6 +44,7 @@ export const useUserStore = defineStore('user', {
       try {
         const res = await api.get('/api/auth/userinfo')
         this.userInfo = res.data
+        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         return res
       } catch (error) {
         this.logout()
@@ -79,6 +81,7 @@ export const useUserStore = defineStore('user', {
         this.token = ''
         this.userInfo = null
         localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
       }
     },
     
@@ -101,9 +104,32 @@ export const useUserStore = defineStore('user', {
             id: res.data.userId
           }
           localStorage.setItem('token', res.data.token)
+          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
           await this.fetchUserInfo()
         }
         
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    
+    async sendSmsCode(phone) {
+      try {
+        const res = await api.post('/api/auth/sms/send', { phone })
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    
+    async loginWithSms(phone, code) {
+      try {
+        const res = await api.post('/api/auth/sms/login', { phone, code })
+        this.token = res.data.token
+        this.userInfo = res.data.userInfo
+        localStorage.setItem('token', this.token)
+        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         return res
       } catch (error) {
         throw error

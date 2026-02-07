@@ -29,6 +29,9 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     "/api/auth/login",
                     "/api/auth/register",
                     "/api/auth/logout",
+                    "/api/auth/sms/send",
+                    "/api/auth/sms/login",
+                    "/api/auth/wechat/**",
                     "/error",
                     "/favicon.ico"
                 )
