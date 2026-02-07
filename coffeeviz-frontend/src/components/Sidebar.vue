@@ -1,8 +1,8 @@
 <template>
   <aside class="fixed left-0 top-0 h-full w-64 bg-[#080808] border-r border-neutral-900 z-50 flex flex-col">
     <div class="p-8 flex items-center space-x-3">
-      <div class="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-900/40">
-        <i class="fas fa-mug-hot text-white text-xl"></i>
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+        <img src="/logo.png" class="w-full h-full object-cover" alt="Logo">
       </div>
       <span class="text-xl font-black tracking-tight text-white uppercase italic">Coffee<span class="text-amber-500">Viz</span></span>
     </div>

@@ -6,8 +6,8 @@
       <div class="absolute bottom-0 left-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
 
       <div class="text-center mb-8 relative z-10">
-        <div class="w-16 h-16 bg-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/40 mx-auto mb-4">
-          <i class="fas fa-mug-hot text-white text-3xl"></i>
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 overflow-hidden">
+          <img src="/logo.png" class="w-full h-full object-cover" alt="Logo">
         </div>
         <h2 class="text-2xl font-black text-white mb-1">欢迎回来</h2>
         <p class="text-xs text-neutral-500">登录以继续您的架构设计之旅</p>

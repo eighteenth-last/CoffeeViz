@@ -1,4 +1,7 @@
-# CoffeeViz
+<div align="center">
+  <img src="./coffeeviz-frontend/public/logo.png" alt="CoffeeViz Logo" width="120">
+  <h1>CoffeeViz</h1>
+</div>
 
 > 数据库架构可视化生成器 - 将 SQL 脚本和数据库连接转换为精美的 ER 图
 
