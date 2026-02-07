@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.coffeeviz</groupId>
+        <artifactId>coffeeviz-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>coffeeviz-service</artifactId>
+    <packaging>jar</packaging>
+
+    <name>CoffeeViz Service</name>
+    <description>业务逻辑层（用户服务、ER 图生成服务、项目管理服务）</description>
+
+    <dependencies>
+        <!-- 依赖所有核心模块 -->
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-sql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-llm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-export</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- MyBatis-Plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- Sa-Token -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- BCrypt 密码加密 -->
+        <dependency>
+            <groupId>at.favre.lib</groupId>
+            <artifactId>bcrypt</artifactId>
+        </dependency>
+
+        <!-- Redis (缓存) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+        </dependency>
+
+        <!-- 测试依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+.code-font {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.console-output {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  background-color: #1e1e1e;
+  padding: 12px;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.console-output .info {
+  color: #4fc3f7;
+}
+
+.console-output .success {
+  color: #81c784;
+}
+
+.console-output .warning {
+  color: #ffb74d;
+}
+
+.console-output .error {
+  color: #e57373;
+}
+
+/* 滚动条样式 - 全局隐藏滚动条 */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
