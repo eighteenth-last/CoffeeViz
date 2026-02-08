@@ -48,10 +48,28 @@ const routes = [
         meta: { title: '项目管理' }
       },
       {
+        path: 'repository/:id',
+        name: 'RepositoryDetail',
+        component: () => import('@/views/RepositoryDetail.vue'),
+        meta: { title: '架构库详情' }
+      },
+      {
+        path: 'project/:id',
+        name: 'ProjectDetail',
+        component: () => import('@/views/ProjectDetail.vue'),
+        meta: { title: '项目详情' }
+      },
+      {
         path: 'subscribe',
         name: 'Subscribe',
         component: () => import('@/views/Subscribe.vue'),
         meta: { title: '订阅计划' }
+      },
+      {
+        path: 'checkout',
+        name: 'Checkout',
+        component: () => import('@/views/Checkout.vue'),
+        meta: { title: '收银台' }
       },
       {
         path: 'settings',
@@ -60,6 +78,12 @@ const routes = [
         meta: { title: '设置' }
       }
     ]
+  },
+  {
+    path: '/payment-gateway',
+    name: 'MockPayment',
+    component: () => import('@/views/MockPayment.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 

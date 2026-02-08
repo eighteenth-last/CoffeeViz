@@ -65,6 +65,7 @@ CREATE TABLE orders (
               <button @click="handleZoomOut" title="缩小" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center transition-all"><i class="fas fa-minus"></i></button>
               <button @click="handleFullscreen" title="全屏显示" class="w-10 h-10 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 hover:text-white hover:border-amber-500 flex items-center justify-center transition-all"><i class="fas fa-expand"></i></button>
               <div class="h-[1px] bg-neutral-800"></div>
+              <button @click="handleSaveProject" title="保存到归档库" class="w-10 h-10 bg-green-600 rounded-xl text-white flex items-center justify-center shadow-lg hover:bg-green-700 transition-all"><i class="fas fa-save"></i></button>
               <button @click="handleDownload" title="下载到本地" class="w-10 h-10 bg-amber-600 rounded-xl text-white flex items-center justify-center shadow-lg hover:bg-amber-700 transition-all"><i class="fas fa-download"></i></button>
             </div>
 
@@ -78,6 +79,146 @@ CREATE TABLE orders (
               </div>
               <div v-else v-html="projectStore.diagramData.svgContent" class="w-full h-full flex items-center justify-center"></div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Project Modal -->
+    <div v-if="showSaveModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" @click="showSaveModal = false"></div>
+      <div class="glass-card w-full max-w-2xl rounded-3xl p-8 relative z-10 border border-neutral-800 shadow-2xl animate-fade-in-up max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-8">
+          <h2 class="text-2xl font-black text-white">保存到归档库</h2>
+          <button @click="showSaveModal = false" class="w-8 h-8 rounded-full bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-white transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="space-y-6">
+          <!-- 选择架构库 -->
+          <div>
+            <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">选择架构库</label>
+            
+            <!-- 加载中 -->
+            <div v-if="loadingRepositories" class="flex items-center justify-center py-8">
+              <i class="fas fa-spinner fa-spin text-2xl text-amber-600"></i>
+            </div>
+            
+            <!-- 架构库列表 -->
+            <div v-else class="space-y-2 max-h-48 overflow-y-auto mb-4">
+              <!-- 新建架构库选项 -->
+              <div 
+                @click="selectedRepositoryId = 'new'"
+                :class="['p-4 rounded-xl border cursor-pointer transition-all', selectedRepositoryId === 'new' ? 'bg-green-600/20 border-green-600' : 'bg-neutral-900/50 border-neutral-800 hover:border-green-600/50']"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-lg bg-green-600/20 border border-green-600 flex items-center justify-center mr-3">
+                      <i class="fas fa-plus text-green-600"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-white font-bold">新建架构库</h3>
+                      <p class="text-sm text-neutral-500">创建一个新的架构库来保存此图</p>
+                    </div>
+                  </div>
+                  <div v-if="selectedRepositoryId === 'new'">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 已有架构库 -->
+              <div 
+                v-for="repo in existingRepositories" 
+                :key="repo.id"
+                @click="selectedRepositoryId = repo.id"
+                :class="['p-4 rounded-xl border cursor-pointer transition-all', selectedRepositoryId === repo.id ? 'bg-amber-600/20 border-amber-600' : 'bg-neutral-900/50 border-neutral-800 hover:border-amber-600/50']"
+              >
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <h3 class="text-white font-bold mb-1">{{ repo.repositoryName }}</h3>
+                    <p class="text-sm text-neutral-500 line-clamp-1">{{ repo.description || '暂无描述' }}</p>
+                    <div class="flex items-center space-x-4 mt-2 text-xs text-neutral-600">
+                      <span><i class="fas fa-folder mr-1"></i>{{ repo.diagramCount || 0 }} 个架构图</span>
+                      <span><i class="fas fa-clock mr-1"></i>{{ formatDate(repo.updateTime) }}</span>
+                    </div>
+                  </div>
+                  <div v-if="selectedRepositoryId === repo.id" class="ml-4">
+                    <i class="fas fa-check-circle text-amber-600 text-xl"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 新建架构库表单 -->
+          <div v-if="selectedRepositoryId === 'new'" class="space-y-4 p-4 bg-green-600/10 border border-green-600/30 rounded-xl">
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">架构库名称</label>
+              <input 
+                v-model="saveFormData.repositoryName"
+                type="text" 
+                class="w-full bg-black/50 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-green-600 transition-all placeholder-neutral-700"
+                placeholder="例如：电商系统架构库"
+              >
+            </div>
+            
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">架构库描述 <span class="text-neutral-700 font-normal normal-case">(可选)</span></label>
+              <textarea 
+                v-model="saveFormData.repositoryDescription"
+                rows="2" 
+                class="w-full bg-black/50 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-green-600 transition-all resize-none placeholder-neutral-700"
+                placeholder="简要描述该架构库的用途..."
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- 架构图信息 -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">架构图名称</label>
+              <input 
+                v-model="saveFormData.diagramName"
+                type="text" 
+                class="w-full bg-black/50 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-600 transition-all placeholder-neutral-700"
+                placeholder="例如：用户订单模块 v1.0"
+              >
+            </div>
+            
+            <div>
+              <label class="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2">架构图描述 <span class="text-neutral-700 font-normal normal-case">(可选)</span></label>
+              <textarea 
+                v-model="saveFormData.diagramDescription"
+                rows="3" 
+                class="w-full bg-black/50 border border-neutral-800 rounded-xl px-4 py-3 text-white outline-none focus:border-amber-600 transition-all resize-none placeholder-neutral-700"
+                placeholder="简要描述该架构图的业务背景或技术栈..."
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="bg-neutral-900/50 border border-neutral-800 rounded-xl p-4">
+            <div class="flex items-center justify-between text-sm mb-2">
+              <span class="text-neutral-500">表数量</span>
+              <span class="text-white font-bold">{{ projectStore.diagramData.tableCount || 0 }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-neutral-500">关系数量</span>
+              <span class="text-white font-bold">{{ projectStore.diagramData.relationCount || 0 }}</span>
+            </div>
+          </div>
+          
+          <div class="pt-4 flex space-x-4">
+            <button @click="showSaveModal = false" class="flex-1 py-3 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all font-bold">取消</button>
+            <button 
+              @click="handleConfirmSave" 
+              :disabled="!selectedRepositoryId || !saveFormData.diagramName || (selectedRepositoryId === 'new' && !saveFormData.repositoryName) || saving"
+              class="flex-1 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-white font-bold shadow-lg shadow-green-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              <i v-if="saving" class="fas fa-spinner fa-spin mr-2"></i>
+              <span>{{ saving ? '保存中...' : '保存架构图' }}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -98,11 +239,23 @@ const sqlText = ref('')
 const logs = ref([])
 const diagramScale = ref(1)
 const diagramTransform = ref({ x: 0, y: 0 })
+const showSaveModal = ref(false)
+const saving = ref(false)
+const existingRepositories = ref([])
+const loadingRepositories = ref(false)
+const selectedRepositoryId = ref(null)
 
 const parseOptions = reactive({
   viewMode: 'PHYSICAL',
   inferRelations: true,
   relationDepth: 1
+})
+
+const saveFormData = reactive({
+  repositoryName: '',
+  repositoryDescription: '',
+  diagramName: '',
+  diagramDescription: ''
 })
 
 // 模拟日志功能
@@ -304,6 +457,144 @@ const downloadBase64File = (base64Data, filename, mimeType) => {
   } catch (error) {
     console.error('Base64 decode error:', error)
     throw new Error('PNG 数据格式错误，可能后端未正确生成')
+  }
+}
+
+// 保存项目到归档库
+const handleSaveProject = async () => {
+  if (!projectStore.diagramData.mermaidCode) {
+    message.warning('请先生成 ER 图')
+    return
+  }
+  
+  // 加载已有架构库列表
+  loadingRepositories.value = true
+  try {
+    const response = await fetch('/api/repository/list?page=1&size=100', {
+      headers: {
+        'Authorization': localStorage.getItem('token') || ''
+      }
+    })
+    const result = await response.json()
+    if (result.code === 200) {
+      existingRepositories.value = result.data.list || []
+    }
+  } catch (error) {
+    console.error('加载架构库列表失败:', error)
+  } finally {
+    loadingRepositories.value = false
+  }
+  
+  // 打开保存弹窗
+  showSaveModal.value = true
+  selectedRepositoryId.value = null
+  addLog('info', 'Opening save diagram dialog...')
+}
+
+// 格式化日期
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now - date
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) return '今天'
+  if (days === 1) return '昨天'
+  if (days < 7) return `${days}天前`
+  
+  return date.toLocaleDateString('zh-CN')
+}
+
+// 确认保存架构图
+const handleConfirmSave = async () => {
+  if (!selectedRepositoryId.value) {
+    message.warning('请选择架构库')
+    return
+  }
+  
+  if (!saveFormData.diagramName) {
+    message.warning('请输入架构图名称')
+    return
+  }
+  
+  if (selectedRepositoryId.value === 'new' && !saveFormData.repositoryName) {
+    message.warning('请输入架构库名称')
+    return
+  }
+  
+  try {
+    saving.value = true
+    let repositoryId = selectedRepositoryId.value
+    
+    // 如果选择新建架构库，先创建架构库
+    if (selectedRepositoryId.value === 'new') {
+      addLog('info', `Creating repository: ${saveFormData.repositoryName}`)
+      
+      const repoResponse = await fetch('/api/repository/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') || ''
+        },
+        body: JSON.stringify({
+          repositoryName: saveFormData.repositoryName,
+          description: saveFormData.repositoryDescription
+        })
+      })
+      
+      const repoResult = await repoResponse.json()
+      if (repoResult.code !== 200) {
+        throw new Error(repoResult.message || '创建架构库失败')
+      }
+      
+      repositoryId = repoResult.data
+      addLog('success', `Repository created: ${saveFormData.repositoryName} (ID: ${repositoryId})`)
+    }
+    
+    // 创建架构图
+    addLog('info', `Saving diagram: ${saveFormData.diagramName}`)
+    
+    const diagramResponse = await fetch('/api/diagram/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') || ''
+      },
+      body: JSON.stringify({
+        repositoryId: repositoryId,
+        diagramName: saveFormData.diagramName,
+        description: saveFormData.diagramDescription,
+        sourceType: 'SQL',
+        dbType: 'mysql',
+        mermaidCode: projectStore.diagramData.mermaidCode,
+        pngBase64: projectStore.diagramData.pngBase64,
+        tableCount: projectStore.diagramData.tableCount,
+        relationCount: projectStore.diagramData.relationCount
+      })
+    })
+    
+    const diagramResult = await diagramResponse.json()
+    if (diagramResult.code !== 200) {
+      throw new Error(diagramResult.message || '保存架构图失败')
+    }
+    
+    addLog('success', `Diagram saved successfully: ${saveFormData.diagramName} (ID: ${diagramResult.data})`)
+    message.success('架构图已保存到归档库')
+    
+    // 关闭弹窗并清空表单
+    showSaveModal.value = false
+    saveFormData.repositoryName = ''
+    saveFormData.repositoryDescription = ''
+    saveFormData.diagramName = ''
+    saveFormData.diagramDescription = ''
+    selectedRepositoryId.value = null
+    
+  } catch (error) {
+    addLog('error', `Save failed: ${error.message}`)
+    message.error('保存失败: ' + (error.message || '未知错误'))
+  } finally {
+    saving.value = false
   }
 }
 </script>

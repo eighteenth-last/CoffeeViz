@@ -12,6 +12,26 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  
+  # 禁用默认静态资源处理，避免与 API 路由冲突
+  web:
+    resources:
+      add-mappings: false
+  
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
 
 # 服务器配置
 server:
@@ -61,3 +81,11 @@ sa-token:
   token-style: uuid
   # 是否输出操作日志
   is-log: false
+
+# MinIO 配置
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: coffeeviz
+  region: cn-beijing-1

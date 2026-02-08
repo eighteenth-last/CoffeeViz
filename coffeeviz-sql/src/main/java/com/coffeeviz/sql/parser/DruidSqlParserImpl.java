@@ -95,7 +95,12 @@ public class DruidSqlParserImpl implements SqlParser {
      */
     private TableModel parseCreateTable(SQLCreateTableStatement createTable, String dialect) {
         TableModel table = new TableModel();
-        table.setName(createTable.getTableName());
+        // 清理表名中的反引号、双引号等特殊字符
+        String tableName = createTable.getTableName();
+        if (tableName != null) {
+            tableName = cleanIdentifier(tableName);
+        }
+        table.setName(tableName);
         table.setColumns(new ArrayList<>());
         table.setForeignKeys(new ArrayList<>());
         table.setIndexes(new ArrayList<>());
@@ -148,11 +153,27 @@ public class DruidSqlParserImpl implements SqlParser {
     }
     
     /**
+     * 清理标识符（移除反引号、双引号等）
+     */
+    private String cleanIdentifier(String identifier) {
+        if (identifier == null) {
+            return null;
+        }
+        // 移除反引号、双引号、方括号
+        return identifier.replaceAll("[`\"\\[\\]]", "").trim();
+    }
+    
+    /**
      * 解析列定义
      */
     private ColumnModel parseColumnDefinition(SQLColumnDefinition colDef) {
         ColumnModel column = new ColumnModel();
-        column.setName(colDef.getColumnName());
+        // 清理列名中的特殊字符
+        String columnName = colDef.getColumnName();
+        if (columnName != null) {
+            columnName = cleanIdentifier(columnName);
+        }
+        column.setName(columnName);
         
         // 数据类型
         String dataType = colDef.getDataType().getName();
@@ -213,12 +234,12 @@ public class DruidSqlParserImpl implements SqlParser {
         PrimaryKeyModel primaryKey = new PrimaryKeyModel();
         
         if (pk.getName() != null) {
-            primaryKey.setName(pk.getName().getSimpleName());
+            primaryKey.setName(cleanIdentifier(pk.getName().getSimpleName()));
         }
         
         List<String> columns = new ArrayList<>();
         for (SQLSelectOrderByItem item : pk.getColumns()) {
-            columns.add(item.getExpr().toString());
+            columns.add(cleanIdentifier(item.getExpr().toString()));
         }
         primaryKey.setColumns(columns);
         
@@ -232,7 +253,7 @@ public class DruidSqlParserImpl implements SqlParser {
         ForeignKeyModel foreignKey = new ForeignKeyModel();
         
         if (fk.getName() != null) {
-            foreignKey.setName(fk.getName().getSimpleName());
+            foreignKey.setName(cleanIdentifier(fk.getName().getSimpleName()));
         }
         
         foreignKey.setFromTable(fromTable);
@@ -240,19 +261,19 @@ public class DruidSqlParserImpl implements SqlParser {
         // FROM 列
         List<String> fromColumns = new ArrayList<>();
         for (SQLExpr column : fk.getReferencingColumns()) {
-            fromColumns.add(column.toString());
+            fromColumns.add(cleanIdentifier(column.toString()));
         }
         foreignKey.setFromColumns(fromColumns);
         
         // TO 表
         if (fk.getReferencedTable() != null) {
-            foreignKey.setToTable(fk.getReferencedTable().toString());
+            foreignKey.setToTable(cleanIdentifier(fk.getReferencedTable().toString()));
         }
         
         // TO 列
         List<String> toColumns = new ArrayList<>();
         for (SQLExpr column : fk.getReferencedColumns()) {
-            toColumns.add(column.toString());
+            toColumns.add(cleanIdentifier(column.toString()));
         }
         foreignKey.setToColumns(toColumns);
         
@@ -270,12 +291,12 @@ public class DruidSqlParserImpl implements SqlParser {
         IndexModel index = new IndexModel();
         
         if (unique.getName() != null) {
-            index.setName(unique.getName().getSimpleName());
+            index.setName(cleanIdentifier(unique.getName().getSimpleName()));
         }
         
         List<String> columns = new ArrayList<>();
         for (SQLSelectOrderByItem item : unique.getColumns()) {
-            columns.add(item.getExpr().toString());
+            columns.add(cleanIdentifier(item.getExpr().toString()));
         }
         index.setColumns(columns);
         index.setUnique(true);

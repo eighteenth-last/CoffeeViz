@@ -60,6 +60,7 @@
         <module>coffeeviz-sql</module>
         <module>coffeeviz-llm</module>
         <module>coffeeviz-export</module>
+        <module>coffeeviz-payment</module>
         <module>coffeeviz-service</module>
         <module>coffeeviz-web</module>
     </modules>
@@ -110,6 +111,11 @@
             <dependency>
                 <groupId>com.coffeeviz</groupId>
                 <artifactId>coffeeviz-export</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.coffeeviz</groupId>
+                <artifactId>coffeeviz-payment</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -176,7 +176,7 @@ public class AuthController {
      * 检查二维码扫描状态（轮询接口）
      */
     @GetMapping("/wechat/check/{qrCodeId}")
-    public Result<Map<String, Object>> checkWechatQrCode(@PathVariable String qrCodeId) {
+    public Result<Map<String, Object>> checkWechatQrCode(@PathVariable("qrCodeId") String qrCodeId) {
         try {
             Map<String, Object> status = wechatService.checkQrCodeStatus(qrCodeId);
             return Result.success(status);

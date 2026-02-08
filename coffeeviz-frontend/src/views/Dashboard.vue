@@ -67,7 +67,7 @@
                 <i class="fas fa-database"></i>
               </div>
               <div>
-                <div class="text-sm font-bold text-white group-hover:text-amber-500 transition-colors">{{ project.name }}</div>
+                <div class="text-sm font-bold text-white group-hover:text-amber-500 transition-colors">{{ project.projectName }}</div>
                 <div class="text-[10px] text-neutral-500">{{ project.description || '暂无描述' }}</div>
               </div>
             </div>

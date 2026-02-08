@@ -130,3 +130,31 @@ openai:
     base-url: https://api.openai.com
     model: gpt-4
     timeout: 30000
+
+# MinIO 配置
+minio:
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: coffeeviz
+  region: cn-beijing-1
+
+# 支付配置
+payment:
+  wechat:
+    app-id: ${WECHAT_APP_ID:}
+    mch-id: ${WECHAT_MCH_ID:}
+    api-key: ${WECHAT_API_KEY:}
+    cert-path: ${WECHAT_CERT_PATH:}
+    notify-url: ${APP_BASE_URL:http://localhost:8080}/api/payment/callback/wechat
+  alipay:
+    app-id: ${ALIPAY_APP_ID:}
+    private-key: ${ALIPAY_PRIVATE_KEY:}
+    public-key: ${ALIPAY_PUBLIC_KEY:}
+    notify-url: ${APP_BASE_URL:http://localhost:8080}/api/payment/callback/alipay
+    return-url: ${APP_BASE_URL:http://localhost:8080}/payment/success
+  stripe:
+    api-key: ${STRIPE_API_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    success-url: ${APP_BASE_URL:http://localhost:8080}/payment/success
+    cancel-url: ${APP_BASE_URL:http://localhost:8080}/payment/cancel

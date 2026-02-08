@@ -7,13 +7,13 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 项目实体类
+ * 项目实体类（映射到 biz_repository 表）
  * 
  * @author CoffeeViz Team
  * @since 1.0.0
  */
 @Data
-@TableName("biz_project")
+@TableName("biz_repository")
 public class Project implements Serializable {
     
     private static final long serialVersionUID = 1L;
@@ -30,8 +30,9 @@ public class Project implements Serializable {
     private Long userId;
     
     /**
-     * 项目名称
+     * 项目名称（映射到 repository_name）
      */
+    @TableField("repository_name")
     private String projectName;
     
     /**
@@ -40,13 +41,15 @@ public class Project implements Serializable {
     private String description;
     
     /**
-     * 来源类型（SQL/JDBC/AI）
+     * 来源类型（SQL/JDBC/AI）- 临时字段，实际存在 diagram 表
      */
+    @TableField(exist = false)
     private String sourceType;
     
     /**
-     * 数据库类型（mysql/postgres）
+     * 数据库类型（mysql/postgres）- 临时字段，实际存在 diagram 表
      */
+    @TableField(exist = false)
     private String dbType;
     
     /**
@@ -55,19 +58,33 @@ public class Project implements Serializable {
     private String status;
     
     /**
-     * Mermaid 源码
+     * Mermaid 源码 - 临时字段，实际存在 diagram 表
      */
+    @TableField(exist = false)
     private String mermaidCode;
     
     /**
-     * SVG 内容
+     * SVG 内容 - 临时字段，不再使用
      */
+    @TableField(exist = false)
     private String svgContent;
     
     /**
-     * 表数量
+     * 图片 URL - 临时字段，实际存在 diagram 表
      */
+    @TableField(exist = false)
+    private String imageUrl;
+    
+    /**
+     * 表数量 - 临时字段，实际存在 diagram 表
+     */
+    @TableField(exist = false)
     private Integer tableCount;
+    
+    /**
+     * 架构图数量（实际字段）
+     */
+    private Integer diagramCount;
     
     /**
      * 创建时间（自动填充）

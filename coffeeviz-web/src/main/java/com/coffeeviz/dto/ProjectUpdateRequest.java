@@ -32,6 +32,16 @@ public class ProjectUpdateRequest {
     private String mermaidCode;
     
     /**
+     * PNG Base64 数据
+     */
+    private String pngBase64;
+    
+    /**
+     * 表数量
+     */
+    private Integer tableCount;
+    
+    /**
      * 是否创建新版本
      */
     private Boolean createVersion = false;

@@ -36,6 +36,9 @@ public class ProjectService {
     @Autowired
     private ProjectVersionMapper projectVersionMapper;
     
+    @Autowired(required = false)
+    private MinioService minioService;
+    
     /**
      * 创建项目
      * 
@@ -125,15 +128,26 @@ public class ProjectService {
             throw new RuntimeException("无权限删除此项目");
         }
         
-        // 2. 逻辑删除项目（MyBatis-Plus 自动处理）
+        // 2. 删除 MinIO 中的图片
+        if (minioService != null && project.getImageUrl() != null && !project.getImageUrl().isEmpty()) {
+            try {
+                String fileName = project.getImageUrl().substring(project.getImageUrl().lastIndexOf("/") + 1);
+                minioService.deleteFile("projects/" + fileName);
+                log.info("已删除 MinIO 图片: {}", fileName);
+            } catch (Exception e) {
+                log.warn("删除 MinIO 图片失败", e);
+            }
+        }
+        
+        // 3. 逻辑删除项目（MyBatis-Plus 自动处理）
         projectMapper.deleteById(projectId);
         
-        // 3. 删除项目配置
+        // 4. 删除项目配置
         LambdaQueryWrapper<ProjectConfig> configWrapper = new LambdaQueryWrapper<>();
         configWrapper.eq(ProjectConfig::getProjectId, projectId);
         projectConfigMapper.delete(configWrapper);
         
-        // 4. 删除项目版本
+        // 5. 删除项目版本
         LambdaQueryWrapper<ProjectVersion> versionWrapper = new LambdaQueryWrapper<>();
         versionWrapper.eq(ProjectVersion::getProjectId, projectId);
         projectVersionMapper.delete(versionWrapper);

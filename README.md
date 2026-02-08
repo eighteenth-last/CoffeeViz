@@ -13,6 +13,8 @@ CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚�
 - 🎨 **可视化渲染**：基于 Mermaid 生成清晰的 ER 图
 - 📦 **多格式导出**：支持 SVG、PNG、Mermaid 源码导出（支持动态分辨率）
 - 🔐 **用户系统**：完整的用户认证（账号/手机验证码/微信扫码）、项目管理、版本控制
+- 💳 **订阅系统**：多层级订阅计划（FREE/PRO/TEAM）、配额管理、权限控制
+- 💰 **支付集成**：支持微信支付、支付宝、Stripe 多种支付方式
 - 🚀 **高性能**：Redis 缓存、异步处理、API 限流
 - 🎯 **智能推断**：自动识别表关系、外键约束
 - 📱 **现代化 UI**：基于 Vue 3 + Naive UI 的响应式界面
@@ -51,7 +53,8 @@ coffeeviz/
 ├── coffeeviz-sql/             # SQL 解析模块（多解析器组合）
 ├── coffeeviz-llm/             # LLM 模块（AI 生成，预留）
 ├── coffeeviz-export/          # 导出模块（SVG/PNG 生成）
-├── coffeeviz-service/         # 业务服务层（用户、项目、ER 图服务）
+├── coffeeviz-payment/         # 支付模块（微信/支付宝/Stripe）
+├── coffeeviz-service/         # 业务服务层（用户、项目、订阅、配额）
 ├── coffeeviz-web/             # Web 层（Controller、配置）
 └── coffeeviz-frontend/        # 前端项目（Vue 3）
 ```
@@ -81,14 +84,20 @@ cd coffeeviz
 mysql -u root -p
 
 # 执行初始化脚本
-mysql -u root -p < init.sql
-```
+mysql -u root -p coffeeviz < coffeeviz-web/src/main/resources/coffeeviz.sql
 
-或者使用 `coffeeviz-web/src/main/resources/schema.sql` 文件。
+# 初始化订阅系统（可选）
+mysql -u root -p coffeeviz < coffeeviz-web/src/main/resources/subscription_tables.sql
+```
 
 **默认管理员账号**：
 - 用户名: `admin`
 - 密码: `admin123`
+
+**订阅计划**：
+- FREE（社区版）：免费，最多 3 个项目
+- PRO（专业版）：¥29/月，无限项目 + AI 功能
+- TEAM（团队版）：¥99/月，团队协作 + 优先支持
 
 ### 3. 配置后端
 
@@ -108,6 +117,18 @@ spring:
       port: 6379
       password: 
       database: 0
+
+# 支付配置（可选，用于订阅功能）
+payment:
+  wechat:
+    app-id: ${WECHAT_APP_ID:}
+    mch-id: ${WECHAT_MCH_ID:}
+    api-key: ${WECHAT_API_KEY:}
+  alipay:
+    app-id: ${ALIPAY_APP_ID:}
+    private-key: ${ALIPAY_PRIVATE_KEY:}
+  stripe:
+    api-key: ${STRIPE_API_KEY:}
 ```
 
 ### 4. 启动后端
@@ -173,6 +194,35 @@ npm run dev
 - **版本控制**：每次更新可创建新版本
 - **历史回溯**：查看和恢复历史版本
 - **导出分享**：导出 Mermaid 源码、SVG、PNG
+
+### 订阅管理
+
+#### 订阅计划对比
+
+| 功能 | FREE | PRO | TEAM |
+|------|------|-----|------|
+| 价格 | 免费 | ¥29/月 或 ¥290/年 | ¥99/月 或 ¥990/年 |
+| 项目数量 | 3 个 | 无限 | 无限 |
+| SQL 导入 | MySQL | 多数据库 | 多数据库 |
+| JDBC 连接 | ❌ | ✅ | ✅ |
+| AI 辅助 | ❌ | ✅ | ✅ |
+| 导出功能 | ✅ | ✅ | ✅ |
+| 团队协作 | ❌ | ❌ | ✅ |
+| 技术支持 | 社区 | 优先 | 7x24 |
+
+#### 配额限制
+
+- **repository**: 仓库数量（FREE: 3，PRO/TEAM: 无限）
+- **diagram**: 每月图表生成次数
+- **sql_parse**: 每日 SQL 解析次数
+- **ai_generate**: 每月 AI 生成次数（仅 PRO/TEAM）
+
+#### 升级订阅
+
+1. 访问"订阅管理"页面
+2. 选择订阅计划（月付/年付）
+3. 选择支付方式（微信/支付宝/Stripe）
+4. 完成支付后自动激活
 
 ## 🔌 API 文档
 
@@ -340,6 +390,58 @@ DELETE /api/project/delete/{projectId}
 Authorization: {token}
 ```
 
+### 订阅管理接口
+
+#### 获取订阅计划列表
+```http
+GET /api/subscription/plans
+```
+
+#### 获取当前用户订阅
+```http
+GET /api/subscription/current
+Authorization: {token}
+```
+
+#### 取消订阅
+```http
+POST /api/subscription/cancel?reason=不需要了
+Authorization: {token}
+```
+
+#### 检查功能权限
+```http
+GET /api/subscription/check-feature?feature=ai
+Authorization: {token}
+```
+
+### 支付接口
+
+#### 创建支付订单
+```http
+POST /api/payment/create
+Authorization: {token}
+Content-Type: application/json
+
+{
+  "planId": 2,
+  "billingCycle": "monthly",
+  "paymentMethod": "wechat"
+}
+```
+
+#### 查询支付状态
+```http
+GET /api/payment/query/{orderNo}
+Authorization: {token}
+```
+
+#### 获取用户订单列表
+```http
+GET /api/payment/orders
+Authorization: {token}
+```
+
 ## 🔧 配置说明
 
 ### 应用配置
@@ -379,6 +481,26 @@ mybatis-plus:
 - `sql.max.length`: SQL 文本最大长度
 - `jdbc.connection.timeout`: JDBC 连接超时时间
 - `rate.limit.per.second`: API 限流配置
+
+### 支付配置
+
+支付配置通过环境变量设置：
+
+```bash
+# 微信支付
+export WECHAT_APP_ID=your_app_id
+export WECHAT_MCH_ID=your_mch_id
+export WECHAT_API_KEY=your_api_key
+
+# 支付宝
+export ALIPAY_APP_ID=your_app_id
+export ALIPAY_PRIVATE_KEY=your_private_key
+export ALIPAY_PUBLIC_KEY=your_public_key
+
+# Stripe
+export STRIPE_API_KEY=sk_test_xxx
+export STRIPE_WEBHOOK_SECRET=whsec_xxx
+```
 
 ### 用户默认配置
 
@@ -514,7 +636,25 @@ A: 确保后端已重启，SMS 相关接口已添加到 Sa-Token 白名单。
 **Q: 用户信息显示为邮箱地址而不是友好名称？**
 A: 执行 `UPDATE_DISPLAY_NAME.sql` 更新现有用户的 displayName 字段。
 
+**Q: 如何测试支付功能？**
+A: 使用支付平台的沙箱环境进行测试，配置沙箱密钥即可。
+
+**Q: 订阅过期后会怎样？**
+A: 订阅过期后会自动降级到 FREE 计划，已创建的项目不会丢失，但会受到 FREE 计划的配额限制。
+
+**Q: 如何查看配额使用情况？**
+A: 在"订阅管理"页面可以查看当前配额使用情况和剩余配额。
+
 ### 已知问题修复记录
+
+#### v1.2.0 (2026-02-08)
+- ✅ 新增支付模块（微信支付、支付宝、Stripe）
+- ✅ 新增订阅系统（FREE/PRO/TEAM 三层计划）
+- ✅ 新增配额管理系统
+- ✅ 新增权限控制（@RequireSubscription、@RequireQuota）
+- ✅ 新增支付订单管理
+- ✅ 新增订阅 API 接口
+- ✅ 完善数据库表结构（订阅、支付、配额）
 
 #### v1.1.0 (2026-02-07)
 - ✅ 修复字段类型不显示长度和精度的问题
@@ -565,6 +705,49 @@ eighteenthstuai@gmail.com
 - 邮箱: eighteenthstuai@gmail.com
 
 ## 📋 更新日志
+
+### v1.2.0 (2026-02-08)
+
+**新功能**
+- 🎉 新增支付模块（coffeeviz-payment）
+  - 支持微信支付、支付宝、Stripe
+  - 统一支付接口和回调处理
+  - 支付订单管理
+- 🎉 新增订阅系统
+  - 三层订阅计划（FREE/PRO/TEAM）
+  - 订阅管理（创建、升级、取消、续费）
+  - 订阅权限检查
+- 🎉 新增配额管理系统
+  - 多种配额类型（repository/diagram/sql_parse/ai_generate）
+  - 自动重置机制（daily/monthly/yearly/never）
+  - 配额使用统计
+- 🎉 新增权限控制
+  - @RequireSubscription 注解（订阅权限）
+  - @RequireQuota 注解（配额检查）
+  - AOP 切面拦截
+
+**数据库变更**
+- ✨ 新增 biz_subscription_plan 表（订阅计划）
+- ✨ 新增 biz_user_subscription 表（用户订阅）
+- ✨ 新增 biz_payment_order 表（支付订单）
+- ✨ 新增 biz_usage_quota 表（使用配额）
+
+**API 接口**
+- ✨ 新增订阅管理接口（/api/subscription/*）
+- ✨ 新增支付接口（/api/payment/*）
+- ✨ 新增支付回调接口（微信/支付宝/Stripe）
+
+**技术改进**
+- 🔧 模块化支付处理（Handler 模式）
+- 🔧 支付配置管理（PaymentConfig）
+- 🔧 订阅服务实现（SubscriptionService）
+- 🔧 配额服务实现（QuotaService）
+- 🔧 支付订单服务（PaymentOrderService）
+
+**文档**
+- 📚 新增《支付与订阅模块完整文档》
+- 📚 更新 README 添加订阅说明
+- 📚 更新 API 文档
 
 ### v1.1.0 (2026-02-07)
 

@@ -149,7 +149,7 @@ public class SettingController {
      * 获取单个配置
      */
     @GetMapping("/config/{configKey}")
-    public Result<String> getConfig(@PathVariable String configKey) {
+    public Result<String> getConfig(@PathVariable("configKey") String configKey) {
         log.info("获取配置: key={}", configKey);
         
         try {
@@ -202,7 +202,7 @@ public class SettingController {
      * 删除配置
      */
     @DeleteMapping("/config/{configKey}")
-    public Result<String> deleteConfig(@PathVariable String configKey) {
+    public Result<String> deleteConfig(@PathVariable("configKey") String configKey) {
         log.info("删除配置: key={}", configKey);
         
         try {

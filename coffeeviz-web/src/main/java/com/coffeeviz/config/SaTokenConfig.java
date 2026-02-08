@@ -32,6 +32,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     "/api/auth/sms/send",
                     "/api/auth/sms/login",
                     "/api/auth/wechat/**",
+                    "/api/image/**",  // 图片代理接口不需要认证
                     "/error",
                     "/favicon.ico"
                 )
