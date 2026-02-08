@@ -11,7 +11,7 @@
  Target Server Version : 80045 (8.0.45-0ubuntu0.24.04.1)
  File Encoding         : 65001
 
- Date: 08/02/2026 14:31:12
+ Date: 08/02/2026 18:57:22
 */
 
 SET NAMES utf8mb4;
@@ -38,7 +38,7 @@ CREATE TABLE `biz_diagram`  (
   INDEX `idx_repository_id`(`repository_id` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   CONSTRAINT `fk_diagram_repository` FOREIGN KEY (`repository_id`) REFERENCES `biz_repository` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '架构图表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '架构图表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for biz_payment_order
@@ -70,7 +70,7 @@ CREATE TABLE `biz_payment_order`  (
   INDEX `idx_payment_status`(`payment_status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '支付订单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '支付订单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for biz_repository
@@ -91,7 +91,7 @@ CREATE TABLE `biz_repository`  (
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   INDEX `idx_user_status`(`user_id` ASC, `status` ASC) USING BTREE,
   CONSTRAINT `fk_project_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '项目表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '项目表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for biz_repository_config
@@ -143,6 +143,10 @@ CREATE TABLE `biz_subscription_plan`  (
   INDEX `idx_status`(`status` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '订阅计划表' ROW_FORMAT = DYNAMIC;
 
+INSERT INTO `coffeeviz`.`biz_subscription_plan` (`id`, `plan_code`, `plan_name`, `plan_name_en`, `description`, `price_monthly`, `price_yearly`, `max_repositories`, `max_diagrams_per_repo`, `max_sql_size_mb`, `support_jdbc`, `support_ai`, `support_export`, `support_team`, `priority_support`, `features`, `sort_order`, `status`, `create_time`, `update_time`) VALUES (1, 'FREE', '社区版', 'Community', '适合个人开发者和小型项目使用', 0.00, 0.00, 3, 10, 5, 0, 0, 1, 0, 0, '[\"3个架构库\", \"10次架构图/月\", \"50次SQL解析/天\", \"基础ER图生成\", \"MySQL支持\", \"社区支持\"]', 1, 'active', '2026-02-08 14:16:32', '2026-02-08 18:56:01');
+INSERT INTO `coffeeviz`.`biz_subscription_plan` (`id`, `plan_code`, `plan_name`, `plan_name_en`, `description`, `price_monthly`, `price_yearly`, `max_repositories`, `max_diagrams_per_repo`, `max_sql_size_mb`, `support_jdbc`, `support_ai`, `support_export`, `support_team`, `priority_support`, `features`, `sort_order`, `status`, `create_time`, `update_time`) VALUES (2, 'PRO', '专业版', 'Professional', '适合开发者和生产力工具使用', 29.00, 290.00, 20, 500, 50, 1, 1, 1, 0, 0, '[\"20个架构库\", \"500次架构图/月\", \"1000次SQL解析/天\", \"100次AI生成/月\", \"多数据库支持\", \"JDBC实时连接\", \"高清导出\", \"优先支持\"]', 2, 'active', '2026-02-08 14:16:32', '2026-02-08 18:56:01');
+INSERT INTO `coffeeviz`.`biz_subscription_plan` (`id`, `plan_code`, `plan_name`, `plan_name_en`, `description`, `price_monthly`, `price_yearly`, `max_repositories`, `max_diagrams_per_repo`, `max_sql_size_mb`, `support_jdbc`, `support_ai`, `support_export`, `support_team`, `priority_support`, `features`, `sort_order`, `status`, `create_time`, `update_time`) VALUES (3, 'TEAM', '团队版', 'Team', '适合企业团队协作使用', 99.00, 990.00, -1, -1, 200, 1, 1, 1, 1, 1, '[\"无限架构库\", \"无限架构图\", \"无限SQL解析\", \"1000次AI生成/月\", \"团队协作\", \"版本控制\", \"API集成\", \"私有部署\", \"专属支持\"]', 3, 'active', '2026-02-08 14:16:32', '2026-02-08 18:56:01');
+
 -- ----------------------------
 -- Table structure for biz_usage_quota
 -- ----------------------------
@@ -160,7 +164,7 @@ CREATE TABLE `biz_usage_quota`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_quota_type`(`user_id` ASC, `quota_type` ASC) USING BTREE,
   CONSTRAINT `fk_quota_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户使用配额表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户使用配额表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for biz_user_subscription
@@ -190,7 +194,7 @@ CREATE TABLE `biz_user_subscription`  (
   INDEX `idx_end_time`(`end_time` ASC) USING BTREE,
   CONSTRAINT `fk_subscription_plan` FOREIGN KEY (`plan_id`) REFERENCES `biz_subscription_plan` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_subscription_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户订阅表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户订阅表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for sys_config

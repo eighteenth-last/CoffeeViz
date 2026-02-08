@@ -158,3 +158,9 @@ payment:
     webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
     success-url: ${APP_BASE_URL:http://localhost:8080}/payment/success
     cancel-url: ${APP_BASE_URL:http://localhost:8080}/payment/cancel
+
+# CoffeeViz 自定义配置
+coffeeviz:
+  # 缓存配置
+  cache:
+    enabled: false  # 开发环境禁用缓存，方便调试和测试

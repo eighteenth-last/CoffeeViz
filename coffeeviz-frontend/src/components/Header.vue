@@ -51,7 +51,7 @@ const currentTitle = computed(() => {
     'db-connect': '数据库连接',
     'ai-generate': 'AI 生成',
     'projects': '项目管理',
-    'settings': '系统参数',
+    'settings': '系统设置',
     'subscribe': '订阅计划'
   }
   return map[name] || route.meta?.title || '未知页面'

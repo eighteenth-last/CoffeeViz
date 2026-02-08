@@ -57,21 +57,29 @@
       <router-link to="/settings" custom v-slot="{ navigate, isActive }">
         <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
           <i class="fas fa-sliders w-8 text-lg"></i>
-          <span>系统参数</span>
+          <span>系统设置</span>
         </a>
       </router-link>
     </nav>
 
-    <div class="p-4">
+    <div class="p-4" v-if="subscriptionStore.planCode === 'FREE'">
       <div class="bg-gradient-to-br from-neutral-900 to-black border border-neutral-800 rounded-2xl p-4 relative overflow-hidden group">
         <div class="text-xs text-amber-500 font-bold mb-1">升级到 Pro</div>
         <p class="text-[10px] text-neutral-500 mb-3">解锁多方言 SQL 高级解析与云端同步功能</p>
-        <button class="w-full py-2 bg-amber-600/10 border border-amber-600/30 rounded-lg text-[10px] font-bold text-amber-500 hover:bg-amber-600 hover:text-white transition-all">立即升级</button>
+        <button @click="handleUpgradeClick" class="w-full py-2 bg-amber-600/10 border border-amber-600/30 rounded-lg text-[10px] font-bold text-amber-500 hover:bg-amber-600 hover:text-white transition-all">立即升级</button>
       </div>
     </div>
   </aside>
 </template>
 
 <script setup>
-// Logic is handled by router-link
+import { useRouter } from 'vue-router'
+import { useSubscriptionStore } from '@/store/subscription'
+
+const router = useRouter()
+const subscriptionStore = useSubscriptionStore()
+
+const handleUpgradeClick = () => {
+  router.push('/subscribe')
+}
 </script>

@@ -2,6 +2,8 @@ package com.coffeeviz.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.coffeeviz.annotation.RequireQuota;
+import com.coffeeviz.annotation.RequireSubscription;
 import com.coffeeviz.common.Result;
 import com.coffeeviz.dto.ProjectCreateRequest;
 import com.coffeeviz.dto.ProjectListRequest;
@@ -37,8 +39,11 @@ public class ProjectController {
     
     /**
      * 创建项目
+     * 需要订阅且消耗 repository 配额
      */
     @PostMapping("/create")
+    @RequireSubscription
+    @RequireQuota("repository")
     public Result<Long> createProject(@RequestBody ProjectCreateRequest request) {
         log.info("创建项目: projectName={}", request.getProjectName());
         

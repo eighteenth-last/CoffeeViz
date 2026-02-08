@@ -67,7 +67,7 @@ public class JSqlParserImpl implements SqlParser {
             
         } catch (Exception e) {
             String error = "JSqlParser 解析失败: " + e.getMessage();
-            log.error(error, e);
+            log.debug(error); // 降级为 DEBUG，因为这是正常的多层解析策略
             errors.add(error);
             return ParseResult.error(error);
         }

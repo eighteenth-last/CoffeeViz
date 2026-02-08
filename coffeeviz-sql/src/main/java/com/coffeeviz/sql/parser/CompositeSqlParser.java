@@ -54,7 +54,7 @@ public class CompositeSqlParser implements SqlParser {
             }
             attemptLog.add("L1: JSqlParser 失败 - " + result.getMessage());
         } catch (Exception e) {
-            log.warn("L1: JSqlParser 解析异常: {}", e.getMessage());
+            log.debug("L1: JSqlParser 解析异常: {}", e.getMessage()); // 降级为 DEBUG
             attemptLog.add("L1: JSqlParser 异常 - " + e.getMessage());
         }
         
@@ -70,7 +70,7 @@ public class CompositeSqlParser implements SqlParser {
             }
             attemptLog.add("L2: Druid SQL Parser 失败 - " + result.getMessage());
         } catch (Exception e) {
-            log.warn("L2: Druid SQL Parser 解析异常: {}", e.getMessage());
+            log.debug("L2: Druid SQL Parser 解析异常: {}", e.getMessage()); // 降级为 DEBUG
             attemptLog.add("L2: Druid SQL Parser 异常 - " + e.getMessage());
         }
         

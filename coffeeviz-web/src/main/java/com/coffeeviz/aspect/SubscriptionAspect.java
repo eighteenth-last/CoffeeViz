@@ -34,13 +34,15 @@ public class SubscriptionAspect {
         
         // 检查订阅是否有效
         if (!subscriptionService.isSubscriptionValid(userId)) {
-            throw new RuntimeException("订阅已过期，请续费");
+            log.warn("订阅已过期: userId={}", userId);
+            throw new RuntimeException("订阅已过期，请续费或升级订阅计划");
         }
         
         // 检查功能权限
         String feature = annotation.feature();
         if (!feature.isEmpty() && !subscriptionService.hasFeature(userId, feature)) {
-            throw new RuntimeException("当前订阅计划不支持此功能，请升级");
+            log.warn("功能权限不足: userId={}, feature={}", userId, feature);
+            throw new RuntimeException("当前订阅计划不支持此功能，请升级到 PRO 或 TEAM 计划");
         }
         
         return joinPoint.proceed();

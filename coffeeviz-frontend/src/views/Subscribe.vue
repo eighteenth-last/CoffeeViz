@@ -9,53 +9,84 @@
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
     </div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-      <div 
-        v-for="plan in plans" 
-        :key="plan.id"
-        :class="[
-          'glass-card p-8 rounded-2xl flex flex-col relative overflow-hidden transition-all group',
-          getPlanStyle(plan.planCode).cardClass
-        ]"
-      >
-        <div v-if="plan.planCode === 'PRO'" class="absolute top-0 right-0 bg-amber-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">RECOMMENDED</div>
-        
-        <div class="mb-6">
-          <div :class="['text-sm font-bold uppercase tracking-widest mb-2', getPlanStyle(plan.planCode).titleClass]">{{ plan.planName }}</div>
-          <div class="text-4xl font-black text-white">
-            ¥{{ plan.priceMonthly }}<span class="text-lg text-neutral-500 font-medium">/{{ plan.planCode === 'TEAM' ? '人/月' : '月' }}</span>
-          </div>
-          <p :class="['text-sm mt-2', getPlanStyle(plan.planCode).descClass]">{{ plan.description }}</p>
+    <div v-else>
+      <!-- Billing Cycle Toggle -->
+      <div class="flex justify-center mb-8">
+        <div class="bg-neutral-900 p-0.5 rounded-full inline-flex relative border border-neutral-800">
+          <div 
+            class="absolute top-0.5 bottom-0.5 rounded-full bg-neutral-700 transition-all duration-300 ease-in-out shadow-sm"
+            :class="billingCycle === 'monthly' ? 'left-0.5 w-[calc(50%-2px)]' : 'left-[50%] w-[calc(50%-2px)]'"
+          ></div>
+          <button 
+            @click="billingCycle = 'monthly'"
+            class="relative z-10 py-1.5 rounded-full text-sm font-bold transition-colors duration-300 w-24"
+            :class="billingCycle === 'monthly' ? 'text-white' : 'text-neutral-400 hover:text-white'"
+          >
+            按月付费
+          </button>
+          <button 
+            @click="billingCycle = 'yearly'"
+            class="relative z-10 py-1.5 rounded-full text-sm font-bold transition-colors duration-300 w-24 flex items-center justify-center"
+            :class="billingCycle === 'yearly' ? 'text-white' : 'text-neutral-400 hover:text-white'"
+          >
+            按年付费
+            <span class="ml-1 text-[10px] bg-amber-600 text-white px-1.5 rounded-full py-0.5 transform scale-90">省20%</span>
+          </button>
         </div>
-        
-        <ul class="space-y-4 mb-8 flex-1">
-          <li v-for="(feature, index) in parseFeatures(plan.features)" :key="index" :class="['flex items-center text-sm', getPlanStyle(plan.planCode).featureTextClass]">
-            <i :class="['fas fa-check mr-3', getPlanStyle(plan.planCode).iconClass]"></i>
-            <span v-html="formatFeature(feature)"></span>
-          </li>
-        </ul>
+      </div>
 
-        <button 
-          v-if="plan.planCode === 'PRO'"
-          @click="handleSubscribe(plan)"
-          class="w-full py-3 btn-amber rounded-xl text-white font-bold flex items-center justify-center group"
-        >
-          立即订阅
-          <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
-        </button>
-        <button 
-          v-else
-          @click="handleSubscribe(plan)"
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div 
+          v-for="plan in plans" 
+          :key="plan.id"
           :class="[
-            'w-full py-3 border rounded-xl font-bold transition-all',
-            isCurrentPlan(plan) 
-              ? 'bg-neutral-800 border-neutral-600 text-neutral-400 cursor-default' 
-              : 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white'
+            'glass-card p-8 rounded-2xl flex flex-col relative overflow-hidden transition-all group',
+            getPlanStyle(plan.planCode).cardClass
           ]"
-          :disabled="isCurrentPlan(plan)"
         >
-          {{ getButtonText(plan) }}
-        </button>
+          <div v-if="plan.planCode === 'PRO'" class="absolute top-0 right-0 bg-amber-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">推荐</div>
+          
+          <div class="mb-6">
+            <div :class="['text-sm font-bold uppercase tracking-widest mb-2', getPlanStyle(plan.planCode).titleClass]">{{ plan.planName }}</div>
+            <div class="text-4xl font-black text-white flex items-baseline">
+              ¥{{ getPrice(plan) }}
+              <span class="text-lg text-neutral-500 font-medium ml-1">/{{ getUnit(plan) }}</span>
+            </div>
+            <p v-if="billingCycle === 'yearly' && plan.priceMonthly > 0" class="text-xs text-amber-500 mt-2 font-medium">
+              相当于 ¥{{ Math.round(getPrice(plan) / 12) }}/月
+            </p>
+            <p v-else :class="['text-sm mt-2', getPlanStyle(plan.planCode).descClass]">{{ plan.description }}</p>
+          </div>
+          
+          <ul class="space-y-4 mb-8 flex-1">
+            <li v-for="(feature, index) in parseFeatures(plan.features)" :key="index" :class="['flex items-center text-sm', getPlanStyle(plan.planCode).featureTextClass]">
+              <i :class="['fas fa-check mr-3', getPlanStyle(plan.planCode).iconClass]"></i>
+              <span v-html="formatFeature(feature)"></span>
+            </li>
+          </ul>
+
+          <button 
+            v-if="plan.planCode === 'PRO'"
+            @click="handleSubscribe(plan)"
+            class="w-full py-3 btn-amber rounded-xl text-white font-bold flex items-center justify-center group"
+          >
+            {{ getButtonText(plan) }}
+            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+          </button>
+          <button 
+            v-else
+            @click="handleSubscribe(plan)"
+            :class="[
+              'w-full py-3 border rounded-xl font-bold transition-all',
+              isCurrentPlan(plan) 
+                ? 'bg-neutral-800 border-neutral-600 text-neutral-400 cursor-default' 
+                : 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-white'
+            ]"
+            :disabled="isCurrentPlan(plan)"
+          >
+            {{ getButtonText(plan) }}
+          </button>
+        </div>
       </div>
     </div>
     
@@ -96,6 +127,19 @@ const userStore = useUserStore()
 const plans = ref([])
 const currentSubscription = ref(null)
 const loading = ref(false)
+const billingCycle = ref('monthly')
+
+const getPrice = (plan) => {
+  if (plan.planCode === 'FREE') return 0
+  if (billingCycle.value === 'monthly') return plan.priceMonthly
+  // Yearly price is monthly * 10 (2 months free)
+  return plan.priceMonthly * 10
+}
+
+const getUnit = (plan) => {
+  const period = billingCycle.value === 'monthly' ? '月' : '年'
+  return plan.planCode === 'TEAM' ? `团队/${period}` : period
+}
 
 const handleSubscribe = (plan) => {
   if (!userStore.isLoggedIn) {
@@ -122,7 +166,8 @@ const handleSubscribe = (plan) => {
   // Navigate to checkout
   router.push({
     name: 'Checkout',
-    state: { plan }
+    query: { planId: plan.id, billingCycle: billingCycle.value },
+    state: { plan, billingCycle: billingCycle.value }
   })
 }
 
@@ -138,7 +183,7 @@ const getPlanStyle = (code) => {
       }
     case 'TEAM':
       return {
-        cardClass: 'hover:border-neutral-700',
+        cardClass: 'border-neutral-800 hover:border-neutral-700',
         titleClass: 'text-purple-500',
         descClass: 'text-neutral-500',
         featureTextClass: 'text-neutral-300',
@@ -146,7 +191,7 @@ const getPlanStyle = (code) => {
       }
     default: // FREE
       return {
-        cardClass: 'hover:border-neutral-700',
+        cardClass: 'border-neutral-800 hover:border-neutral-700',
         titleClass: 'text-neutral-500',
         descClass: 'text-neutral-500',
         featureTextClass: 'text-neutral-300',

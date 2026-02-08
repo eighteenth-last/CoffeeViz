@@ -27,7 +27,18 @@
           <div class="relative z-10 flex-1 text-center md:text-left mt-2 md:mt-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
               <div class="w-full md:w-auto">
-                <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight mb-1 break-words">{{ userStore.displayName || 'User' }}</h1>
+                <div class="flex items-center justify-center md:justify-start gap-2 mb-1">
+                  <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight break-words">{{ userStore.displayName || 'User' }}</h1>
+                  <span 
+                    class="px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider"
+                    :class="{
+                      'bg-amber-600/20 text-amber-500 border border-amber-600/30': subscriptionInfo.color === 'amber',
+                      'bg-purple-600/20 text-purple-500 border border-purple-600/30': subscriptionInfo.color === 'purple',
+                      'bg-neutral-800 text-neutral-400 border border-neutral-700': subscriptionInfo.color === 'neutral'
+                    }">
+                    {{ subscriptionInfo.badge }}
+                  </span>
+                </div>
                 <p class="text-neutral-500 font-mono text-xs md:text-sm break-all">@{{ userStore.username || 'user' }}</p>
               </div>
             </div>
@@ -44,6 +55,78 @@
               <div v-if="!userStore.userInfo?.email && !userStore.userInfo?.phone" class="flex items-center text-neutral-500 text-xs md:text-sm italic">
                 <i class="fas fa-info-circle mr-2 flex-shrink-0"></i>
                 <span>暂无联系方式</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subscription Info -->
+        <div class="glass-card p-6 rounded-2xl mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-white flex items-center">
+              <i class="fas fa-crown text-amber-500 mr-2"></i> 订阅信息
+            </h3>
+            <button 
+              v-if="subscriptionStore.planCode === 'FREE'"
+              @click="goToSubscribe"
+              class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 rounded-lg text-xs font-bold text-white transition-all">
+              升级
+            </button>
+          </div>
+          
+          <div class="flex items-center justify-between mb-6 p-4 rounded-xl"
+               :class="{
+                 'bg-amber-600/10 border border-amber-600/20': subscriptionInfo.color === 'amber',
+                 'bg-purple-600/10 border border-purple-600/20': subscriptionInfo.color === 'purple',
+                 'bg-neutral-800/50 border border-neutral-700': subscriptionInfo.color === 'neutral'
+               }">
+            <div class="flex items-center gap-3">
+              <div 
+                class="w-12 h-12 rounded-xl flex items-center justify-center"
+                :class="{
+                  'bg-amber-600/20 text-amber-500': subscriptionInfo.color === 'amber',
+                  'bg-purple-600/20 text-purple-500': subscriptionInfo.color === 'purple',
+                  'bg-neutral-700 text-neutral-400': subscriptionInfo.color === 'neutral'
+                }">
+                <i class="fas text-lg" :class="subscriptionInfo.icon"></i>
+              </div>
+              <div>
+                <div class="text-base font-bold text-white">{{ subscriptionInfo.name }}</div>
+                <div class="text-xs text-neutral-400">{{ expiresText }}</div>
+              </div>
+            </div>
+            <div v-if="subscriptionStore.isExpired" class="px-2 py-1 bg-red-600/20 border border-red-600/30 rounded-md">
+              <span class="text-xs font-bold text-red-500">已过期</span>
+            </div>
+          </div>
+          
+          <!-- Quota Stats -->
+          <div class="space-y-3">
+            <div v-for="quota in quotaStats" :key="quota.name" class="flex items-center justify-between">
+              <div class="flex items-center gap-2 flex-1">
+                <i class="fas text-sm w-4" :class="[`fa-${quota.icon}`, `text-${quota.color}-500`]"></i>
+                <span class="text-sm text-neutral-300">{{ quota.name }}</span>
+              </div>
+              <div class="flex items-center gap-3 flex-1 justify-end">
+                <div class="w-24 bg-neutral-800 rounded-full h-1.5">
+                  <div 
+                    class="h-1.5 rounded-full transition-all"
+                    :class="`bg-${quota.color}-500`"
+                    :style="{ width: quota.percent + '%' }">
+                  </div>
+                </div>
+                <span class="text-xs font-mono text-neutral-400 w-16 text-right">
+                  {{ quota.used }}/{{ quota.limit === -1 ? '∞' : quota.limit }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4 pt-4 border-t border-neutral-800">
+            <div class="text-[10px] text-neutral-500 space-y-1">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-info-circle"></i>
+                <span>配额重置周期：架构库永不重置，架构图和AI生成每月重置，SQL解析每日重置</span>
               </div>
             </div>
           </div>
@@ -82,19 +165,103 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { useSubscriptionStore } from '@/store/subscription'
 
 const router = useRouter()
 const userStore = useUserStore()
+const subscriptionStore = useSubscriptionStore()
 
 const emit = defineEmits(['close'])
+
+// 订阅信息计算属性
+const subscriptionInfo = computed(() => {
+  const sub = subscriptionStore.currentSubscription
+  if (!sub) return { name: 'Free', icon: 'fa-coffee', color: 'neutral', badge: 'FREE' }
+  
+  const planMap = {
+    'FREE': { name: 'Coffee Free', icon: 'fa-coffee', color: 'neutral', badge: 'FREE' },
+    'PRO': { name: 'Coffee Pro', icon: 'fa-crown', color: 'amber', badge: 'PRO' },
+    'TEAM': { name: 'Coffee Team', icon: 'fa-users', color: 'purple', badge: 'TEAM' }
+  }
+  
+  return planMap[sub.planCode] || planMap['FREE']
+})
+
+const expiresText = computed(() => {
+  const expiresAt = subscriptionStore.expiresAt
+  if (!expiresAt) return '永久有效'
+  
+  const date = new Date(expiresAt)
+  const now = new Date()
+  const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return '已过期'
+  if (diffDays === 0) return '今天到期'
+  if (diffDays <= 30) return `${diffDays} 天后到期`
+  
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+})
+
+// 配额信息
+const quotaStats = computed(() => {
+  const repo = subscriptionStore.repositoryQuota
+  const diagram = subscriptionStore.diagramQuota
+  const sqlParse = subscriptionStore.sqlParseQuota
+  const aiGen = subscriptionStore.aiGenerateQuota
+  
+  return [
+    {
+      name: '架构库',
+      icon: 'fa-folder',
+      color: 'blue',
+      used: repo?.quotaUsed || 0,
+      limit: repo?.quotaLimit || 0,
+      percent: subscriptionStore.repositoryUsagePercent,
+      resetCycle: '永不重置'
+    },
+    {
+      name: '架构图',
+      icon: 'fa-diagram-project',
+      color: 'amber',
+      used: diagram?.quotaUsed || 0,
+      limit: diagram?.quotaLimit || 0,
+      percent: subscriptionStore.diagramUsagePercent,
+      resetCycle: '每月重置'
+    },
+    {
+      name: 'SQL解析',
+      icon: 'fa-code',
+      color: 'purple',
+      used: sqlParse?.quotaUsed || 0,
+      limit: sqlParse?.quotaLimit || 0,
+      percent: subscriptionStore.sqlParseUsagePercent,
+      resetCycle: '每日重置'
+    },
+    {
+      name: 'AI生成',
+      icon: 'fa-magic',
+      color: 'green',
+      used: aiGen?.quotaUsed || 0,
+      limit: aiGen?.quotaLimit || 0,
+      percent: subscriptionStore.aiGenerateUsagePercent,
+      resetCycle: '每月重置'
+    }
+  ]
+})
 
 // 跳转到设置页面
 const goToSettings = () => {
   emit('close')
   router.push('/settings')
+}
+
+// 跳转到订阅页面
+const goToSubscribe = () => {
+  emit('close')
+  router.push('/subscribe')
 }
 
 // 退出登录
@@ -105,8 +272,18 @@ const handleLogout = async () => {
 }
 
 // Prevent body scroll when modal is open
-onMounted(() => {
+onMounted(async () => {
   document.body.style.overflow = 'hidden'
+  
+  // 加载订阅信息
+  try {
+    await Promise.all([
+      subscriptionStore.fetchCurrentSubscription(),
+      subscriptionStore.fetchQuotas()
+    ])
+  } catch (error) {
+    console.error('Failed to load subscription info', error)
+  }
 })
 
 onUnmounted(() => {

@@ -46,6 +46,10 @@ public class ErService {
     @Autowired(required = false)
     private RedisTemplate<String, Object> redisTemplate;
     
+    // 是否启用缓存（从配置文件读取）
+    @org.springframework.beans.factory.annotation.Value("${coffeeviz.cache.enabled:false}")
+    private boolean cacheEnabled;
+    
     /**
      * 从 SQL 生成 ER 图
      * 
@@ -55,14 +59,18 @@ public class ErService {
      */
     public ErResult generateFromSql(String sqlText, RenderOptions options) {
         long startTime = System.currentTimeMillis();
-        log.info("开始从 SQL 生成 ER 图，SQL 长度: {}", sqlText.length());
+        log.info("开始从 SQL 生成 ER 图，SQL 长度: {}, 缓存状态: {}", sqlText.length(), cacheEnabled ? "启用" : "禁用");
         
-        // 1. 尝试从缓存获取
-        String cacheKey = generateCacheKey("sql", sqlText, options);
-        ErResult cachedResult = getFromCache(cacheKey);
-        if (cachedResult != null) {
-            log.info("命中缓存: {}", cacheKey);
-            return cachedResult;
+        // 1. 尝试从缓存获取（仅当缓存启用时）
+        ErResult cachedResult = null;
+        String cacheKey = null;
+        if (cacheEnabled) {
+            cacheKey = generateCacheKey("sql", sqlText, options);
+            cachedResult = getFromCache(cacheKey);
+            if (cachedResult != null) {
+                log.info("命中缓存: {}", cacheKey);
+                return cachedResult;
+            }
         }
         
         try {
@@ -108,8 +116,10 @@ public class ErService {
                     .sum()
             );
             
-            // 6. 写入缓存
-            saveToCache(cacheKey, result);
+            // 6. 写入缓存（仅当缓存启用时）
+            if (cacheEnabled && cacheKey != null) {
+                saveToCache(cacheKey, result);
+            }
             
             return result;
             
@@ -132,7 +142,8 @@ public class ErService {
      * 从缓存获取
      */
     private ErResult getFromCache(String cacheKey) {
-        if (redisTemplate == null) {
+        // 如果缓存未启用，直接返回 null
+        if (!cacheEnabled || redisTemplate == null) {
             return null;
         }
         
@@ -152,7 +163,8 @@ public class ErService {
      * 保存到缓存
      */
     private void saveToCache(String cacheKey, ErResult result) {
-        if (redisTemplate == null) {
+        // 如果缓存未启用，不保存
+        if (!cacheEnabled || redisTemplate == null) {
             return;
         }
         

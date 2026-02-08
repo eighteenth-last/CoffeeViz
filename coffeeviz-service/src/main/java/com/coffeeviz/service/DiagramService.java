@@ -162,4 +162,18 @@ public class DiagramService {
         wrapper.eq(Diagram::getRepositoryId, repositoryId);
         return diagramMapper.selectCount(wrapper);
     }
+    
+    /**
+     * 统计用户所有架构图的表总数
+     */
+    public Long sumTableCountByUserId(Long userId) {
+        return diagramMapper.sumTableCountByUserId(userId);
+    }
+    
+    /**
+     * 统计用户所有架构图的关系总数
+     */
+    public Long sumRelationCountByUserId(Long userId) {
+        return diagramMapper.sumRelationCountByUserId(userId);
+    }
 }

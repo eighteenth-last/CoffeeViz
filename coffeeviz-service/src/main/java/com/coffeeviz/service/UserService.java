@@ -36,6 +36,12 @@ public class UserService {
     @Autowired
     private UserMapper userMapper;
     
+    @Autowired(required = false)
+    private SubscriptionService subscriptionService;
+    
+    @Autowired(required = false)
+    private QuotaService quotaService;
+    
     /**
      * BCrypt 加密成本因子（默认为 12，范围 4-31）
      * 值越大，加密越安全，但计算时间越长
@@ -111,6 +117,10 @@ public class UserService {
         
         if (result > 0) {
             log.info("用户注册成功，用户ID: {}, 用户名: {}, 显示名称: {}", user.getId(), username, user.getDisplayName());
+            
+            // 5. 为新用户创建免费订阅
+            initUserSubscription(user.getId());
+            
             return user;
         } else {
             log.error("用户注册失败，用户名: {}", username);
@@ -417,6 +427,9 @@ public class UserService {
             
             userMapper.insert(user);
             log.info("新用户创建成功，用户ID: {}, 显示名称: {}", user.getId(), user.getDisplayName());
+            
+            // 为新用户创建免费订阅
+            initUserSubscription(user.getId());
         }
         
         // 6. 检查用户状态
@@ -473,5 +486,34 @@ public class UserService {
         // 生成10位UUID（使用UUID的前10位）
         String uuid = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         return "神阁绘" + uuid;
+    }
+    
+    /**
+     * 初始化用户订阅（创建免费订阅）
+     * 
+     * @param userId 用户ID
+     */
+    private void initUserSubscription(Long userId) {
+        if (subscriptionService == null || quotaService == null) {
+            log.warn("订阅服务未初始化，跳过创建免费订阅");
+            return;
+        }
+        
+        try {
+            // 获取 FREE 计划
+            var freePlan = subscriptionService.getPlanByCode("FREE");
+            if (freePlan == null) {
+                log.error("FREE 订阅计划不存在，无法创建免费订阅");
+                return;
+            }
+            
+            // 创建免费订阅（永久有效）
+            subscriptionService.createSubscription(userId, freePlan.getId(), "monthly");
+            log.info("为用户创建免费订阅成功: userId={}", userId);
+            
+        } catch (Exception e) {
+            log.error("创建免费订阅失败: userId={}", userId, e);
+            // 不抛出异常，避免影响用户注册
+        }
     }
 }

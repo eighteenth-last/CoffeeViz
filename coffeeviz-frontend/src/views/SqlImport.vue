@@ -7,10 +7,11 @@
           <p class="text-neutral-500 text-sm italic font-mono">输入 DDL 脚本以生成 Mermaid 架构图。</p>
         </div>
         <div class="flex items-center space-x-3">
-          <!-- <div class="flex bg-neutral-900 p-1 rounded-xl border border-neutral-800">
-            <button @click="loadExample('mysql')" class="px-4 py-1.5 rounded-lg text-xs font-bold hover:text-white text-neutral-500 hover:bg-neutral-800 transition-all">MySQL 示例</button>
-            <button @click="loadExample('postgres')" class="px-4 py-1.5 rounded-lg text-xs font-bold hover:text-white text-neutral-500 hover:bg-neutral-800 transition-all">Postgres 示例</button>
-          </div> -->
+          <button 
+            @click="clearWorkspace" 
+            class="px-5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm font-bold hover:bg-neutral-800 hover:border-red-600/50 hover:text-red-500 transition-all text-neutral-400 flex items-center">
+            <i class="fas fa-trash-alt mr-2"></i> 清空
+          </button>
           <button @click="handleParse" :disabled="projectStore.loading" class="btn-amber text-white px-8 py-2.5 rounded-xl text-sm font-black flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
             <i class="fas fa-play mr-2" :class="{'fa-spin': projectStore.loading}"></i> {{ projectStore.loading ? '解析中...' : '执行解析' }}
           </button>
@@ -590,12 +591,35 @@ const handleConfirmSave = async () => {
     saveFormData.diagramDescription = ''
     selectedRepositoryId.value = null
     
+    // 清空编辑器和画布
+    clearWorkspace()
+    
   } catch (error) {
     addLog('error', `Save failed: ${error.message}`)
     message.error('保存失败: ' + (error.message || '未知错误'))
   } finally {
     saving.value = false
   }
+}
+
+// 清空工作区
+const clearWorkspace = () => {
+  // 清空 SQL 编辑器
+  sqlText.value = ''
+  
+  // 清空控制台日志
+  logs.value = []
+  
+  // 清空图表数据
+  projectStore.clearDiagram()
+  
+  // 重置缩放
+  diagramScale.value = 1
+  diagramTransform.value = { x: 0, y: 0 }
+  
+  addLog('info', 'Workspace cleared. Ready for new input...')
+  
+  message.success('工作区已清空，可以开始新的解析')
 }
 </script>
 

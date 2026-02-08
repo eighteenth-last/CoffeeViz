@@ -34,16 +34,20 @@ public class QuotaAspect {
         
         String quotaType = annotation.value();
         
-        // 检查配额
+        // 先检查配额是否足够
         if (!quotaService.checkQuota(userId, quotaType)) {
-            throw new RuntimeException("配额不足，请升级订阅计划");
+            log.warn("配额不足: userId={}, quotaType={}", userId, quotaType);
+            throw new RuntimeException("配额不足，请升级订阅计划或等待配额重置");
         }
         
         // 执行方法
         Object result = joinPoint.proceed();
         
-        // 使用配额
-        quotaService.useQuota(userId, quotaType);
+        // 方法执行成功后才使用配额
+        boolean used = quotaService.useQuota(userId, quotaType);
+        if (!used) {
+            log.error("使用配额失败: userId={}, quotaType={}", userId, quotaType);
+        }
         
         return result;
     }

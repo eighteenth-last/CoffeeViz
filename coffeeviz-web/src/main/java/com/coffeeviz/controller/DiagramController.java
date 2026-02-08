@@ -1,6 +1,8 @@
 package com.coffeeviz.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.coffeeviz.annotation.RequireQuota;
+import com.coffeeviz.annotation.RequireSubscription;
 import com.coffeeviz.common.Result;
 import com.coffeeviz.dto.DiagramCreateRequest;
 import com.coffeeviz.entity.Diagram;
@@ -33,6 +35,8 @@ public class DiagramController {
      * 创建架构图
      */
     @PostMapping("/create")
+    @RequireSubscription
+    @RequireQuota("diagram")
     public Result<Long> createDiagram(@RequestBody DiagramCreateRequest request) {
         log.info("创建架构图: diagramName={}, repositoryId={}", 
                 request.getDiagramName(), request.getRepositoryId());
@@ -169,6 +173,34 @@ public class DiagramController {
         } catch (Exception e) {
             log.error("架构图删除失败", e);
             return Result.error("架构图删除失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取用户统计数据
+     */
+    @GetMapping("/statistics")
+    public Result<java.util.Map<String, Object>> getStatistics() {
+        log.info("获取用户统计数据");
+        
+        try {
+            // 1. 获取当前用户 ID
+            Long userId = StpUtil.getLoginIdAsLong();
+            
+            // 2. 统计数据
+            Long totalTables = diagramService.sumTableCountByUserId(userId);
+            Long totalRelations = diagramService.sumRelationCountByUserId(userId);
+            
+            java.util.Map<String, Object> statistics = new java.util.HashMap<>();
+            statistics.put("totalTables", totalTables != null ? totalTables : 0L);
+            statistics.put("totalRelations", totalRelations != null ? totalRelations : 0L);
+            
+            log.info("统计数据: totalTables={}, totalRelations={}", totalTables, totalRelations);
+            return Result.success(statistics);
+            
+        } catch (Exception e) {
+            log.error("获取统计数据失败", e);
+            return Result.error("获取统计数据失败: " + e.getMessage());
         }
     }
 }

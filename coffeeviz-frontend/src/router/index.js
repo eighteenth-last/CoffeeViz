@@ -66,12 +66,6 @@ const routes = [
         meta: { title: '订阅计划' }
       },
       {
-        path: 'checkout',
-        name: 'Checkout',
-        component: () => import('@/views/Checkout.vue'),
-        meta: { title: '收银台' }
-      },
-      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
@@ -80,10 +74,10 @@ const routes = [
     ]
   },
   {
-    path: '/payment-gateway',
-    name: 'MockPayment',
-    component: () => import('@/views/MockPayment.vue'),
-    meta: { requiresAuth: false }
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('@/views/Checkout.vue'),
+    meta: { title: '收银台', requiresAuth: true }
   }
 ]
 

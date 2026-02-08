@@ -1,5 +1,15 @@
 import axios from 'axios'
 import { useUserStore } from '@/store/user'
+import { useSubscriptionStore } from '@/store/subscription'
+
+// 需要刷新配额的 API 路径
+const QUOTA_REFRESH_APIS = [
+  '/api/er/parse-sql',           // SQL 解析
+  '/api/er/connect-jdbc',        // JDBC 连接
+  '/api/repository/create',      // 创建架构库
+  '/api/diagram/create',         // 创建架构图
+  '/api/project/create'          // 创建项目
+]
 
 // 创建 axios 实例
 const api = axios.create({
@@ -35,6 +45,22 @@ api.interceptors.response.use(
     if (res.code !== 200) {
       console.error('接口错误:', res.message)
       return Promise.reject(new Error(res.message || '请求失败'))
+    }
+    
+    // 检查是否需要刷新配额
+    const requestUrl = response.config.url
+    const shouldRefreshQuota = QUOTA_REFRESH_APIS.some(api => requestUrl.includes(api))
+    
+    if (shouldRefreshQuota) {
+      // 异步刷新配额，不阻塞响应
+      setTimeout(() => {
+        try {
+          const subscriptionStore = useSubscriptionStore()
+          subscriptionStore.refreshQuotas()
+        } catch (error) {
+          console.error('刷新配额失败:', error)
+        }
+      }, 100)
     }
     
     return res

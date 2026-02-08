@@ -2,6 +2,8 @@ package com.coffeeviz.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.coffeeviz.annotation.RequireQuota;
+import com.coffeeviz.annotation.RequireSubscription;
 import com.coffeeviz.common.Result;
 import com.coffeeviz.dto.RepositoryCreateRequest;
 import com.coffeeviz.entity.Repository;
@@ -31,6 +33,8 @@ public class RepositoryController {
      * 创建架构库
      */
     @PostMapping("/create")
+    @RequireSubscription
+    @RequireQuota("repository")
     public Result<Long> createRepository(@RequestBody RepositoryCreateRequest request) {
         log.info("创建架构库: repositoryName={}", request.getRepositoryName());
         

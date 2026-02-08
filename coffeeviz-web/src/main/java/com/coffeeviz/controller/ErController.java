@@ -2,6 +2,8 @@ package com.coffeeviz.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.coffeeviz.annotation.RateLimit;
+import com.coffeeviz.annotation.RequireQuota;
+import com.coffeeviz.annotation.RequireSubscription;
 import com.coffeeviz.common.Result;
 import com.coffeeviz.core.enums.LayoutDirection;
 import com.coffeeviz.core.model.RenderOptions;
@@ -38,8 +40,11 @@ public class ErController {
     
     /**
      * 从 SQL 解析生成 ER 图
+     * 需要订阅且消耗 sql_parse 配额
      */
     @PostMapping("/parse-sql")
+    @RequireSubscription
+    @RequireQuota("sql_parse")
     @RateLimit(key = "parse_sql", time = 60, count = 30, limitType = RateLimit.LimitType.USER)
     public Result<ErResponse> parseSql(@RequestBody SqlParseRequest request) {
         log.info("收到 SQL 解析请求，SQL 长度: {}", 
@@ -87,8 +92,11 @@ public class ErController {
     
     /**
      * 从 JDBC 连接生成 ER 图
+     * 需要 JDBC 功能权限且消耗 sql_parse 配额
      */
     @PostMapping("/connect-jdbc")
+    @RequireSubscription(feature = "jdbc")
+    @RequireQuota("sql_parse")
     @RateLimit(key = "connect_jdbc", time = 60, count = 10, limitType = RateLimit.LimitType.USER)
     public Result<ErResponse> connectJdbc(@RequestBody JdbcConnectRequest request) {
         log.info("收到 JDBC 连接请求，数据库类型: {}, URL: {}", 
@@ -154,8 +162,10 @@ public class ErController {
     
     /**
      * 测试 JDBC 连接
+     * 需要 JDBC 功能权限
      */
     @PostMapping("/test-connection")
+    @RequireSubscription(feature = "jdbc")
     @RateLimit(key = "test_connection", time = 60, count = 20, limitType = RateLimit.LimitType.USER)
     public Result<String> testConnection(@RequestBody JdbcConnectRequest request) {
         log.info("收到测试连接请求，数据库类型: {}, URL: {}", 

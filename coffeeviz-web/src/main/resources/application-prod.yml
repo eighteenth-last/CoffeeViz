@@ -82,3 +82,9 @@ openai:
     base-url: ${OPENAI_API_BASE_URL:https://api.openai.com}
     model: ${OPENAI_MODEL:gpt-4}
     timeout: 60000
+
+# CoffeeViz 自定义配置
+coffeeviz:
+  # 缓存配置
+  cache:
+    enabled: true  # 生产环境启用缓存，提升性能

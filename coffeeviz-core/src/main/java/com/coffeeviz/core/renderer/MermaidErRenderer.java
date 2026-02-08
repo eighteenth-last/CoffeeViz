@@ -126,15 +126,17 @@ public class MermaidErRenderer implements MermaidRenderer {
     
     /**
      * 构建完整的数据类型（包含长度/精度）
-     * 注意：Mermaid ER 图语法不支持类型定义中的逗号，因此 DECIMAL(10,2) 需要改为 DECIMAL(10_2)
+     * 注意：Mermaid ER 图语法对类型定义有限制，需要进行转换
      */
     private String buildFullType(ColumnModel column) {
         String rawType = column.getRawType() != null ? column.getRawType() : column.getType();
         
-        // 如果已经包含长度信息，直接返回（但需要处理逗号）
+        // 如果已经包含长度信息，直接返回（但需要处理特殊字符）
         if (column.getType() != null && column.getType().contains("(")) {
-            // 替换逗号为下划线，避免 Mermaid 解析错误
-            return column.getType().replace(",", "_");
+            // 移除空格并替换逗号为下划线，避免 Mermaid 解析错误
+            return column.getType()
+                    .replaceAll("\\s+", "")  // 移除所有空格
+                    .replace(",", "_");       // 替换逗号为下划线
         }
         
         // 根据长度/精度构建完整类型
@@ -159,9 +161,20 @@ public class MermaidErRenderer implements MermaidRenderer {
     
     /**
      * 转义注释中的特殊字符
+     * Mermaid ER 图对注释内容有严格限制，需要移除或转义特殊字符
      */
     private String escapeComment(String comment) {
-        return comment.replace("\"", "'").replace("\n", " ").trim();
+        if (comment == null || comment.isEmpty()) {
+            return "";
+        }
+        
+        return comment
+                .replace("\"", "'")      // 双引号替换为单引号
+                .replace("\n", " ")      // 换行符替换为空格
+                .replace("\r", "")       // 移除回车符
+                .replace("\t", " ")      // 制表符替换为空格
+                .replaceAll("\\s+", " ") // 多个空格合并为一个
+                .trim();
     }
     
     /**

@@ -2,8 +2,10 @@ package com.coffeeviz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.coffeeviz.entity.SubscriptionPlan;
+import com.coffeeviz.entity.UsageQuota;
 import com.coffeeviz.entity.UserSubscription;
 import com.coffeeviz.mapper.SubscriptionPlanMapper;
+import com.coffeeviz.mapper.UsageQuotaMapper;
 import com.coffeeviz.mapper.UserSubscriptionMapper;
 import com.coffeeviz.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     
     private final SubscriptionPlanMapper planMapper;
     private final UserSubscriptionMapper subscriptionMapper;
+    private final UsageQuotaMapper quotaMapper;
     
     @Override
     public List<SubscriptionPlan> getAllPlans() {
@@ -63,6 +66,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new IllegalArgumentException("订阅计划不存在");
         }
         
+        // 取消当前订阅（如果存在）
+        UserSubscription current = getCurrentSubscription(userId);
+        if (current != null && "active".equals(current.getStatus())) {
+            current.setStatus("cancelled");
+            current.setCancelTime(LocalDateTime.now());
+            current.setCancelReason("升级到新计划");
+            subscriptionMapper.updateById(current);
+        }
+        
         // 计算结束时间
         LocalDateTime startTime = LocalDateTime.now();
         LocalDateTime endTime = "yearly".equals(billingCycle) 
@@ -81,6 +93,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         subscription.setStatus("active");
         
         subscriptionMapper.insert(subscription);
+        
+        // 更新用户配额
+        updateUserQuota(userId, plan);
+        
         return subscription;
     }
     
@@ -176,6 +192,54 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 return plan.getSupportTeam() == 1;
             default:
                 return false;
+        }
+    }
+    
+    /**
+     * 更新用户配额
+     */
+    private void updateUserQuota(Long userId, SubscriptionPlan plan) {
+        log.info("更新用户配额: userId={}, plan={}", userId, plan.getPlanCode());
+        
+        // 更新 repository 配额
+        updateQuota(userId, "repository", plan.getMaxRepositories(), "never");
+        
+        // 更新 diagram 配额
+        updateQuota(userId, "diagram", plan.getMaxDiagramsPerRepo() * 10, "monthly");
+        
+        // 更新 sql_parse 配额
+        updateQuota(userId, "sql_parse", 100, "daily");
+        
+        // 更新 ai_generate 配额
+        int aiQuota = plan.getSupportAi() == 1 ? 50 : 0;
+        updateQuota(userId, "ai_generate", aiQuota, "monthly");
+    }
+    
+    /**
+     * 更新单个配额
+     */
+    private void updateQuota(Long userId, String quotaType, Integer limit, String resetCycle) {
+        UsageQuota quota = quotaMapper.selectOne(
+            new LambdaQueryWrapper<UsageQuota>()
+                .eq(UsageQuota::getUserId, userId)
+                .eq(UsageQuota::getQuotaType, quotaType)
+        );
+        
+        if (quota == null) {
+            // 创建新配额
+            quota = new UsageQuota();
+            quota.setUserId(userId);
+            quota.setQuotaType(quotaType);
+            quota.setQuotaLimit(limit);
+            quota.setQuotaUsed(0);
+            quota.setResetCycle(resetCycle);
+            quota.setLastResetTime(LocalDateTime.now());
+            quotaMapper.insert(quota);
+        } else {
+            // 更新配额限制
+            quota.setQuotaLimit(limit);
+            quota.setResetCycle(resetCycle);
+            quotaMapper.updateById(quota);
         }
     }
 }

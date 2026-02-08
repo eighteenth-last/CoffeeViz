@@ -38,12 +38,20 @@
         <div class="text-2xl font-black text-white">2.4s</div>
         <div class="text-xs text-neutral-500 font-medium">平均解析耗时</div>
       </div>
-      <div class="glass-card p-6 rounded-2xl border-amber-600/20 bg-amber-600/[0.02]">
+      <div 
+        @click="handleUpgradeClick"
+        class="glass-card p-6 rounded-2xl cursor-pointer transition-all hover:border-amber-600/40"
+        :class="subscriptionInfo.color === 'amber' ? 'border-amber-600/20 bg-amber-600/[0.02]' : subscriptionInfo.color === 'purple' ? 'border-purple-600/20 bg-purple-600/[0.02]' : ''">
         <div class="flex justify-between items-start mb-4">
-          <div class="w-10 h-10 rounded-lg bg-amber-600/20 flex items-center justify-center text-amber-600"><i class="fas fa-crown"></i></div>
+          <div 
+            class="w-10 h-10 rounded-lg flex items-center justify-center"
+            :class="subscriptionInfo.color === 'amber' ? 'bg-amber-600/20 text-amber-600' : subscriptionInfo.color === 'purple' ? 'bg-purple-600/20 text-purple-600' : 'bg-neutral-800 text-neutral-400'">
+            <i class="fas" :class="subscriptionInfo.icon"></i>
+          </div>
+          <span v-if="subscriptionStore.isExpired" class="text-xs text-red-500">已过期</span>
         </div>
-        <div class="text-lg font-black text-white">Coffee Pro</div>
-        <div class="text-xs text-neutral-500 font-medium">当前订阅计划</div>
+        <div class="text-lg font-black text-white">{{ subscriptionInfo.name }}</div>
+        <div class="text-xs text-neutral-500 font-medium">{{ expiresText }}</div>
       </div>
     </div>
 
@@ -84,21 +92,110 @@
         </div>
       </div>
       
-      <!-- Right Column (could be added later or kept empty for now as per ff.html implies a layout but content might be truncated in my read) -->
-      <!-- Adding a placeholder or keeping it simple based on what I saw in ff.html which had a grid -->
+      <!-- 配额使用情况 -->
+      <div class="lg:col-span-1">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-bold text-white flex items-center">
+            <i class="fas fa-chart-pie text-amber-500 mr-2 text-sm"></i> 配额使用
+          </h3>
+        </div>
+        
+        <div class="space-y-4">
+          <!-- 架构库配额 -->
+          <div class="glass-card p-4 rounded-xl">
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-folder text-blue-500 text-sm"></i>
+                <span class="text-sm font-medium text-white">架构库</span>
+              </div>
+              <span class="text-xs font-mono text-neutral-400">{{ quotaStats.repository }}</span>
+            </div>
+            <div class="w-full bg-neutral-800 rounded-full h-1.5">
+              <div 
+                class="bg-blue-500 h-1.5 rounded-full transition-all"
+                :style="{ width: subscriptionStore.repositoryUsagePercent + '%' }">
+              </div>
+            </div>
+          </div>
+          
+          <!-- 架构图配额 -->
+          <div class="glass-card p-4 rounded-xl">
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-diagram-project text-amber-500 text-sm"></i>
+                <span class="text-sm font-medium text-white">架构图</span>
+              </div>
+              <span class="text-xs font-mono text-neutral-400">{{ quotaStats.diagram }}</span>
+            </div>
+            <div class="w-full bg-neutral-800 rounded-full h-1.5">
+              <div 
+                class="bg-amber-500 h-1.5 rounded-full transition-all"
+                :style="{ width: subscriptionStore.diagramUsagePercent + '%' }">
+              </div>
+            </div>
+            <div class="text-[10px] text-neutral-500 mt-1">每月重置</div>
+          </div>
+          
+          <!-- SQL解析配额 -->
+          <div class="glass-card p-4 rounded-xl">
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-code text-purple-500 text-sm"></i>
+                <span class="text-sm font-medium text-white">SQL 解析</span>
+              </div>
+              <span class="text-xs font-mono text-neutral-400">{{ quotaStats.sqlParse }}</span>
+            </div>
+            <div class="w-full bg-neutral-800 rounded-full h-1.5">
+              <div 
+                class="bg-purple-500 h-1.5 rounded-full transition-all"
+                :style="{ width: subscriptionStore.sqlParseUsagePercent + '%' }">
+              </div>
+            </div>
+            <div class="text-[10px] text-neutral-500 mt-1">每日重置</div>
+          </div>
+          
+          <!-- AI生成配额 -->
+          <div class="glass-card p-4 rounded-xl">
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-magic text-green-500 text-sm"></i>
+                <span class="text-sm font-medium text-white">AI 生成</span>
+              </div>
+              <span class="text-xs font-mono text-neutral-400">{{ quotaStats.aiGenerate }}</span>
+            </div>
+            <div class="w-full bg-neutral-800 rounded-full h-1.5">
+              <div 
+                class="bg-green-500 h-1.5 rounded-full transition-all"
+                :style="{ width: subscriptionStore.aiGenerateUsagePercent + '%' }">
+              </div>
+            </div>
+            <div class="text-[10px] text-neutral-500 mt-1">每月重置</div>
+          </div>
+          
+          <!-- 升级按钮 -->
+          <button 
+            v-if="subscriptionStore.planCode === 'FREE'"
+            @click="handleUpgradeClick"
+            class="w-full btn-amber px-4 py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center mt-4">
+            <i class="fas fa-crown mr-2"></i> 升级到 Pro
+          </button>
+        </div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { useProjectStore } from '@/store/project'
+import { useSubscriptionStore } from '@/store/subscription'
 
 const router = useRouter()
 const userStore = useUserStore()
 const projectStore = useProjectStore()
+const subscriptionStore = useSubscriptionStore()
 
 const loading = ref(false)
 const statistics = ref({
@@ -108,11 +205,83 @@ const statistics = ref({
   newTables: 0
 })
 const recentProjects = ref([])
+let refreshTimer = null
+
+// 订阅信息计算属性
+const subscriptionInfo = computed(() => {
+  const sub = subscriptionStore.currentSubscription
+  if (!sub) return { name: 'Free', icon: 'fa-coffee', color: 'neutral' }
+  
+  const planMap = {
+    'FREE': { name: 'Coffee Free', icon: 'fa-coffee', color: 'neutral' },
+    'PRO': { name: 'Coffee Pro', icon: 'fa-crown', color: 'amber' },
+    'TEAM': { name: 'Coffee Team', icon: 'fa-users', color: 'purple' }
+  }
+  
+  return planMap[sub.planCode] || planMap['FREE']
+})
+
+const expiresText = computed(() => {
+  const expiresAt = subscriptionStore.expiresAt
+  if (!expiresAt) return '永久有效'
+  
+  const date = new Date(expiresAt)
+  const now = new Date()
+  const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24))
+  
+  if (diffDays < 0) return '已过期'
+  if (diffDays === 0) return '今天到期'
+  if (diffDays <= 30) return `${diffDays} 天后到期`
+  
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })
+})
+
+// 配额信息
+const quotaStats = computed(() => {
+  const repo = subscriptionStore.repositoryQuota
+  const diagram = subscriptionStore.diagramQuota
+  const sqlParse = subscriptionStore.sqlParseQuota
+  const aiGen = subscriptionStore.aiGenerateQuota
+  
+  return {
+    repository: repo ? `${repo.quotaUsed}/${repo.quotaLimit === -1 ? '∞' : repo.quotaLimit}` : '0/0',
+    diagram: diagram ? `${diagram.quotaUsed}/${diagram.quotaLimit === -1 ? '∞' : diagram.quotaLimit}` : '0/0',
+    sqlParse: sqlParse ? `${sqlParse.quotaUsed}/${sqlParse.quotaLimit === -1 ? '∞' : sqlParse.quotaLimit}` : '0/0',
+    aiGenerate: aiGen ? `${aiGen.quotaUsed}/${aiGen.quotaLimit === -1 ? '∞' : aiGen.quotaLimit}` : '0/0'
+  }
+})
 
 onMounted(async () => {
   loading.value = true
   try {
-    // 获取最近的项目
+    // 并行获取数据
+    await Promise.all([
+      loadProjects(),
+      loadStatistics(),
+      loadSubscription()
+    ])
+    
+    // 设置定时刷新配额（每30秒）
+    refreshTimer = setInterval(() => {
+      subscriptionStore.refreshQuotas()
+    }, 30000)
+  } catch (error) {
+    console.error('Failed to load dashboard data', error)
+  } finally {
+    loading.value = false
+  }
+})
+
+onUnmounted(() => {
+  // 清除定时器
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+})
+
+const loadProjects = async () => {
+  try {
     const res = await projectStore.fetchProjects({
       page: 1,
       size: 5,
@@ -121,32 +290,51 @@ onMounted(async () => {
     
     recentProjects.value = res.data.list || []
     
-    // 计算统计数据
+    // 计算统计数据 - 只统计项目数量
     const total = res.data.total || 0
-    // 简单的统计计算，实际应由后端接口提供
-    let tableCount = 0
-    recentProjects.value.forEach(p => {
-      if (p.tableCount) tableCount += p.tableCount
-    })
     
     statistics.value = {
       totalProjects: total,
-      monthlyNew: 0, // 暂无数据
-      totalTables: tableCount, // 仅统计最近项目的表数量作为示例，或者显示0
+      monthlyNew: 0,
+      totalTables: 0,  // 将通过 loadStatistics 获取
       newTables: 0
     }
   } catch (error) {
-    console.error('Failed to load dashboard data', error)
-  } finally {
-    loading.value = false
+    console.error('Failed to load projects', error)
   }
-})
+}
+
+const loadStatistics = async () => {
+  try {
+    const api = (await import('@/api/index.js')).default
+    const res = await api.get('/api/diagram/statistics')
+    
+    if (res.code === 200 && res.data) {
+      statistics.value.totalTables = res.data.totalTables || 0
+      statistics.value.totalRelations = res.data.totalRelations || 0
+    }
+  } catch (error) {
+    console.error('Failed to load statistics', error)
+  }
+}
+
+const loadSubscription = async () => {
+  try {
+    await Promise.all([
+      subscriptionStore.fetchCurrentSubscription(),
+      subscriptionStore.fetchQuotas()
+    ])
+  } catch (error) {
+    console.error('Failed to load subscription', error)
+  }
+}
 
 const handleProjectClick = (project) => {
-  // Navigate to project details or editor
-  // router.push(`/project/${project.id}`)
-  // 暂时跳转到项目列表，或者如果有详情页则跳转详情页
   router.push('/projects')
+}
+
+const handleUpgradeClick = () => {
+  router.push('/subscribe')
 }
 
 const formatDate = (date) => {
