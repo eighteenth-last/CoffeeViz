@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoffeeViz Admin Dashboard Prototype</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #101014;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101014; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46; 
+        }
+    </style>
+</head>
+<body class="text-white selection:bg-blue-500/30">
+
+    <!-- Header -->
+    <header class="h-16 bg-[#27272a] border-b border-white/5 px-6 flex items-center justify-between sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <i class="fas fa-shield-alt text-white text-sm"></i>
+            </div>
+            <h1 class="text-lg font-bold tracking-wide text-white">
+                CoffeeViz <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Admin</span>
+            </h1>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <!-- Search -->
+            <div class="relative hidden md:block group">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-blue-400 transition-colors"></i>
+                <input 
+                    type="text" 
+                    placeholder="搜索设置..." 
+                    class="h-9 w-64 bg-[#18181c] border border-white/10 rounded-full pl-10 pr-4 text-xs focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder-neutral-600 text-neutral-300"
+                >
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <button class="w-8 h-8 rounded-full bg-[#18181c] hover:bg-blue-500/20 text-neutral-400 hover:text-blue-400 flex items-center justify-center transition-all cursor-pointer">
+                    <i class="fas fa-bell text-xs"></i>
+                </button>
+                <button class="w-8 h-8 rounded-full bg-[#18181c] hover:bg-blue-500/20 text-neutral-400 hover:text-blue-400 flex items-center justify-center transition-all cursor-pointer">
+                    <i class="fas fa-cog text-xs"></i>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-neutral-700 to-neutral-800 border border-white/10 flex items-center justify-center cursor-pointer">
+                    <span class="text-xs font-bold text-neutral-300">A</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6">
+        
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="stats-container">
+            <!-- Stats will be injected here by JS -->
+        </div>
+
+        <!-- Quick Actions Grid -->
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-white flex items-center">
+                <i class="fas fa-th-large mr-2 text-blue-500"></i> 业务管理模块
+            </h2>
+            <div class="flex gap-2">
+                <button class="p-1.5 rounded bg-[#18181c] text-neutral-400 hover:text-white hover:bg-blue-600 transition-colors cursor-pointer"><i class="fas fa-filter text-xs"></i></button>
+                <button class="p-1.5 rounded bg-[#18181c] text-neutral-400 hover:text-white hover:bg-blue-600 transition-colors cursor-pointer"><i class="fas fa-sort text-xs"></i></button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mb-8" id="modules-container">
+            <!-- Modules will be injected here by JS -->
+        </div>
+
+        <!-- Recent Activity / Tables -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Table -->
+            <div class="lg:col-span-2 bg-[#18181c] rounded-2xl border border-white/5 overflow-hidden flex flex-col">
+                <div class="p-4 border-b border-white/5 flex justify-between items-center bg-[#27272a]/50">
+                    <h3 class="font-bold text-sm text-white">最近用户订阅</h3>
+                    <button class="text-xs text-blue-400 hover:text-blue-300 transition-colors cursor-pointer">查看全部</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-[#27272a] text-xs uppercase text-neutral-400 tracking-wider">
+                                <th class="p-4 font-medium">用户</th>
+                                <th class="p-4 font-medium">计划</th>
+                                <th class="p-4 font-medium">状态</th>
+                                <th class="p-4 font-medium">金额</th>
+                                <th class="p-4 font-medium">日期</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm" id="table-body">
+                            <!-- Table rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="bg-[#18181c] rounded-2xl border border-white/5 p-5 flex flex-col h-full">
+                <h3 class="font-bold text-sm text-white mb-4">系统健康度</h3>
+                
+                <div class="space-y-6 flex-1" id="health-stats">
+                    <!-- Health stats will be injected here -->
+                </div>
+
+                <div class="mt-8 p-4 rounded-xl bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/20 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <div class="text-blue-400 text-xs font-bold mb-1">AI 服务状态</div>
+                        <div class="text-white font-bold text-lg mb-2">运行正常</div>
+                        <p class="text-neutral-400 text-xs leading-relaxed">所有 AI 模型节点响应时间在预期范围内。</p>
+                    </div>
+                    <i class="fas fa-robot absolute -bottom-2 -right-2 text-6xl text-blue-500/10 transform rotate-12"></i>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Module Detail Modal -->
+    <div id="module-modal" class="fixed inset-0 z-[100] hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="modal-backdrop"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6">
+            <div class="bg-[#18181c] border border-white/10 w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col overflow-hidden" id="modal-content">
+                
+                <!-- Modal Header -->
+                <div class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-[#202025]">
+                    <div class="flex items-center gap-3">
+                        <div id="modal-icon-container" class="w-8 h-8 rounded-lg flex items-center justify-center text-lg">
+                            <i id="modal-icon" class="fas fa-cube"></i>
+                        </div>
+                        <h2 id="modal-title" class="text-lg font-bold text-white">模块详情</h2>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-white/10 flex items-center justify-center text-neutral-400 hover:text-white transition-colors">
+                            <i class="fas fa-expand text-xs"></i>
+                        </button>
+                        <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#27272a] hover:bg-red-500/20 flex items-center justify-center text-neutral-400 hover:text-red-500 transition-colors">
+                            <i class="fas fa-times text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div id="modal-body" class="flex-1 overflow-y-auto p-6 bg-[#101014]">
+                    <!-- Dynamic Content Injected Here -->
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="h-14 border-t border-white/5 flex items-center justify-between px-6 bg-[#202025]">
+                    <div class="text-xs text-neutral-500">
+                        <i class="fas fa-info-circle mr-1"></i> Press ESC to close
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="closeModal()" class="px-4 py-1.5 rounded-lg border border-white/10 text-xs font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-all">取消</button>
+                        <button class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-600/20 transition-all">保存更改</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const stats = [
+            { label: '总用户数', value: '12,543', trend: '12%', icon: 'fa-users', color: '#3b82f6', gradientClass: 'from-blue-600 to-blue-400' },
+            { label: '本月收入', value: '¥45,230', trend: '8.5%', icon: 'fa-yen-sign', color: '#10b981', gradientClass: 'from-green-600 to-green-400' },
+            { label: '活跃项目', value: '3,892', trend: '5.2%', icon: 'fa-project-diagram', color: '#f59e0b', gradientClass: 'from-amber-600 to-amber-400' },
+            { label: 'API 调用', value: '1.2M', trend: '24%', icon: 'fa-server', color: '#8b5cf6', gradientClass: 'from-purple-600 to-purple-400' },
+        ];
+
+        const modules = [
+            { name: '用户管理', icon: 'fa-user-cog', bgClass: 'bg-blue-500/10', textClass: 'text-blue-500' },
+            { name: '订阅订单', icon: 'fa-file-invoice-dollar', bgClass: 'bg-green-500/10', textClass: 'text-green-500' },
+            { name: '项目概览', icon: 'fa-layer-group', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500' },
+            { name: '系统设置', icon: 'fa-cogs', bgClass: 'bg-neutral-500/10', textClass: 'text-neutral-400' },
+            { name: '通知中心', icon: 'fa-bell', bgClass: 'bg-red-500/10', textClass: 'text-red-500' },
+            { name: '审计日志', icon: 'fa-clipboard-list', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500' },
+            { name: 'AI 模型', icon: 'fa-brain', bgClass: 'bg-cyan-500/10', textClass: 'text-cyan-500' },
+            { name: '数据库', icon: 'fa-database', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500' },
+            { name: '文件存储', icon: 'fa-hdd', bgClass: 'bg-pink-500/10', textClass: 'text-pink-500' },
+            { name: 'API 密钥', icon: 'fa-key', bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-500' },
+            { name: '工单支持', icon: 'fa-headset', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500' },
+            { name: '营销活动', icon: 'fa-bullhorn', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500' },
+            { name: '数据分析', icon: 'fa-chart-line', bgClass: 'bg-lime-500/10', textClass: 'text-lime-500' },
+            { name: '安全中心', icon: 'fa-shield-virus', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500' },
+            { name: '备份恢复', icon: 'fa-trash-restore', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500' },
+            { name: '开发者', icon: 'fa-code', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500' },
+        ];
+
+        const healthStats = [
+            { label: 'CPU 使用率', value: 42, color: 'bg-blue-500' },
+            { label: '内存占用', value: 68, color: 'bg-purple-500' },
+            { label: '存储空间', value: 24, color: 'bg-green-500' },
+            { label: '网络流量', value: 55, color: 'bg-amber-500' },
+        ];
+
+        // Render Stats
+        const statsContainer = document.getElementById('stats-container');
+        stats.forEach(stat => {
+            const el = document.createElement('div');
+            el.className = 'bg-[#18181c] p-5 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all duration-300 group relative overflow-hidden';
+            el.innerHTML = `
+                <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 duration-500">
+                    <i class="fas ${stat.icon} text-6xl" style="color: ${stat.color}"></i>
+                </div>
+                <div class="relative z-10">
+                    <div class="text-neutral-400 text-xs font-medium uppercase tracking-wider mb-2">${stat.label}</div>
+                    <div class="text-2xl font-black text-white flex items-end gap-2">
+                        ${stat.value}
+                        <span class="text-xs font-medium text-green-500 mb-1 flex items-center">
+                            <i class="fas fa-arrow-up mr-1 text-[10px]"></i> ${stat.trend}
+                        </span>
+                    </div>
+                </div>
+                <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r ${stat.gradientClass} transition-all duration-500 w-0 group-hover:w-full"></div>
+            `;
+            statsContainer.appendChild(el);
+        });
+
+        // Render Modules
+        const modulesContainer = document.getElementById('modules-container');
+        modules.forEach(module => {
+            const el = document.createElement('div');
+            el.className = 'bg-[#18181c] aspect-square rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-3 cursor-pointer group hover:bg-[#202025] hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-900/20 transition-all duration-300 relative overflow-hidden';
+            el.onclick = () => openModal(module);
+            el.innerHTML = `
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-1 transition-all duration-300 transform group-hover:scale-110 group-hover:-translate-y-1 shadow-inner ${module.bgClass} ${module.textClass}">
+                    <i class="fas ${module.icon}"></i>
+                </div>
+                <div class="text-xs font-medium text-neutral-400 group-hover:text-white transition-colors text-center px-2 z-10">
+                    ${module.name}
+                </div>
+                <div class="absolute bottom-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                    <i class="fas fa-chevron-right text-[10px] text-blue-500"></i>
+                </div>
+            `;
+            modulesContainer.appendChild(el);
+        });
+
+        // Modal Logic
+        const modal = document.getElementById('module-modal');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const modalContent = document.getElementById('modal-content');
+        const modalBody = document.getElementById('modal-body');
+        const modalTitle = document.getElementById('modal-title');
+        const modalIcon = document.getElementById('modal-icon');
+        const modalIconContainer = document.getElementById('modal-icon-container');
+
+        function openModal(module) {
+            modal.classList.remove('hidden');
+            // Trigger reflow
+            void modal.offsetWidth;
+            
+            // Animation
+            modalBackdrop.classList.remove('opacity-0');
+            modalContent.classList.remove('opacity-0', 'scale-95');
+            modalContent.classList.add('scale-100');
+
+            // Set Content
+            modalTitle.textContent = module.name;
+            modalIcon.className = `fas ${module.icon}`;
+            modalIconContainer.className = `w-8 h-8 rounded-lg flex items-center justify-center text-lg ${module.bgClass} ${module.textClass}`;
+            
+            // Render specific template
+            renderModuleTemplate(module);
+        }
+
+        function closeModal() {
+            modalBackdrop.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('opacity-0', 'scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modalBody.innerHTML = ''; // Clear content
+            }, 300);
+        }
+
+        // Close on backdrop click
+        modalBackdrop.onclick = closeModal;
+        
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        // Template Renderer
+        function renderModuleTemplate(module) {
+            let html = '';
+            let shouldInitCharts = false;
+            
+            // Clear any existing chart instances to prevent memory leaks or rendering issues
+            if (window.activeCharts) {
+                window.activeCharts.forEach(chart => chart.destroy());
+                window.activeCharts = [];
+            }
+            
+            switch (module.name) {
+                case '用户管理':
+                    html = generateUserManagementTemplate();
+                    break;
+                case '订阅订单':
+                    html = generateOrdersTemplate();
+                    break;
+                case '项目概览':
+                    html = generateProjectsTemplate();
+                    break;
+                case '系统设置':
+                    html = generateSettingsTemplate();
+                    break;
+                case '通知中心':
+                    html = generateNotificationsTemplate();
+                    break;
+                case 'API 密钥':
+                    html = generateApiKeysTemplate();
+                    break;
+                case '数据分析':
+                case 'AI 模型':
+                    html = generateAnalyticsTemplate(module);
+                    shouldInitCharts = true;
+                    break;
+                case '数据库':
+                    html = generateDatabaseTemplate();
+                    break;
+                case '文件存储':
+                    html = generateFileStorageTemplate();
+                    break;
+                case '工单支持':
+                    html = generateTicketSupportTemplate();
+                    break;
+                case '审计日志':
+                    html = generateAuditLogsTemplate();
+                    break;
+                case '营销活动':
+                    html = generateMarketingTemplate();
+                    break;
+                case '安全中心':
+                    html = generateSecurityCenterTemplate();
+                    break;
+                case '备份恢复':
+                    html = generateBackupRestoreTemplate();
+                    break;
+                case '开发者':
+                    html = generateDevelopersTemplate();
+                    break;
+                default:
+                    html = generateDefaultTemplate(module);
+            }
+            
+            modalBody.innerHTML = html;
+
+            if (shouldInitCharts) {
+                initCharts();
+            }
+        }
+
+        // --- Specific Templates ---
+
+        function generateAuditLogsTemplate() {
+            return `
+                <div class="flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex gap-3">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"></i>
+                                <input type="text" placeholder="搜索日志..." class="bg-[#18181c] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-blue-500/50 focus:outline-none w-64">
+                            </div>
+                            <select class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-neutral-400 focus:outline-none">
+                                <option>所有操作</option>
+                                <option>登录</option>
+                                <option>创建</option>
+                                <option>删除</option>
+                                <option>更新</option>
+                            </select>
+                            <input type="date" class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-neutral-400 focus:outline-none">
+                        </div>
+                        <button class="px-3 py-2 bg-[#18181c] border border-white/10 rounded-lg text-neutral-400 hover:text-white transition-colors"><i class="fas fa-file-export"></i> 导出日志</button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto bg-[#18181c] rounded-xl border border-white/5">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-[#202025] z-10">
+                                <tr class="text-xs uppercase text-neutral-400 tracking-wider">
+                                    <th class="p-4 font-medium border-b border-white/5">时间</th>
+                                    <th class="p-4 font-medium border-b border-white/5">操作人</th>
+                                    <th class="p-4 font-medium border-b border-white/5">行为</th>
+                                    <th class="p-4 font-medium border-b border-white/5">资源</th>
+                                    <th class="p-4 font-medium border-b border-white/5">IP 地址</th>
+                                    <th class="p-4 font-medium border-b border-white/5">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-white/5">
+                                ${Array(15).fill(0).map((_, i) => `
+                                <tr class="hover:bg-white/[0.02] transition-colors">
+                                    <td class="p-4 text-neutral-500 font-mono text-xs">2023-10-${20-i} 14:${30+i}:12</td>
+                                    <td class="p-4 text-white">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 rounded-full bg-neutral-700 flex items-center justify-center text-[10px]">U</div>
+                                            <span>User_${i+1}</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-neutral-300">${['登录', '创建项目', '删除文件', '更新设置', '导出数据'][i % 5]}</td>
+                                    <td class="p-4 text-neutral-400 font-mono text-xs">/api/v1/${['auth', 'projects', 'files', 'settings', 'export'][i % 5]}</td>
+                                    <td class="p-4 text-neutral-500 text-xs font-mono">192.168.1.${10+i}</td>
+                                    <td class="p-4">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${i % 7 === 0 ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}">
+                                            ${i % 7 === 0 ? '失败' : '成功'}
+                                        </span>
+                                    </td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateDatabaseTemplate() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <div class="lg:col-span-2 flex flex-col gap-6">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 relative overflow-hidden">
+                                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fas fa-database text-6xl text-blue-500"></i></div>
+                                <div class="text-xs text-neutral-500 mb-1">连接数</div>
+                                <div class="text-2xl font-bold text-white">342</div>
+                                <div class="text-xs text-neutral-400 mt-2">最大: 1000</div>
+                                <div class="w-full bg-neutral-800 h-1 mt-2 rounded-full overflow-hidden"><div class="bg-blue-500 h-full w-[34%]"></div></div>
+                            </div>
+                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 relative overflow-hidden">
+                                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fas fa-tachometer-alt text-6xl text-green-500"></i></div>
+                                <div class="text-xs text-neutral-500 mb-1">QPS</div>
+                                <div class="text-2xl font-bold text-white">1,205</div>
+                                <div class="text-xs text-green-500 mt-2"><i class="fas fa-arrow-up"></i> 5% 环比</div>
+                            </div>
+                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 relative overflow-hidden">
+                                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fas fa-hdd text-6xl text-amber-500"></i></div>
+                                <div class="text-xs text-neutral-500 mb-1">存储使用</div>
+                                <div class="text-2xl font-bold text-white">45.2 GB</div>
+                                <div class="text-xs text-neutral-400 mt-2">总量: 100 GB</div>
+                                <div class="w-full bg-neutral-800 h-1 mt-2 rounded-full overflow-hidden"><div class="bg-amber-500 h-full w-[45%]"></div></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#18181c] rounded-xl border border-white/5 flex-1 flex flex-col">
+                            <div class="p-4 border-b border-white/5 flex justify-between items-center">
+                                <h3 class="text-white font-bold text-sm">慢查询日志</h3>
+                                <button class="text-xs text-blue-400 hover:text-blue-300">查看全部</button>
+                            </div>
+                            <div class="overflow-auto flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="bg-[#202025]">
+                                        <tr class="text-xs uppercase text-neutral-400">
+                                            <th class="p-3 font-medium">SQL 语句</th>
+                                            <th class="p-3 font-medium">耗时</th>
+                                            <th class="p-3 font-medium">时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-xs divide-y divide-white/5">
+                                        ${Array(5).fill(0).map((_, i) => `
+                                        <tr>
+                                            <td class="p-3 font-mono text-neutral-300 truncate max-w-[200px]">SELECT * FROM large_table WHERE status = 'active' AND type = 'complex' JOIN other_table...</td>
+                                            <td class="p-3 text-amber-500">${(Math.random() * 2 + 0.5).toFixed(2)}s</td>
+                                            <td class="p-3 text-neutral-500">10:${10+i}:00</td>
+                                        </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#18181c] rounded-xl border border-white/5 flex flex-col h-full">
+                        <div class="p-4 border-b border-white/5">
+                            <h3 class="text-white font-bold text-sm">表统计信息</h3>
+                        </div>
+                        <div class="p-4 space-y-4 overflow-auto flex-1">
+                            ${['users', 'orders', 'projects', 'logs', 'audit_trails'].map(table => `
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-neutral-300 font-mono">${table}</span>
+                                    <span class="text-neutral-500 text-xs">${Math.floor(Math.random() * 100000)} 行</span>
+                                </div>
+                                <div class="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-blue-600 h-full" style="width: ${Math.random() * 80 + 10}%"></div>
+                                </div>
+                            </div>
+                            `).join('')}
+                        </div>
+                        <div class="p-4 border-t border-white/5">
+                            <button class="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold rounded transition-colors">
+                                优化分析
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateFileStorageTemplate() {
+            return `
+                <div class="flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex gap-2">
+                             <button class="text-neutral-400 hover:text-white transition-colors"><i class="fas fa-home"></i></button>
+                             <span class="text-neutral-600">/</span>
+                             <span class="text-neutral-300">uploads</span>
+                             <span class="text-neutral-600">/</span>
+                             <span class="text-white font-medium">images</span>
+                        </div>
+                        <div class="flex gap-3">
+                            <input type="text" placeholder="搜索文件..." class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none w-48">
+                            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+                                <i class="fas fa-cloud-upload-alt"></i> 上传
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 bg-[#18181c] rounded-xl border border-white/5 p-4 overflow-auto">
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <!-- Folders -->
+                            ${['头像', '项目资源', '文档', '备份'].map(folder => `
+                            <div class="group p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors text-center">
+                                <i class="fas fa-folder text-4xl text-amber-400 mb-2 group-hover:scale-110 transition-transform"></i>
+                                <div class="text-sm text-neutral-300 truncate">${folder}</div>
+                                <div class="text-[10px] text-neutral-600">12 项</div>
+                            </div>
+                            `).join('')}
+                            
+                            <!-- Files -->
+                            ${Array(12).fill(0).map((_, i) => `
+                            <div class="group p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors text-center relative">
+                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="text-neutral-400 hover:text-white"><i class="fas fa-ellipsis-v"></i></button>
+                                </div>
+                                <div class="w-full aspect-square bg-neutral-800 rounded mb-2 flex items-center justify-center overflow-hidden border border-white/5">
+                                    ${i % 3 === 0 
+                                        ? `<i class="fas fa-file-image text-3xl text-purple-400"></i>` 
+                                        : i % 3 === 1 
+                                            ? `<i class="fas fa-file-pdf text-3xl text-red-400"></i>` 
+                                            : `<i class="fas fa-file-code text-3xl text-blue-400"></i>`}
+                                </div>
+                                <div class="text-sm text-neutral-300 truncate">资源_${i+1}.${i%3===0?'png':i%3===1?'pdf':'json'}</div>
+                                <div class="text-[10px] text-neutral-600">${(Math.random() * 5).toFixed(1)} MB</div>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center text-xs text-neutral-500">
+                        <div>存储: 45.2GB / 100GB 已用</div>
+                        <div class="w-48 h-1.5 bg-[#27272a] rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-600 w-[45%]"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateTicketSupportTemplate() {
+            return `
+                <div class="flex h-full gap-6">
+                    <!-- Ticket List -->
+                    <div class="w-1/3 flex flex-col bg-[#18181c] rounded-xl border border-white/5 overflow-hidden">
+                        <div class="p-4 border-b border-white/5">
+                            <h3 class="text-white font-bold mb-3">工单列表</h3>
+                            <div class="flex gap-2">
+                                <button class="flex-1 py-1.5 bg-white/10 text-white text-xs rounded text-center">待处理 (12)</button>
+                                <button class="flex-1 py-1.5 hover:bg-white/5 text-neutral-400 text-xs rounded text-center">已关闭</button>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-auto divide-y divide-white/5">
+                            ${Array(8).fill(0).map((_, i) => `
+                            <div class="p-4 hover:bg-white/5 cursor-pointer transition-colors ${i===0 ? 'bg-white/[0.03] border-l-2 border-blue-500' : 'border-l-2 border-transparent'}">
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="text-xs font-mono text-neutral-500">#TKT-${202300+i}</span>
+                                    <span class="text-[10px] text-neutral-600">2小时前</span>
+                                </div>
+                                <h4 class="text-sm text-white font-medium mb-1 line-clamp-1">无法从外部 IP 连接数据库</h4>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 text-red-500 border border-red-500/20">高优先级</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-500 border border-blue-500/20">技术问题</span>
+                                </div>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Ticket Detail -->
+                    <div class="flex-1 flex flex-col bg-[#18181c] rounded-xl border border-white/5 overflow-hidden">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-start">
+                            <div>
+                                <h2 class="text-xl font-bold text-white mb-2">无法从外部 IP 连接数据库</h2>
+                                <div class="flex items-center gap-3 text-xs">
+                                    <span class="text-neutral-400"><i class="fas fa-user mr-1"></i> User_123</span>
+                                    <span class="text-neutral-400"><i class="fas fa-envelope mr-1"></i> user@example.com</span>
+                                    <span class="px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20">待处理</span>
+                                </div>
+                            </div>
+                            <button class="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded transition-colors">操作 <i class="fas fa-chevron-down ml-1"></i></button>
+                        </div>
+                        
+                        <div class="flex-1 overflow-auto p-6 space-y-6">
+                            <div class="flex gap-4">
+                                <div class="w-8 h-8 rounded-full bg-neutral-700 flex-shrink-0 flex items-center justify-center text-xs text-white">U</div>
+                                <div>
+                                    <div class="text-sm text-neutral-300 bg-[#202025] p-3 rounded-lg rounded-tl-none border border-white/5">
+                                        我尝试使用提供的凭据连接到我的托管数据库，但我一直收到超时错误。我的 IP 是 203.0.113.1。
+                                    </div>
+                                    <div class="text-[10px] text-neutral-600 mt-1">今天 10:23 AM</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex gap-4 flex-row-reverse">
+                                <div class="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-xs text-white">S</div>
+                                <div class="flex flex-col items-end">
+                                    <div class="text-sm text-white bg-blue-600/10 p-3 rounded-lg rounded-tr-none border border-blue-600/20">
+                                        您好，您是否检查过您的 IP 是否已添加到安全设置选项卡中的白名单？
+                                    </div>
+                                    <div class="text-[10px] text-neutral-600 mt-1">今天 10:45 AM</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 border-t border-white/5 bg-[#202025]">
+                            <div class="relative">
+                                <textarea class="w-full bg-[#18181c] border border-white/10 rounded-lg p-3 text-sm text-white focus:border-blue-500/50 focus:outline-none min-h-[80px]" placeholder="输入回复..."></textarea>
+                                <div class="absolute bottom-2 right-2 flex gap-2">
+                                    <button class="text-neutral-400 hover:text-white"><i class="fas fa-paperclip"></i></button>
+                                    <button class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">回复</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateMarketingTemplate() {
+             return `
+                <div class="flex flex-col h-full">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                         <div class="bg-gradient-to-br from-purple-900/40 to-purple-800/10 p-5 rounded-xl border border-purple-500/20">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fas fa-bullhorn"></i></div>
+                                <span class="text-xs font-mono text-purple-300 bg-purple-500/10 px-2 py-1 rounded">进行中</span>
+                            </div>
+                            <div class="text-2xl font-bold text-white mb-1">夏季促销</div>
+                            <div class="text-sm text-neutral-400">12天后结束</div>
+                            <div class="mt-4 flex justify-between text-xs text-neutral-300">
+                                <span>转化率: 4.5%</span>
+                                <span>ROI: 320%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-[#18181c] p-5 rounded-xl border border-white/5 flex flex-col justify-center">
+                            <div class="text-neutral-500 text-xs mb-1">潜在客户</div>
+                            <div class="text-2xl font-bold text-white">12,450</div>
+                            <div class="text-green-500 text-xs mt-1"><i class="fas fa-arrow-up"></i> 本周 15%</div>
+                        </div>
+                        
+                        <div class="bg-[#18181c] p-5 rounded-xl border border-white/5 flex flex-col justify-center">
+                            <div class="text-neutral-500 text-xs mb-1">邮件打开率</div>
+                            <div class="text-2xl font-bold text-white">24.8%</div>
+                            <div class="text-neutral-400 text-xs mt-1">行业平均: 21%</div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-white font-bold">营销活动</h3>
+                        <button class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded transition-colors"><i class="fas fa-plus mr-1"></i> 新建活动</button>
+                    </div>
+
+                    <div class="flex-1 overflow-auto bg-[#18181c] rounded-xl border border-white/5">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-[#202025]">
+                                <tr class="text-xs uppercase text-neutral-400 tracking-wider">
+                                    <th class="p-4 font-medium border-b border-white/5">名称</th>
+                                    <th class="p-4 font-medium border-b border-white/5">渠道</th>
+                                    <th class="p-4 font-medium border-b border-white/5">状态</th>
+                                    <th class="p-4 font-medium border-b border-white/5">覆盖人数</th>
+                                    <th class="p-4 font-medium border-b border-white/5 text-right">预算</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-white/5">
+                                ${['黑色星期五', '新功能发布', '通讯简报 #45', '重定向广告', '网红推广'].map((name, i) => `
+                                <tr class="hover:bg-white/[0.02] transition-colors">
+                                    <td class="p-4 text-white font-medium">${name}</td>
+                                    <td class="p-4 text-neutral-400 text-xs"><i class="fas ${['fa-envelope', 'fa-ad', 'fa-envelope', 'fa-bullseye', 'fa-hashtag'][i]} mr-2"></i> ${['邮件', '广告', '邮件', '广告', '社媒'][i]}</td>
+                                    <td class="p-4">
+                                        <span class="w-2 h-2 rounded-full ${i===0?'bg-green-500':i===3?'bg-amber-500':'bg-neutral-600'} inline-block mr-2"></span>
+                                        <span class="text-neutral-300 text-xs">${i===0?'进行中':i===3?'暂停':'已结束'}</span>
+                                    </td>
+                                    <td class="p-4 text-neutral-300">${Math.floor(Math.random() * 50000)}</td>
+                                    <td class="p-4 text-right text-white font-mono">$${Math.floor(Math.random() * 2000)}</td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateSecurityCenterTemplate() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <div class="lg:col-span-2 flex flex-col gap-6">
+                        <div class="bg-gradient-to-r from-green-900/20 to-green-800/10 border border-green-500/20 rounded-xl p-6 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-bold text-white mb-1">系统安全</h3>
+                                <p class="text-sm text-neutral-400">未检测到严重漏洞。上次扫描: 2小时前。</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 text-2xl">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#18181c] rounded-xl border border-white/5 flex-1 flex flex-col">
+                            <div class="p-4 border-b border-white/5">
+                                <h3 class="text-white font-bold text-sm">安全检查项</h3>
+                            </div>
+                            <div class="p-4 space-y-4">
+                                ${[
+                                    {name: '防火墙已启用', status: true},
+                                    {name: '强制双重认证', status: true},
+                                    {name: 'SSL 证书有效', status: true},
+                                    {name: '数据库已加密', status: true},
+                                    {name: 'API 速率限制', status: true},
+                                    {name: '登录尝试监控', status: false}
+                                ].map(item => `
+                                <div class="flex items-center justify-between p-3 rounded-lg bg-[#202025] border border-white/5">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas ${item.status ? 'fa-check-circle text-green-500' : 'fa-exclamation-triangle text-amber-500'}"></i>
+                                        <span class="text-sm text-neutral-300">${item.name}</span>
+                                    </div>
+                                    <button class="text-xs ${item.status ? 'text-neutral-500' : 'text-blue-500 hover:text-blue-400'}">${item.status ? '配置' : '立即启用'}</button>
+                                </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#18181c] rounded-xl border border-white/5 flex flex-col h-full">
+                        <div class="p-4 border-b border-white/5 flex justify-between items-center">
+                            <h3 class="text-white font-bold text-sm">最近警报</h3>
+                            <span class="px-2 py-0.5 rounded text-[10px] bg-neutral-700 text-neutral-300">过去24小时</span>
+                        </div>
+                        <div class="flex-1 overflow-auto p-4 space-y-4">
+                            ${Array(5).fill(0).map((_, i) => `
+                            <div class="flex gap-3">
+                                <div class="w-8 h-8 rounded bg-red-500/10 flex-shrink-0 flex items-center justify-center text-red-500 text-xs">
+                                    <i class="fas fa-exclamation"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-white font-medium">登录失败尝试</div>
+                                    <div class="text-xs text-neutral-500 mt-0.5">IP: 45.23.12.${100+i} (中国)</div>
+                                    <div class="text-[10px] text-neutral-600 mt-1">20 分钟前</div>
+                                </div>
+                            </div>
+                            `).join('')}
+                        </div>
+                        <div class="p-4 border-t border-white/5">
+                            <button class="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold rounded transition-colors">
+                                查看安全日志
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateBackupRestoreTemplate() {
+            return `
+                <div class="flex flex-col h-full gap-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
+                            <h3 class="text-white font-bold mb-4">上次备份</h3>
+                            <div class="flex items-end gap-2 mb-2">
+                                <span class="text-3xl font-bold text-green-500">成功</span>
+                                <span class="text-sm text-neutral-400 mb-1.5">通过计划任务</span>
+                            </div>
+                            <div class="text-sm text-neutral-300">2023年10月24日 02:00</div>
+                            <div class="text-xs text-neutral-500 mt-1">大小: 4.2 GB • 124 个表</div>
+                        </div>
+                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
+                            <h3 class="text-white font-bold mb-4">下次备份</h3>
+                            <div class="flex items-end gap-2 mb-2">
+                                <span class="text-3xl font-bold text-blue-500">14小时 32分</span>
+                                <span class="text-sm text-neutral-400 mb-1.5">后</span>
+                            </div>
+                            <div class="text-sm text-neutral-300">2023年10月25日 02:00</div>
+                            <div class="mt-4">
+                                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-colors w-full">
+                                    立即备份
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 bg-[#18181c] rounded-xl border border-white/5 flex flex-col overflow-hidden">
+                        <div class="p-4 border-b border-white/5">
+                            <h3 class="text-white font-bold text-sm">备份历史</h3>
+                        </div>
+                        <div class="flex-1 overflow-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-[#202025]">
+                                    <tr class="text-xs uppercase text-neutral-400">
+                                        <th class="p-4 font-medium">日期时间</th>
+                                        <th class="p-4 font-medium">类型</th>
+                                        <th class="p-4 font-medium">大小</th>
+                                        <th class="p-4 font-medium">耗时</th>
+                                        <th class="p-4 font-medium text-right">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm divide-y divide-white/5">
+                                    ${Array(8).fill(0).map((_, i) => `
+                                    <tr class="hover:bg-white/[0.02] transition-colors">
+                                        <td class="p-4 text-white">2023年10月${24-i}日 02:00</td>
+                                        <td class="p-4 text-neutral-400 text-xs uppercase bg-neutral-800/50 px-2 py-1 rounded w-max">全量</td>
+                                        <td class="p-4 text-neutral-300 font-mono">4.2 GB</td>
+                                        <td class="p-4 text-neutral-500">4分 12秒</td>
+                                        <td class="p-4 text-right">
+                                            <button class="text-blue-400 hover:text-blue-300 text-xs mr-3">下载</button>
+                                            <button class="text-neutral-500 hover:text-white text-xs">恢复</button>
+                                        </td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateDevelopersTemplate() {
+            return `
+                <div class="flex h-full gap-6">
+                    <div class="w-64 bg-[#18181c] rounded-xl border border-white/5 p-2 h-full">
+                        <div class="space-y-1">
+                            <button class="w-full text-left px-4 py-2 rounded bg-blue-600/10 text-blue-500 text-sm font-medium">概览</button>
+                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">Webhooks</button>
+                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">访问令牌</button>
+                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">OAuth 应用</button>
+                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">日志</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 flex flex-col gap-6 overflow-auto">
+                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
+                            <h3 class="text-white font-bold mb-4">沙盒环境</h3>
+                            <p class="text-sm text-neutral-400 mb-6">安全地测试您的集成，而不影响生产数据。</p>
+                            <div class="flex items-center gap-4 bg-[#202025] p-4 rounded-lg border border-white/5">
+                                <div class="w-10 h-6 bg-green-600 rounded-full relative cursor-pointer">
+                                    <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+                                </div>
+                                <div>
+                                    <div class="text-white font-medium text-sm">沙盒模式已启用</div>
+                                    <div class="text-xs text-neutral-500">所有请求当前都路由到沙盒环境。</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-white font-bold">活跃 Webhooks</h3>
+                                <button class="px-3 py-1.5 bg-neutral-800 border border-white/10 rounded text-xs text-white hover:bg-neutral-700 transition-colors">添加端点</button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                ${[
+                                    {url: 'https://api.myapp.com/hooks/orders', event: 'order.created'},
+                                    {url: 'https://api.myapp.com/hooks/users', event: 'user.signup'}
+                                ].map(hook => `
+                                <div class="flex items-center justify-between p-4 rounded-lg bg-[#202025] border border-white/5 group">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-xs font-mono text-neutral-500 bg-neutral-800 px-1.5 py-0.5 rounded">POST</span>
+                                            <span class="text-white font-mono text-sm">${hook.url}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-neutral-500">事件:</span>
+                                            <span class="text-xs text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">${hook.event}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="flex items-center gap-1.5 text-xs text-green-500">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 活跃
+                                        </span>
+                                        <button class="text-neutral-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-trash-alt"></i></button>
+                                    </div>
+                                </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Specific Templates ---
+
+        function generateUserManagementTemplate() {
+            return `
+                <div class="flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex gap-3">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"></i>
+                                <input type="text" placeholder="搜索用户..." class="bg-[#18181c] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-blue-500/50 focus:outline-none w-64">
+                            </div>
+                            <select class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-neutral-400 focus:outline-none">
+                                <option>所有角色</option>
+                                <option>管理员</option>
+                                <option>普通用户</option>
+                                <option>VIP用户</option>
+                            </select>
+                            <select class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-neutral-400 focus:outline-none">
+                                <option>所有状态</option>
+                                <option>正常</option>
+                                <option>禁用</option>
+                            </select>
+                        </div>
+                        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/20">
+                            <i class="fas fa-user-plus"></i> 新增用户
+                        </button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-auto bg-[#18181c] rounded-xl border border-white/5">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-[#202025] z-10">
+                                <tr class="text-xs uppercase text-neutral-400 tracking-wider">
+                                    <th class="p-4 font-medium border-b border-white/5 w-12"><input type="checkbox" class="rounded border-white/20 bg-transparent"></th>
+                                    <th class="p-4 font-medium border-b border-white/5">用户</th>
+                                    <th class="p-4 font-medium border-b border-white/5">角色</th>
+                                    <th class="p-4 font-medium border-b border-white/5">状态</th>
+                                    <th class="p-4 font-medium border-b border-white/5">最后登录</th>
+                                    <th class="p-4 font-medium border-b border-white/5 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-white/5">
+                                ${Array(8).fill(0).map((_, i) => `
+                                <tr class="hover:bg-white/[0.02] transition-colors group">
+                                    <td class="p-4"><input type="checkbox" class="rounded border-white/20 bg-transparent"></td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-neutral-700 to-neutral-800 border border-white/5 flex items-center justify-center text-xs text-white overflow-hidden">
+                                                <i class="fas fa-user text-neutral-400"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-white font-medium">User_${100+i}</div>
+                                                <div class="text-xs text-neutral-500">user${100+i}@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="flex items-center gap-1.5">
+                                            <i class="fas ${i % 3 === 0 ? 'fa-shield-alt text-blue-500' : 'fa-user text-neutral-500'} text-xs"></i>
+                                            <span class="text-neutral-300">${i % 3 === 0 ? '管理员' : '普通用户'}</span>
+                                        </span>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${i === 2 ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}">
+                                            ${i === 2 ? '已禁用' : '正常'}
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-neutral-500 text-xs">
+                                        <div>2023-10-${10 + i}</div>
+                                        <div class="text-[10px] opacity-60">14:2${i}:00</div>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <button class="w-8 h-8 rounded hover:bg-white/5 text-neutral-500 hover:text-blue-400 transition-colors"><i class="fas fa-edit"></i></button>
+                                        <button class="w-8 h-8 rounded hover:bg-white/5 text-neutral-500 hover:text-red-400 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                                    </td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateOrdersTemplate() {
+             return `
+                <div class="flex flex-col h-full">
+                    <div class="grid grid-cols-4 gap-4 mb-6">
+                         <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs text-neutral-500 mb-1">今日收入</div>
+                                <div class="text-lg font-bold text-white">¥2,340.00</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500"><i class="fas fa-yen-sign"></i></div>
+                        </div>
+                        <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs text-neutral-500 mb-1">待支付订单</div>
+                                <div class="text-lg font-bold text-white">12</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500"><i class="fas fa-clock"></i></div>
+                        </div>
+                        <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs text-neutral-500 mb-1">总订单数</div>
+                                <div class="text-lg font-bold text-white">8,932</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500"><i class="fas fa-shopping-bag"></i></div>
+                        </div>
+                         <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div>
+                                <div class="text-xs text-neutral-500 mb-1">退款率</div>
+                                <div class="text-lg font-bold text-white">0.5%</div>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500"><i class="fas fa-undo"></i></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex gap-3">
+                             <input type="text" placeholder="搜索订单号/用户..." class="bg-[#18181c] border border-white/10 rounded-lg pl-4 pr-4 py-2 text-sm text-white focus:border-blue-500/50 focus:outline-none w-64">
+                             <button class="px-3 py-2 bg-[#18181c] border border-white/10 rounded-lg text-neutral-400 hover:text-white transition-colors"><i class="fas fa-download"></i> 导出报表</button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-auto bg-[#18181c] rounded-xl border border-white/5">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="sticky top-0 bg-[#202025] z-10">
+                                <tr class="text-xs uppercase text-neutral-400 tracking-wider">
+                                    <th class="p-4 font-medium border-b border-white/5">订单号</th>
+                                    <th class="p-4 font-medium border-b border-white/5">用户</th>
+                                    <th class="p-4 font-medium border-b border-white/5">订阅计划</th>
+                                    <th class="p-4 font-medium border-b border-white/5">金额</th>
+                                    <th class="p-4 font-medium border-b border-white/5">支付方式</th>
+                                    <th class="p-4 font-medium border-b border-white/5">状态</th>
+                                    <th class="p-4 font-medium border-b border-white/5 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm divide-y divide-white/5">
+                                ${Array(8).fill(0).map((_, i) => `
+                                <tr class="hover:bg-white/[0.02] transition-colors">
+                                    <td class="p-4 font-mono text-neutral-400 text-xs">#ORD-2023-${1000+i}</td>
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 rounded-full bg-neutral-700 flex items-center justify-center text-[10px]">U</div>
+                                            <span class="text-white text-sm">User_${i+1}</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${i%2===0 ? 'border-amber-500/20 text-amber-500 bg-amber-500/5' : 'border-purple-500/20 text-purple-500 bg-purple-500/5'}">
+                                            ${i%2===0 ? '专业版' : '团队版'}
+                                        </span>
+                                    </td>
+                                    <td class="p-4 font-medium text-white">¥${i%2===0 ? '99.00' : '299.00'}</td>
+                                    <td class="p-4 text-neutral-400 text-xs"><i class="fab fa-alipay text-blue-400 mr-1"></i> 支付宝</td>
+                                    <td class="p-4">
+                                        <span class="flex items-center gap-1.5 text-xs text-green-400">
+                                            <i class="fas fa-check-circle"></i> 已支付
+                                        </span>
+                                    </td>
+                                    <td class="p-4 text-right">
+                                        <button class="text-neutral-500 hover:text-white transition-colors text-xs border border-white/10 px-2 py-1 rounded">详情</button>
+                                    </td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateProjectsTemplate() {
+            return `
+                <div class="flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-white font-bold text-lg">项目列表</h3>
+                        <div class="flex gap-2">
+                             <button class="w-9 h-9 rounded-lg bg-[#18181c] border border-white/10 flex items-center justify-center text-white"><i class="fas fa-list"></i></button>
+                             <button class="w-9 h-9 rounded-lg bg-[#18181c] border border-white/10 flex items-center justify-center text-neutral-500 hover:text-white"><i class="fas fa-th-large"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pb-4">
+                        ${Array(9).fill(0).map((_, i) => `
+                        <div class="bg-[#18181c] rounded-xl border border-white/5 overflow-hidden group hover:border-blue-500/30 transition-all">
+                            <div class="h-32 bg-neutral-800 relative">
+                                <div class="absolute inset-0 flex items-center justify-center text-neutral-700">
+                                    <i class="fas fa-project-diagram text-4xl opacity-20 group-hover:opacity-30 transition-opacity"></i>
+                                </div>
+                                <div class="absolute top-3 right-3 px-2 py-1 bg-black/50 backdrop-blur-md rounded text-[10px] text-white border border-white/10">
+                                    ${Math.floor(Math.random() * 20 + 5)} 个图表
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="text-white font-bold group-hover:text-blue-400 transition-colors">电商系统 v${i+1}.0</h4>
+                                    <button class="text-neutral-500 hover:text-white"><i class="fas fa-ellipsis-v"></i></button>
+                                </div>
+                                <p class="text-xs text-neutral-500 mb-4 line-clamp-2">包含订单处理和库存管理的新电商平台核心架构。</p>
+                                
+                                <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white">PM</div>
+                                        <span class="text-xs text-neutral-400">项目经理</span>
+                                    </div>
+                                    <div class="text-[10px] text-neutral-600">2小时前更新</div>
+                                </div>
+                            </div>
+                        </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateSettingsTemplate() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
+                    <!-- Sidebar Navigation -->
+                    <div class="bg-[#18181c] rounded-xl border border-white/5 p-2 h-full">
+                        <div class="space-y-1">
+                            <button class="w-full text-left px-4 py-2.5 rounded-lg bg-blue-600/10 text-blue-500 text-sm font-medium flex items-center gap-3">
+                                <i class="fas fa-sliders-h w-4"></i> 通用设置
+                            </button>
+                            <button class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-white text-sm font-medium flex items-center gap-3 transition-colors">
+                                <i class="fas fa-shield-alt w-4"></i> 安全策略
+                            </button>
+                            <button class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-white text-sm font-medium flex items-center gap-3 transition-colors">
+                                <i class="fas fa-envelope w-4"></i> 邮件服务
+                            </button>
+                            <button class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-white text-sm font-medium flex items-center gap-3 transition-colors">
+                                <i class="fas fa-hdd w-4"></i> 存储配置
+                            </button>
+                             <button class="w-full text-left px-4 py-2.5 rounded-lg hover:bg-white/5 text-neutral-400 hover:text-white text-sm font-medium flex items-center gap-3 transition-colors">
+                                <i class="fas fa-code-branch w-4"></i> 版本控制
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Main Form Area -->
+                    <div class="lg:col-span-3 bg-[#18181c] rounded-xl border border-white/5 p-8 overflow-y-auto">
+                        <h3 class="text-xl font-bold text-white mb-6 pb-4 border-b border-white/5">通用设置</h3>
+                        
+                        <div class="space-y-6 max-w-2xl">
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-300 mb-2">站点名称</label>
+                                <input type="text" value="CoffeeViz Admin" class="w-full bg-[#101014] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-blue-500/50 outline-none transition-all">
+                                <p class="text-xs text-neutral-600 mt-1">显示在浏览器标题栏和登录页面的名称。</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-300 mb-2">站点 Logo</label>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 rounded-lg bg-[#101014] border border-white/10 flex items-center justify-center">
+                                        <img src="https://via.placeholder.com/40" alt="Logo" class="opacity-50">
+                                    </div>
+                                    <button class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white hover:bg-white/10 transition-colors">上传新图片</button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-300 mb-2">默认语言</label>
+                                    <select class="w-full bg-[#101014] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-blue-500/50 outline-none">
+                                        <option>简体中文</option>
+                                        <option>English</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-300 mb-2">时区</label>
+                                    <select class="w-full bg-[#101014] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:border-blue-500/50 outline-none">
+                                        <option>(GMT+08:00) Beijing, Chongqing, Hong Kong</option>
+                                        <option>(GMT+00:00) UTC</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-white/5">
+                                <label class="block text-sm font-medium text-neutral-300 mb-4">功能开关</label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-3 rounded-lg bg-[#101014] border border-white/5">
+                                        <div>
+                                            <div class="text-sm text-white">允许新用户注册</div>
+                                            <div class="text-xs text-neutral-500">关闭后仅管理员可创建用户</div>
+                                        </div>
+                                        <div class="w-10 h-5 bg-green-600 rounded-full relative cursor-pointer">
+                                            <div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 rounded-lg bg-[#101014] border border-white/5">
+                                        <div>
+                                            <div class="text-sm text-white">强制两步验证 (2FA)</div>
+                                            <div class="text-xs text-neutral-500">所有管理员必须开启 2FA</div>
+                                        </div>
+                                        <div class="w-10 h-5 bg-neutral-700 rounded-full relative cursor-pointer">
+                                            <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateNotificationsTemplate() {
+             return `
+                <div class="flex flex-col h-full max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex gap-2">
+                            <button class="px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold">全部</button>
+                            <button class="px-3 py-1.5 rounded-full bg-[#18181c] border border-white/10 text-neutral-400 hover:text-white text-xs font-bold transition-colors">未读 (3)</button>
+                            <button class="px-3 py-1.5 rounded-full bg-[#18181c] border border-white/10 text-neutral-400 hover:text-white text-xs font-bold transition-colors">系统公告</button>
+                        </div>
+                        <button class="text-xs text-blue-500 hover:text-blue-400">全部标记为已读</button>
+                    </div>
+
+                    <div class="space-y-3 overflow-y-auto pr-2">
+                        \${Array(6).fill(0).map((_, i) => \`
+                        <div class="p-4 rounded-xl bg-[#18181c] border \${i < 3 ? 'border-blue-500/30' : 'border-white/5'} hover:border-blue-500/50 transition-all group cursor-pointer relative overflow-hidden">
+                             \${i < 3 ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>' : ''}
+                             <div class="flex gap-4">
+                                <div class="w-10 h-10 rounded-full \${i % 2 === 0 ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'} flex items-center justify-center shrink-0">
+                                    <i class="fas \${i % 2 === 0 ? 'fa-info-circle' : 'fa-exclamation-triangle'}"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <h4 class="text-white font-bold text-sm \${i < 3 ? '' : 'text-neutral-300'}">系统维护通知 \${i+1}</h4>
+                                        <span class="text-[10px] text-neutral-500">2小时前</span>
+                                    </div>
+                                    <p class="text-xs text-neutral-400 leading-relaxed">
+                                        系统将于本周六凌晨 02:00 进行例行维护，预计耗时 30 分钟。期间可能会出现短暂的服务中断，请提前做好准备。
+                                    </p>
+                                </div>
+                             </div>
+                        </div>
+                        \`).join('')}
+                    </div>
+                </div>
+             `;
+        }
+
+        function generateApiKeysTemplate() {
+            return `
+                 <div class="flex flex-col h-full">
+                    <div class="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
+                        <i class="fas fa-exclamation-circle text-yellow-500 mt-0.5"></i>
+                        <div>
+                            <h4 class="text-yellow-500 font-bold text-sm mb-1">安全提示</h4>
+                            <p class="text-xs text-yellow-200/70">API 密钥具有完全访问权限，请勿将密钥泄露给他人。建议定期轮换密钥以保证安全。</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-white font-bold">活跃密钥列表</h3>
+                        <button class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
+                            <i class="fas fa-plus"></i> 创建新密钥
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        \${Array(4).fill(0).map((_, i) => \`
+                        <div class="bg-[#18181c] border border-white/5 rounded-xl p-4 flex items-center justify-between group hover:border-yellow-500/30 transition-all">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-400">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-white font-bold text-sm">开发密钥 \${i+1}</span>
+                                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-neutral-700 text-neutral-300">只读</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <code class="text-xs text-neutral-500 bg-black/30 px-2 py-0.5 rounded font-mono">sk_live_51Mz...Xy9z</code>
+                                        <button class="text-neutral-500 hover:text-white text-xs" title="Copy"><i class="fas fa-copy"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-6">
+                                <div class="text-right hidden sm:block">
+                                    <div class="text-[10px] text-neutral-500 uppercase tracking-wider">上次使用</div>
+                                    <div class="text-xs text-white">2分钟前</div>
+                                </div>
+                                <div class="text-right hidden sm:block">
+                                    <div class="text-[10px] text-neutral-500 uppercase tracking-wider">创建于</div>
+                                    <div class="text-xs text-white">2023年10月24日</div>
+                                </div>
+                                <button class="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-neutral-400 hover:text-red-500 hover:border-red-500/30 transition-all">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        \`).join('')}
+                    </div>
+                 </div>
+            `;
+        }
+
+        function generateDefaultTemplate(module) {
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
+                        <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-blue-500"></i> 基本信息
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-neutral-500 mb-1">模块名称</label>
+                                <input type="text" value="\${module.name}" class="w-full bg-[#101014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500/50 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-neutral-500 mb-1">描述</label>
+                                <textarea class="w-full bg-[#101014] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-blue-500/50 outline-none h-24">这是 \${module.name} 的配置面板，您可以在此处管理相关设置。</textarea>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-[#101014] rounded-lg border border-white/5">
+                                <span class="text-sm text-neutral-300">启用该模块</span>
+                                <div class="w-10 h-5 bg-green-600 rounded-full relative cursor-pointer">
+                                    <div class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
+                        <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+                            <i class="fas fa-history text-purple-500"></i> 最近操作
+                        </h3>
+                        <div class="space-y-4">
+                            \${Array(5).fill(0).map((_, i) => \`
+                            <div class="flex items-start gap-3 pb-3 border-b border-white/5 last:border-0">
+                                <div class="w-8 h-8 rounded bg-neutral-800 flex items-center justify-center text-xs text-neutral-400 mt-0.5">
+                                    <i class="fas fa-terminal"></i>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-white font-medium">系统更新 v2.\${i}</div>
+                                    <div class="text-xs text-neutral-500 mt-1">更新了 \${module.name} 模块的配置文件。</div>
+                                    <div class="text-[10px] text-neutral-600 mt-2">2小时前</div>
+                                </div>
+                            </div>
+                            \`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateAnalyticsTemplate(module) {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                    <div class="lg:col-span-2 flex flex-col gap-6">
+                        <!-- Main Chart -->
+                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5 flex-1 min-h-[300px]">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-white font-bold">趋势分析</h3>
+                                <select class="bg-[#101014] border border-white/10 rounded px-2 py-1 text-xs text-neutral-300 outline-none">
+                                    <option>最近7天</option>
+                                    <option>最近30天</option>
+                                    <option>今年</option>
+                                </select>
+                            </div>
+                            <div class="relative h-[300px] w-full">
+                                <canvas id="mainChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Secondary Stats -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5">
+                                <div class="text-xs text-neutral-500 mb-1">总请求</div>
+                                <div class="text-xl font-bold text-white">2.4M</div>
+                                <div class="text-xs text-green-500 mt-1"><i class="fas fa-arrow-up"></i> 12%</div>
+                            </div>
+                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5">
+                                <div class="text-xs text-neutral-500 mb-1">平均耗时</div>
+                                <div class="text-xl font-bold text-white">45ms</div>
+                                <div class="text-xs text-green-500 mt-1"><i class="fas fa-arrow-down"></i> 5%</div>
+                            </div>
+                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5">
+                                <div class="text-xs text-neutral-500 mb-1">错误率</div>
+                                <div class="text-xl font-bold text-white">0.02%</div>
+                                <div class="text-xs text-red-500 mt-1"><i class="fas fa-arrow-up"></i> 0.01%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-[#18181c] p-6 rounded-xl border border-white/5 flex flex-col">
+                        <h3 class="text-white font-bold mb-6">分布统计</h3>
+                        <div class="relative h-[250px] w-full mb-6">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                        
+                        <div class="space-y-4 flex-1 overflow-auto">
+                            <h4 class="text-xs font-bold text-neutral-500 uppercase">热门资源</h4>
+                            ${Array(5).fill(0).map((_, i) => `
+                            <div class="flex justify-between items-center text-sm">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    <span class="text-neutral-300">资源 ${String.fromCharCode(65+i)}</span>
+                                </div>
+                                <span class="text-white font-mono">${Math.floor(Math.random() * 100)}%</span>
+                            </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initCharts() {
+            // Wait for DOM update
+            setTimeout(() => {
+                const ctx1 = document.getElementById('mainChart').getContext('2d');
+                const chart1 = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                        datasets: [{
+                            label: '请求数',
+                            data: [65, 59, 80, 81, 56, 55, 40],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }, {
+                            label: '错误数',
+                            data: [5, 2, 8, 1, 6, 2, 4],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#737373' } },
+                            x: { grid: { display: false }, ticks: { color: '#737373' } }
+                        }
+                    }
+                });
+
+                const ctx2 = document.getElementById('pieChart').getContext('2d');
+                const chart2 = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['类型 A', '类型 B', '类型 C', '类型 D'],
+                        datasets: [{
+                            data: [30, 20, 15, 35],
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { color: '#a3a3a3', usePointStyle: true } } },
+                        cutout: '70%'
+                    }
+                });
+                
+                // Store chart instances globally to destroy them later
+                window.activeCharts = [chart1, chart2];
+            }, 50);
+        }
+
+        // Render Table Rows
+        const tableBody = document.getElementById('table-body');
+        for(let i=1; i<=5; i++) {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-white/5 hover:bg-white/[0.02] transition-colors group';
+            row.innerHTML = `
+                <td class="p-4 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-xs text-white">U${i}</div>
+                    <span class="text-neutral-300 font-medium group-hover:text-blue-400 transition-colors">User_${i}</span>
+                </td>
+                <td class="p-4">
+                    <span class="px-2 py-1 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">PRO</span>
+                </td>
+                <td class="p-4">
+                    <span class="flex items-center gap-1.5 text-xs text-green-400">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Active
+                    </span>
+                </td>
+                <td class="p-4 text-white font-mono">¥99.00</td>
+                <td class="p-4 text-neutral-500 text-xs">2023-10-2${i}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        // Render Health Stats
+        const healthContainer = document.getElementById('health-stats');
+        healthStats.forEach(item => {
+            const el = document.createElement('div');
+            el.innerHTML = `
+                <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-neutral-400">${item.label}</span>
+                    <span class="text-white font-mono">${item.value}%</span>
+                </div>
+                <div class="h-1.5 bg-[#27272a] rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-1000 ease-out ${item.color}" style="width: ${item.value}%"></div>
+                </div>
+            `;
+            healthContainer.appendChild(el);
+        });
+    </script>
+</body>
+</html>

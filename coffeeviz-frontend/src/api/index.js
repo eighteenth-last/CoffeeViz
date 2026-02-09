@@ -14,7 +14,7 @@ const QUOTA_REFRESH_APIS = [
 // 创建 axios 实例
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
-  timeout: 30000,
+  timeout: 120000, // 增加到 120 秒（AI 生成需要更长时间）
   headers: {
     'Content-Type': 'application/json'
   }

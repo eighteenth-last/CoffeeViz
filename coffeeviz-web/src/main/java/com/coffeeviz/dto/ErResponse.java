@@ -42,4 +42,19 @@ public class ErResponse {
      * 关系数量
      */
     private Integer relationCount;
+    
+    /**
+     * AI 生成的业务说明（仅 AI 生成时有值）
+     */
+    private String aiExplanation;
+    
+    /**
+     * AI 建议列表（仅 AI 生成时有值）
+     */
+    private List<String> aiSuggestions;
+    
+    /**
+     * 生成的 SQL DDL（仅 AI 生成时有值）
+     */
+    private String sqlDdl;
 }

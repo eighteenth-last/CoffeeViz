@@ -126,7 +126,7 @@ mermaid:
 # OpenAI 配置（可选）
 openai:
   api:
-    key: ${OPENAI_API_KEY:}
+    key: ${OPENAI_API_KEY:sk-proj-your-api-key-here}  # 替换为你的实际 API Key
     base-url: https://api.openai.com
     model: gpt-4
     timeout: 30000

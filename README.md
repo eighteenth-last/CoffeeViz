@@ -10,6 +10,7 @@ CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚�
 ## ✨ 核心特性
 
 - 🔍 **多源解析**：支持 SQL 脚本解析、JDBC 数据库连接、AI 辅助生成
+- 🤖 **AI 架构对话引擎**：通过自然语言描述业务需求，自动生成规范化数据库模型（NEW!）
 - 🎨 **可视化渲染**：基于 Mermaid 生成清晰的 ER 图
 - 📦 **多格式导出**：支持 SVG、PNG、Mermaid 源码导出（支持动态分辨率）
 - 🔐 **用户系统**：完整的用户认证（账号/手机验证码/微信扫码）、项目管理、版本控制
@@ -187,6 +188,31 @@ npm run dev
 3. 点击 "测试连接" 验证
 4. 配置渲染选项
 5. 点击 "生成 ER 图"
+
+### AI 生成模式（NEW!）
+
+1. 访问 "AI 架构对话引擎" 页面
+2. 输入业务需求描述，例如：
+   ```
+   创建一个电商系统的数据库模型，包含：
+   - 用户管理（用户信息、地址）
+   - 商品管理（商品、分类、库存）
+   - 订单管理（订单、订单明细、支付）
+   - 评价系统（商品评价、评分）
+   ```
+3. 配置生成选项：
+   - 数据库类型（MySQL/PostgreSQL）
+   - 命名风格（snake_case/camelCase）
+   - 是否生成中间表、索引、注释
+4. 点击 "执行生成"
+5. 查看 AI 生成的：
+   - 业务说明
+   - SQL DDL
+   - ER 图预览
+   - AI 建议
+6. 保存到架构库或下载 SQL 文件
+
+**注意**：AI 功能需要 PRO 或 TEAM 订阅，并配置 OpenAI API Key。详见 [AI 功能使用指南](AI_FEATURE_GUIDE.md)
 
 ### 项目管理
 
@@ -440,6 +466,26 @@ Authorization: {token}
 ```http
 GET /api/payment/orders
 Authorization: {token}
+```
+
+### 统计接口
+
+#### 获取用户统计数据
+```http
+GET /api/diagram/statistics
+Authorization: {token}
+```
+
+**响应示例**：
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "totalTables": 42,
+    "totalRelations": 18
+  }
+}
 ```
 
 ## 🔧 配置说明

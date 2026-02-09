@@ -183,7 +183,7 @@ const getPlanStyle = (code) => {
       }
     case 'TEAM':
       return {
-        cardClass: 'border-neutral-800 hover:border-neutral-700',
+        cardClass: 'border border-neutral-600 hover:border-neutral-500',
         titleClass: 'text-purple-500',
         descClass: 'text-neutral-500',
         featureTextClass: 'text-neutral-300',
@@ -191,7 +191,7 @@ const getPlanStyle = (code) => {
       }
     default: // FREE
       return {
-        cardClass: 'border-neutral-800 hover:border-neutral-700',
+        cardClass: 'border border-neutral-600 hover:border-neutral-500',
         titleClass: 'text-neutral-500',
         descClass: 'text-neutral-500',
         featureTextClass: 'text-neutral-300',

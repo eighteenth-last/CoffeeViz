@@ -51,17 +51,26 @@ public class ConfigService {
             return null;
         }
         
-        // 如果是敏感配置，自动解密
+        String configValue = config.getConfigValue();
+        
+        // 如果是敏感配置，尝试解密
         if (isSensitiveKey(configKey)) {
-            try {
-                return passwordEncryptor.decrypt(config.getConfigValue());
-            } catch (Exception e) {
-                log.warn("解密配置失败: {}", configKey, e);
-                return config.getConfigValue();
+            // 判断是否为加密数据（Base64 编码的数据不包含某些特殊字符）
+            if (isEncrypted(configValue)) {
+                try {
+                    return passwordEncryptor.decrypt(configValue);
+                } catch (Exception e) {
+                    log.warn("解密配置失败，使用原始值: {}", configKey);
+                    return configValue;
+                }
+            } else {
+                // 明文存储，直接返回
+                log.debug("配置为明文存储: {}", configKey);
+                return configValue;
             }
         }
         
-        return config.getConfigValue();
+        return configValue;
     }
     
     /**
@@ -209,6 +218,21 @@ public class ConfigService {
             }
         }
         return false;
+    }
+    
+    /**
+     * 判断字符串是否为加密数据（Base64 编码）
+     * Base64 只包含 A-Z, a-z, 0-9, +, /, = 字符
+     * 如果包含其他字符（如 - 连字符），则不是 Base64 编码
+     */
+    private boolean isEncrypted(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        
+        // 检查是否只包含 Base64 字符
+        // Base64 字符集: A-Z, a-z, 0-9, +, /, =
+        return value.matches("^[A-Za-z0-9+/=]+$");
     }
     
     /**

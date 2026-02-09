@@ -87,4 +87,4 @@ openai:
 coffeeviz:
   # 缓存配置
   cache:
-    enabled: true  # 生产环境启用缓存，提升性能
+    enabled: false  # 生产环境启用缓存，提升性能
