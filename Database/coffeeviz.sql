@@ -11,7 +11,7 @@
  Target Server Version : 80045 (8.0.45-0ubuntu0.24.04.1)
  File Encoding         : 65001
 
- Date: 08/02/2026 18:57:22
+ Date: 10/02/2026 13:28:42
 */
 
 SET NAMES utf8mb4;
@@ -24,6 +24,8 @@ DROP TABLE IF EXISTS `biz_diagram`;
 CREATE TABLE `biz_diagram`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '架构图ID',
   `repository_id` bigint NOT NULL COMMENT '架构库ID',
+  `save_source` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'personal' COMMENT '保存来源: personal-个人, team-团队',
+  `save_by_user_id` bigint NULL DEFAULT NULL COMMENT '保存人ID（团队成员保存时记录）',
   `diagram_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '架构图名称',
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '架构图描述',
   `source_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '来源类型（SQL/JDBC/AI）',
@@ -83,6 +85,7 @@ CREATE TABLE `biz_repository`  (
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '项目描述',
   `diagram_count` int NULL DEFAULT 0 COMMENT '架构图数量',
   `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT 'DRAFT' COMMENT '状态（DRAFT/PUBLISHED）',
+  `is_team_repository` tinyint(1) NULL DEFAULT 0 COMMENT '是否为团队归档库',
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
@@ -91,7 +94,7 @@ CREATE TABLE `biz_repository`  (
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   INDEX `idx_user_status`(`user_id` ASC, `status` ASC) USING BTREE,
   CONSTRAINT `fk_project_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '项目表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '项目表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for biz_repository_config
@@ -132,6 +135,8 @@ CREATE TABLE `biz_subscription_plan`  (
   `support_ai` tinyint NULL DEFAULT 0 COMMENT '是否支持AI功能（0=否，1=是）',
   `support_export` tinyint NULL DEFAULT 1 COMMENT '是否支持导出（0=否，1=是）',
   `support_team` tinyint NULL DEFAULT 0 COMMENT '是否支持团队协作（0=否，1=是）',
+  `max_teams` int NULL DEFAULT 0 COMMENT '最大团队数量',
+  `max_team_members` int NULL DEFAULT 0 COMMENT '每个团队最大成员数',
   `priority_support` tinyint NULL DEFAULT 0 COMMENT '是否优先支持（0=否，1=是）',
   `features` json NULL COMMENT '功能特性列表（JSON格式）',
   `sort_order` int NULL DEFAULT 0 COMMENT '排序顺序',
@@ -143,9 +148,115 @@ CREATE TABLE `biz_subscription_plan`  (
   INDEX `idx_status`(`status` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '订阅计划表' ROW_FORMAT = DYNAMIC;
 
-INSERT INTO `coffeeviz`.`biz_subscription_plan` (`id`, `plan_code`, `plan_name`, `plan_name_en`, `description`, `price_monthly`, `price_yearly`, `max_repositories`, `max_diagrams_per_repo`, `max_sql_size_mb`, `support_jdbc`, `support_ai`, `support_export`, `support_team`, `priority_support`, `features`, `sort_order`, `status`, `create_time`, `update_time`) VALUES (1, 'FREE', '社区版', 'Community', '适合个人开发者和小型项目使用', 0.00, 0.00, 3, 10, 5, 0, 0, 1, 0, 0, '[\"3个架构库\", \"10次架构图/月\", \"50次SQL解析/天\", \"基础ER图生成\", \"MySQL支持\", \"社区支持\"]', 1, 'active', '2026-02-08 14:16:32', '2026-02-08 18:56:01');
-INSERT INTO `coffeeviz`.`biz_subscription_plan` (`id`, `plan_code`, `plan_name`, `plan_name_en`, `description`, `price_monthly`, `price_yearly`, `max_repositories`, `max_diagrams_per_repo`, `max_sql_size_mb`, `support_jdbc`, `support_ai`, `support_export`, `support_team`, `priority_support`, `features`, `sort_order`, `status`, `create_time`, `update_time`) VALUES (2, 'PRO', '专业版', 'Professional', '适合开发者和生产力工具使用', 29.00, 290.00, 20, 500, 50, 1, 1, 1, 0, 0, '[\"20个架构库\", \"500次架构图/月\", \"1000次SQL解析/天\", \"100次AI生成/月\", \"多数据库支持\", \"JDBC实时连接\", \"高清导出\", \"优先支持\"]', 2, 'active', '2026-02-08 14:16:32', '2026-02-08 18:56:01');
-INSERT INTO `coffeeviz`.`biz_subscription_plan` (`id`, `plan_code`, `plan_name`, `plan_name_en`, `description`, `price_monthly`, `price_yearly`, `max_repositories`, `max_diagrams_per_repo`, `max_sql_size_mb`, `support_jdbc`, `support_ai`, `support_export`, `support_team`, `priority_support`, `features`, `sort_order`, `status`, `create_time`, `update_time`) VALUES (3, 'TEAM', '团队版', 'Team', '适合企业团队协作使用', 99.00, 990.00, -1, -1, 200, 1, 1, 1, 1, 1, '[\"无限架构库\", \"无限架构图\", \"无限SQL解析\", \"1000次AI生成/月\", \"团队协作\", \"版本控制\", \"API集成\", \"私有部署\", \"专属支持\"]', 3, 'active', '2026-02-08 14:16:32', '2026-02-08 18:56:01');
+-- ----------------------------
+-- Table structure for biz_team
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_team`;
+CREATE TABLE `biz_team`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '团队ID',
+  `team_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '团队名称',
+  `team_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '团队唯一标识',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '团队描述',
+  `avatar_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '团队头像',
+  `owner_id` bigint NOT NULL COMMENT '所有者ID',
+  `repository_id` bigint NOT NULL COMMENT '绑定的架构归档库ID',
+  `member_count` int NULL DEFAULT 1 COMMENT '成员数量',
+  `max_members` int NULL DEFAULT 10 COMMENT '最大成员数（根据订阅套餐）',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'active' COMMENT '状态: active-活跃, suspended-暂停, deleted-已删除',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_team_code`(`team_code` ASC) USING BTREE,
+  UNIQUE INDEX `uk_repository_id`(`repository_id` ASC) USING BTREE,
+  INDEX `idx_owner_id`(`owner_id` ASC) USING BTREE,
+  INDEX `idx_status`(`status` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '团队表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for biz_team_invitation
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_team_invitation`;
+CREATE TABLE `biz_team_invitation`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '邀请ID',
+  `team_id` bigint NOT NULL COMMENT '团队ID',
+  `invite_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '邀请码（UUID）',
+  `invite_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '完整邀请链接',
+  `creator_id` bigint NOT NULL COMMENT '创建人ID',
+  `max_uses` int NULL DEFAULT 0 COMMENT '最大使用次数（0=无限制）',
+  `used_count` int NULL DEFAULT 0 COMMENT '已使用次数',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'active' COMMENT '状态: active-有效, disabled-禁用, expired-已过期',
+  `expire_time` datetime NULL DEFAULT NULL COMMENT '过期时间（NULL=永久有效）',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_invite_code`(`invite_code` ASC) USING BTREE,
+  INDEX `idx_team_id`(`team_id` ASC) USING BTREE,
+  INDEX `idx_status`(`status` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '团队邀请链接表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for biz_team_invitation_log
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_team_invitation_log`;
+CREATE TABLE `biz_team_invitation_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+  `team_id` bigint NOT NULL COMMENT '团队ID',
+  `invite_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '邀请码',
+  `user_id` bigint NOT NULL COMMENT '加入用户ID',
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户名',
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '邮箱',
+  `is_new_user` tinyint(1) NULL DEFAULT 0 COMMENT '是否新注册用户',
+  `join_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  `ip_address` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'IP地址',
+  `user_agent` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户代理',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_team_id`(`team_id` ASC) USING BTREE,
+  INDEX `idx_invite_code`(`invite_code` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '邀请使用记录表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for biz_team_log
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_team_log`;
+CREATE TABLE `biz_team_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `team_id` bigint NOT NULL COMMENT '团队ID',
+  `user_id` bigint NOT NULL COMMENT '操作人ID',
+  `action` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '操作类型',
+  `target_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '目标类型: member-成员, diagram-架构图, team-团队',
+  `target_id` bigint NULL DEFAULT NULL COMMENT '目标ID',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '操作描述',
+  `ip_address` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT 'IP地址',
+  `user_agent` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '用户代理',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_team_id`(`team_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '团队操作日志表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for biz_team_member
+-- ----------------------------
+DROP TABLE IF EXISTS `biz_team_member`;
+CREATE TABLE `biz_team_member`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '成员ID',
+  `team_id` bigint NOT NULL COMMENT '团队ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'member' COMMENT '角色: owner-所有者, member-成员',
+  `nickname` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '团队内昵称',
+  `join_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
+  `join_source` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'invite' COMMENT '加入方式: create-创建, invite-邀请',
+  `invite_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '使用的邀请码',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'active' COMMENT '状态: active-活跃, inactive-停用',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_team_user`(`team_id` ASC, `user_id` ASC) USING BTREE,
+  INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
+  INDEX `idx_team_id`(`team_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '团队成员表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for biz_usage_quota
@@ -164,7 +275,7 @@ CREATE TABLE `biz_usage_quota`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_quota_type`(`user_id` ASC, `quota_type` ASC) USING BTREE,
   CONSTRAINT `fk_quota_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户使用配额表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户使用配额表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for biz_user_subscription

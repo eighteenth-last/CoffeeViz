@@ -12,9 +12,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,9 +102,183 @@ public class OpenAiServiceImpl implements OpenAiService {
     }
     
     @Override
+    public void generateSqlFromPromptStream(AiRequest request, SseEmitter emitter) {
+        log.info("开始流式 AI 生成 SQL，提示词: {}", request.getPrompt());
+        
+        // 异步处理，避免阻塞主线程
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 1. 检查配置
+                if (!isAvailable()) {
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("{\"message\":\"OpenAI API 未配置\"}"));
+                    emitter.complete();
+                    return;
+                }
+                
+                // 2. 构建提示词
+                String systemPrompt = buildSystemPrompt(request);
+                String userPrompt = buildUserPrompt(request);
+                
+                // 3. 流式调用 OpenAI API
+                callOpenAiApiStream(systemPrompt, userPrompt, emitter);
+                
+            } catch (Exception e) {
+                log.error("流式 AI 生成失败", e);
+                try {
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("{\"message\":\"" + e.getMessage() + "\"}"));
+                    emitter.completeWithError(e);
+                } catch (Exception ex) {
+                    log.error("发送错误消息失败", ex);
+                }
+            }
+        });
+    }
+    
+    @Override
     public boolean isAvailable() {
         String apiKey = getApiKey();
         return apiKey != null && !apiKey.isEmpty();
+    }
+    
+    /**
+     * 流式调用 OpenAI API
+     */
+    private void callOpenAiApiStream(String systemPrompt, String userPrompt, SseEmitter emitter) {
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+        
+        try {
+            String baseUrl = getBaseUrl();
+            String url = baseUrl + "/chat/completions";
+            
+            // 构建请求体
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("model", getModelName());
+            requestBody.put("max_tokens", openAiConfig.getMaxTokens());
+            requestBody.put("temperature", openAiConfig.getTemperature());
+            requestBody.put("stream", true); // 启用流式输出
+            
+            JSONArray messages = new JSONArray();
+            
+            JSONObject systemMessage = new JSONObject();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", systemPrompt);
+            messages.add(systemMessage);
+            
+            JSONObject userMessage = new JSONObject();
+            userMessage.put("role", "user");
+            userMessage.put("content", userPrompt);
+            messages.add(userMessage);
+            
+            requestBody.put("messages", messages);
+            
+            // 创建连接
+            log.info("流式调用 OpenAI API: {}, model: {}", url, getModelName());
+            URL apiUrl = new URL(url);
+            connection = (HttpURLConnection) apiUrl.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", "Bearer " + getApiKey());
+            connection.setDoOutput(true);
+            connection.setReadTimeout(180000); // 3 分钟超时
+            connection.setConnectTimeout(30000); // 30 秒连接超时
+            
+            // 发送请求
+            byte[] requestBytes = requestBody.toJSONString().getBytes(StandardCharsets.UTF_8);
+            connection.getOutputStream().write(requestBytes);
+            connection.getOutputStream().flush();
+            
+            // 检查响应码
+            int responseCode = connection.getResponseCode();
+            log.info("API 响应码: {}", responseCode);
+            
+            if (responseCode != 200) {
+                String errorMsg = "API 调用失败，响应码: " + responseCode;
+                log.error(errorMsg);
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"" + errorMsg + "\"}"));
+                emitter.completeWithError(new RuntimeException(errorMsg));
+                return;
+            }
+            
+            // 读取流式响应
+            reader = new BufferedReader(new InputStreamReader(
+                    connection.getInputStream(), StandardCharsets.UTF_8));
+            
+            String line;
+            StringBuilder fullContent = new StringBuilder();
+            int chunkCount = 0;
+            
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("data: ")) {
+                    String data = line.substring(6).trim();
+                    
+                    // 检查是否结束
+                    if ("[DONE]".equals(data)) {
+                        log.info("流式响应完成，共 {} 个块", chunkCount);
+                        break;
+                    }
+                    
+                    try {
+                        JSONObject chunk = JSON.parseObject(data);
+                        JSONArray choices = chunk.getJSONArray("choices");
+                        
+                        if (choices != null && !choices.isEmpty()) {
+                            JSONObject firstChoice = choices.getJSONObject(0);
+                            JSONObject delta = firstChoice.getJSONObject("delta");
+                            
+                            if (delta != null && delta.containsKey("content")) {
+                                String content = delta.getString("content");
+                                fullContent.append(content);
+                                chunkCount++;
+                                
+                                // 发送增量内容
+                                emitter.send(SseEmitter.event()
+                                        .name("message")
+                                        .data(content));
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("解析流式响应块失败: {}", data, e);
+                    }
+                }
+            }
+            
+            // 发送完成事件
+            log.info("流式生成完成，总长度: {}, 块数: {}", fullContent.length(), chunkCount);
+            emitter.send(SseEmitter.event()
+                    .name("done")
+                    .data("{\"message\":\"完成\"}"));
+            emitter.complete();
+            
+        } catch (Exception e) {
+            log.error("流式 API 调用失败", e);
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"" + e.getMessage() + "\"}"));
+                emitter.completeWithError(e);
+            } catch (Exception ex) {
+                log.error("发送错误消息失败", ex);
+            }
+        } finally {
+            // 关闭资源
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            } catch (Exception e) {
+                log.error("关闭连接失败", e);
+            }
+        }
     }
     
     /**

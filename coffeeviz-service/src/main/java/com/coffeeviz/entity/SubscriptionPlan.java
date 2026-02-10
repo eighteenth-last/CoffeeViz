@@ -45,6 +45,10 @@ public class SubscriptionPlan {
     
     private Integer supportTeam;
     
+    private Integer maxTeams;
+    
+    private Integer maxTeamMembers;
+    
     private Integer prioritySupport;
     
     private String features;

@@ -14,6 +14,7 @@ import com.coffeeviz.service.ErService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * AI 生成 Controller
@@ -104,6 +105,108 @@ public class AiController {
             log.error("AI 生成失败", e);
             return Result.error("AI 生成失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * AI 流式生成 SQL
+     * 使用 SSE (Server-Sent Events) 实现流式输出
+     * 注意：由于 EventSource 不支持自定义 headers，token 通过 URL 参数传递
+     */
+    @GetMapping("/generate/stream")
+    public SseEmitter generateFromAiStream(
+            @RequestParam("prompt") String prompt,
+            @RequestParam(value = "dbType", defaultValue = "mysql") String dbType,
+            @RequestParam(value = "namingStyle", defaultValue = "snake_case") String namingStyle,
+            @RequestParam(value = "generateIndexes", defaultValue = "true") Boolean generateIndexes,
+            @RequestParam(value = "generateComments", defaultValue = "true") Boolean generateComments,
+            @RequestParam(value = "generateJunctionTables", defaultValue = "true") Boolean generateJunctionTables,
+            @RequestParam(value = "token", required = false) String token) {
+        
+        log.info("收到流式 AI 生成请求，提示词: {}", prompt);
+        
+        // 创建 SSE Emitter，超时时间 3 分钟
+        SseEmitter emitter = new SseEmitter(180000L);
+        
+        try {
+            // 验证 token
+            if (token == null || token.isEmpty()) {
+                log.warn("流式请求缺少 token");
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"未登录或登录已过期\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            
+            try {
+                // 使用 token 进行登录验证
+                Object loginId = StpUtil.getLoginIdByToken(token);
+                if (loginId == null) {
+                    log.warn("Token 无效: {}", token);
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("{\"message\":\"未登录或登录已过期\"}"));
+                    emitter.complete();
+                    return emitter;
+                }
+                
+                log.info("流式请求验证成功，用户ID: {}", loginId);
+                
+            } catch (Exception e) {
+                log.warn("Token 验证失败: {}", e.getMessage());
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"未登录或登录已过期\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            
+            // 从数据库加载 OpenAI 配置
+            loadOpenAiConfigFromDatabase();
+            
+            // 参数校验
+            if (prompt == null || prompt.trim().isEmpty()) {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"提示词不能为空\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            
+            if (prompt.length() > 1000) {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"提示词过长，最大支持 1000 字符\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            
+            // 构建请求
+            AiRequest request = AiRequest.builder()
+                    .prompt(prompt)
+                    .dbType(dbType)
+                    .namingStyle(namingStyle)
+                    .generateIndexes(generateIndexes)
+                    .generateComments(generateComments)
+                    .generateJunctionTables(generateJunctionTables)
+                    .build();
+            
+            // 调用流式生成
+            openAiService.generateSqlFromPromptStream(request, emitter);
+            
+        } catch (Exception e) {
+            log.error("流式 AI 生成失败", e);
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"" + e.getMessage() + "\"}"));
+                emitter.completeWithError(e);
+            } catch (Exception ex) {
+                log.error("发送错误消息失败", ex);
+            }
+        }
+        
+        return emitter;
     }
     
     /**

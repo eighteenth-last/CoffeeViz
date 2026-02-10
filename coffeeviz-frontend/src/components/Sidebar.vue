@@ -47,6 +47,13 @@
         </a>
       </router-link>
 
+      <router-link to="/team" custom v-slot="{ navigate, isActive }">
+        <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
+          <i class="fas fa-users w-8 text-lg"></i>
+          <span>团队协作</span>
+        </a>
+      </router-link>
+
       <router-link to="/subscribe" custom v-slot="{ navigate, isActive }">
         <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
           <i class="fas fa-credit-card w-8 text-lg"></i>

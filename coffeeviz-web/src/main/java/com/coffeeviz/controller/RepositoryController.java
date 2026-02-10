@@ -102,7 +102,29 @@ public class RepositoryController {
     }
     
     /**
-     * 查询架构库详情
+     * 查询架构库详情（简短路径）
+     */
+    @GetMapping("/{repositoryId}")
+    public Result<Repository> getRepository(@PathVariable("repositoryId") Long repositoryId) {
+        log.info("查询架构库: repositoryId={}", repositoryId);
+        
+        try {
+            // 1. 获取当前用户 ID
+            Long userId = StpUtil.getLoginIdAsLong();
+            
+            // 2. 查询架构库
+            Repository repository = repositoryService.getRepositoryById(repositoryId, userId);
+            
+            return Result.success(repository);
+            
+        } catch (Exception e) {
+            log.error("查询架构库失败", e);
+            return Result.error("查询架构库失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 查询架构库详情（详细路径，保持兼容性）
      */
     @GetMapping("/detail/{repositoryId}")
     public Result<Repository> getRepositoryDetail(@PathVariable("repositoryId") Long repositoryId) {

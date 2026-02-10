@@ -242,4 +242,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             quotaMapper.updateById(quota);
         }
     }
+
+
+    @Override
+    public SubscriptionPlan getPlanById(Long planId) {
+        return planMapper.selectById(planId);
+    }
+
+    @Override
+    public UserSubscription getUserActiveSubscription(Long userId) {
+        return getCurrentSubscription(userId);
+    }
+
 }

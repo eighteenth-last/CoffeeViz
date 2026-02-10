@@ -20,7 +20,7 @@ public class RestTemplateConfig {
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         return builder
                 .setConnectTimeout(Duration.ofSeconds(30))
-                .setReadTimeout(Duration.ofSeconds(60))
+                .setReadTimeout(Duration.ofSeconds(120)) // 增加到 120 秒，支持 AI 长时间响应
                 .build();
     }
 }

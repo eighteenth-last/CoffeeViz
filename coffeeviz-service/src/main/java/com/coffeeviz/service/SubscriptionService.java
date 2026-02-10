@@ -54,4 +54,16 @@ public interface SubscriptionService {
      * 检查功能权限
      */
     boolean hasFeature(Long userId, String feature);
+
+
+    /**
+     * 根据ID获取订阅计划
+     */
+    SubscriptionPlan getPlanById(Long planId);
+
+    /**
+     * 获取用户当前有效订阅
+     */
+    UserSubscription getUserActiveSubscription(Long userId);
+
 }

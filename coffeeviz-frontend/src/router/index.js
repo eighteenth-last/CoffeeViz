@@ -70,8 +70,26 @@ const routes = [
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
         meta: { title: '设置' }
+      },
+      {
+        path: 'team',
+        name: 'TeamList',
+        component: () => import('@/views/team/TeamList.vue'),
+        meta: { title: '我的团队' }
+      },
+      {
+        path: 'team/:id',
+        name: 'TeamDetail',
+        component: () => import('@/views/team/TeamDetail.vue'),
+        meta: { title: '团队详情' }
       }
     ]
+  },
+  {
+    path: '/team/join/:inviteCode',
+    name: 'JoinTeam',
+    component: () => import('@/views/team/JoinTeam.vue'),
+    meta: { title: '加入团队', requiresAuth: false }
   },
   {
     path: '/checkout',

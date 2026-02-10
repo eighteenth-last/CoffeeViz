@@ -50,6 +50,11 @@ public class Repository implements Serializable {
     private String status;
     
     /**
+     * 是否为团队归档库
+     */
+    private Boolean isTeamRepository;
+    
+    /**
      * 创建时间（自动填充）
      */
     @TableField(fill = FieldFill.INSERT)
