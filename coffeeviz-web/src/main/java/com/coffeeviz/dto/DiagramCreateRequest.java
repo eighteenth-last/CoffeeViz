@@ -42,6 +42,11 @@ public class DiagramCreateRequest {
     private String mermaidCode;
     
     /**
+     * SQL DDL 代码（AI 生成的原始 SQL）
+     */
+    private String sqlDdl;
+    
+    /**
      * PNG Base64 数据
      */
     private String pngBase64;

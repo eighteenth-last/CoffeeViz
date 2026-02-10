@@ -16,6 +16,25 @@
 
 <script setup>
 import { darkTheme } from 'naive-ui'
+import { onMounted } from 'vue'
+import { useSubscriptionStore } from '@/store/subscription'
+import { useUserStore } from '@/store/user'
+
+const subscriptionStore = useSubscriptionStore()
+const userStore = useUserStore()
+
+// 应用启动时加载订阅信息
+onMounted(async () => {
+  // 只有在用户已登录时才加载订阅信息
+  if (userStore.isLoggedIn) {
+    try {
+      await subscriptionStore.fetchCurrentSubscription()
+      await subscriptionStore.fetchQuotas()
+    } catch (error) {
+      console.error('加载订阅信息失败:', error)
+    }
+  }
+})
 </script>
 
 <style>

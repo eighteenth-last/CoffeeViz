@@ -15,10 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 /**
- * 配额服务实现
+ * 配额服务实现（旧版本）
+ * 
+ * @deprecated 此实现已废弃，请使用 {@link QuotaServiceImplV2} 替代
+ * @see QuotaServiceImplV2
  */
+@Deprecated
 @Slf4j
-@Service
+@Service("quotaServiceOld")
 @RequiredArgsConstructor
 public class QuotaServiceImpl implements QuotaService {
     
@@ -164,5 +168,56 @@ public class QuotaServiceImpl implements QuotaService {
         quota.setLastResetTime(LocalDateTime.now());
         
         quotaMapper.insert(quota);
+    }
+    
+    // ========== 新方法的空实现（为了兼容性）==========
+    
+    @Override
+    public java.util.List<com.coffeeviz.entity.PlanQuota> getPlanQuotas(Long planId) {
+        throw new UnsupportedOperationException("请使用 QuotaServiceImplV2");
+    }
+    
+    @Override
+    public com.coffeeviz.entity.PlanQuota getPlanQuota(Long planId, String quotaType) {
+        throw new UnsupportedOperationException("请使用 QuotaServiceImplV2");
+    }
+    
+    @Override
+    public void initializeUserQuotas(Long userId, Long planId) {
+        // 使用旧方法实现
+        initUserQuota(userId);
+    }
+    
+    @Override
+    public void updateUserQuotaLimits(Long userId, Long newPlanId) {
+        throw new UnsupportedOperationException("请使用 QuotaServiceImplV2");
+    }
+    
+    @Override
+    public boolean hasAvailableQuota(Long userId, String quotaType) {
+        return checkQuota(userId, quotaType);
+    }
+    
+    @Override
+    public void consumeQuota(Long userId, String quotaType, int amount) {
+        for (int i = 0; i < amount; i++) {
+            if (!useQuota(userId, quotaType)) {
+                throw new com.coffeeviz.exception.QuotaExceededException(quotaType, 0, 0);
+            }
+        }
+    }
+    
+    @Override
+    public com.coffeeviz.entity.UserQuotaTracking getUserQuotaTracking(Long userId, String quotaType) {
+        throw new UnsupportedOperationException("请使用 QuotaServiceImplV2");
+    }
+    
+    @Override
+    public void resetUserQuotas(Long userId) {
+        // 重置所有配额类型
+        resetQuota(userId, "repository");
+        resetQuota(userId, "diagram");
+        resetQuota(userId, "sql_parse");
+        resetQuota(userId, "ai_generate");
     }
 }

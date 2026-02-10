@@ -95,6 +95,7 @@ public class ProjectController {
             project.setMermaidCode(request.getMermaidCode());
             project.setImageUrl(imageUrl);
             project.setTableCount(request.getTableCount() != null ? request.getTableCount() : 0);
+            project.setRelationCount(request.getRelationCount() != null ? request.getRelationCount() : 0);
             project.setSourceType(request.getSourceType() != null ? request.getSourceType() : "SQL");
             project.setDbType(request.getDbType());
             project.setStatus("active");
@@ -102,7 +103,7 @@ public class ProjectController {
             // 4. 构建项目配置
             ProjectConfig config = new ProjectConfig();
             config.setConfigType("SQL");
-            config.setSqlContent(request.getMermaidCode());
+            config.setSqlContent(request.getSqlDdl() != null ? request.getSqlDdl() : request.getMermaidCode());
             // renderOptions 可以后续扩展为 JSON 格式存储
             
             // 5. 创建项目
@@ -369,4 +370,37 @@ public class ProjectController {
             return Result.error("导出项目失败: " + e.getMessage());
         }
     }
+    
+    /**
+     * 获取项目配置（包含 SQL 代码）
+     */
+    @GetMapping("/config/{projectId}")
+    public Result<ProjectConfig> getProjectConfig(@PathVariable("projectId") Long projectId) {
+        log.info("获取项目配置: projectId={}", projectId);
+        
+        try {
+            // 1. 获取当前用户 ID
+            Long userId = StpUtil.getLoginIdAsLong();
+            
+            // 2. 验证项目权限
+            Project project = projectService.getProjectById(projectId, userId);
+            if (project == null) {
+                return Result.error("项目不存在或无权限访问");
+            }
+            
+            // 3. 查询项目配置
+            ProjectConfig config = projectService.getProjectConfig(projectId);
+            
+            if (config == null) {
+                return Result.error("项目配置不存在");
+            }
+            
+            return Result.success("获取成功", config);
+            
+        } catch (Exception e) {
+            log.error("获取项目配置失败", e);
+            return Result.error("获取项目配置失败: " + e.getMessage());
+        }
+    }
 }
+

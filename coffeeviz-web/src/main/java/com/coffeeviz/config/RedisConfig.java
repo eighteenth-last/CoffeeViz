@@ -31,7 +31,9 @@ public class RedisConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
-        serializer.setObjectMapper(mapper);
+        
+        // 使用构造函数传入 ObjectMapper（新方法）
+        serializer = new Jackson2JsonRedisSerializer<>(mapper, Object.class);
         
         // 使用 StringRedisSerializer 来序列化和反序列化 redis 的 key 值
         StringRedisSerializer stringSerializer = new StringRedisSerializer();

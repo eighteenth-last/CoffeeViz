@@ -31,6 +31,12 @@ public class DiagramController {
     @Autowired(required = false)
     private MinioService minioService;
     
+    @Autowired
+    private com.coffeeviz.service.ProjectService projectService;
+    
+    @Autowired
+    private com.coffeeviz.mapper.ProjectConfigMapper projectConfigMapper;
+    
     /**
      * 创建架构图
      */
@@ -99,6 +105,28 @@ public class DiagramController {
             
             // 5. 创建架构图
             Long diagramId = diagramService.createDiagram(diagram, userId);
+            
+            // 6. 如果有 SQL DDL，更新项目配置
+            if (request.getSqlDdl() != null && !request.getSqlDdl().trim().isEmpty()) {
+                try {
+                    // 查询或创建项目配置
+                    com.coffeeviz.entity.ProjectConfig config = projectService.getProjectConfig(request.getRepositoryId());
+                    if (config == null) {
+                        config = new com.coffeeviz.entity.ProjectConfig();
+                        config.setProjectId(request.getRepositoryId());
+                        config.setConfigType("SQL");
+                        config.setSqlContent(request.getSqlDdl());
+                        projectConfigMapper.insert(config);
+                    } else {
+                        // 如果已存在，追加或更新 SQL 内容
+                        config.setSqlContent(request.getSqlDdl());
+                        projectConfigMapper.updateById(config);
+                    }
+                    log.info("已更新项目配置的 SQL 内容");
+                } catch (Exception e) {
+                    log.warn("更新项目配置失败，但架构图已创建", e);
+                }
+            }
             
             log.info("架构图创建成功: diagramId={}", diagramId);
             return Result.success("架构图创建成功", diagramId);

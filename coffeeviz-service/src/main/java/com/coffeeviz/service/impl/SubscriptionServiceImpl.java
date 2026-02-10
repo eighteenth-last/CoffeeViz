@@ -2,11 +2,10 @@ package com.coffeeviz.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.coffeeviz.entity.SubscriptionPlan;
-import com.coffeeviz.entity.UsageQuota;
 import com.coffeeviz.entity.UserSubscription;
 import com.coffeeviz.mapper.SubscriptionPlanMapper;
-import com.coffeeviz.mapper.UsageQuotaMapper;
 import com.coffeeviz.mapper.UserSubscriptionMapper;
+import com.coffeeviz.service.QuotaService;
 import com.coffeeviz.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,12 +20,23 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SubscriptionServiceImpl implements SubscriptionService {
     
     private final SubscriptionPlanMapper planMapper;
     private final UserSubscriptionMapper subscriptionMapper;
-    private final UsageQuotaMapper quotaMapper;
+    private QuotaService quotaService;
+    
+    public SubscriptionServiceImpl(SubscriptionPlanMapper planMapper, 
+                                   UserSubscriptionMapper subscriptionMapper) {
+        this.planMapper = planMapper;
+        this.subscriptionMapper = subscriptionMapper;
+    }
+    
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    public void setQuotaService(QuotaService quotaService) {
+        this.quotaService = quotaService;
+    }
     
     @Override
     public List<SubscriptionPlan> getAllPlans() {
@@ -94,8 +104,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         
         subscriptionMapper.insert(subscription);
         
-        // 更新用户配额
-        updateUserQuota(userId, plan);
+        // 使用 QuotaService 初始化用户配额
+        quotaService.initializeUserQuotas(userId, planId);
         
         return subscription;
     }
@@ -120,7 +130,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean cancelSubscription(Long userId, String reason) {
+    public boolean cancelUserSubscription(Long userId, String reason) {
         log.info("取消订阅: userId={}, reason={}", userId, reason);
         
         UserSubscription subscription = getCurrentSubscription(userId);
@@ -195,55 +205,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         }
     }
     
-    /**
-     * 更新用户配额
-     */
-    private void updateUserQuota(Long userId, SubscriptionPlan plan) {
-        log.info("更新用户配额: userId={}, plan={}", userId, plan.getPlanCode());
-        
-        // 更新 repository 配额
-        updateQuota(userId, "repository", plan.getMaxRepositories(), "never");
-        
-        // 更新 diagram 配额
-        updateQuota(userId, "diagram", plan.getMaxDiagramsPerRepo() * 10, "monthly");
-        
-        // 更新 sql_parse 配额
-        updateQuota(userId, "sql_parse", 100, "daily");
-        
-        // 更新 ai_generate 配额
-        int aiQuota = plan.getSupportAi() == 1 ? 50 : 0;
-        updateQuota(userId, "ai_generate", aiQuota, "monthly");
-    }
-    
-    /**
-     * 更新单个配额
-     */
-    private void updateQuota(Long userId, String quotaType, Integer limit, String resetCycle) {
-        UsageQuota quota = quotaMapper.selectOne(
-            new LambdaQueryWrapper<UsageQuota>()
-                .eq(UsageQuota::getUserId, userId)
-                .eq(UsageQuota::getQuotaType, quotaType)
-        );
-        
-        if (quota == null) {
-            // 创建新配额
-            quota = new UsageQuota();
-            quota.setUserId(userId);
-            quota.setQuotaType(quotaType);
-            quota.setQuotaLimit(limit);
-            quota.setQuotaUsed(0);
-            quota.setResetCycle(resetCycle);
-            quota.setLastResetTime(LocalDateTime.now());
-            quotaMapper.insert(quota);
-        } else {
-            // 更新配额限制
-            quota.setQuotaLimit(limit);
-            quota.setResetCycle(resetCycle);
-            quotaMapper.updateById(quota);
-        }
-    }
-
-
     @Override
     public SubscriptionPlan getPlanById(Long planId) {
         return planMapper.selectById(planId);
@@ -253,5 +214,36 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public UserSubscription getUserActiveSubscription(Long userId) {
         return getCurrentSubscription(userId);
     }
-
+    
+    // ========== 新方法的空实现（待完成）==========
+    
+    @Override
+    public UserSubscription createSubscription(com.coffeeviz.dto.SubscriptionCreateRequest request) {
+        throw new UnsupportedOperationException("待实现");
+    }
+    
+    @Override
+    public void verifyPayment(Long paymentOrderId, Long planId, String billingCycle) {
+        throw new UnsupportedOperationException("待实现");
+    }
+    
+    @Override
+    public UserSubscription activateSubscription(Long subscriptionId, Long paymentOrderId) {
+        throw new UnsupportedOperationException("待实现");
+    }
+    
+    @Override
+    public UserSubscription changeSubscriptionPlan(Long userId, Long newPlanId, String billingCycle) {
+        return upgradeSubscription(userId, newPlanId, billingCycle);
+    }
+    
+    @Override
+    public UserSubscription getActiveSubscription(Long userId) {
+        return getCurrentSubscription(userId);
+    }
+    
+    @Override
+    public boolean cancelSubscription(Long subscriptionId, String reason) {
+        throw new UnsupportedOperationException("待实现");
+    }
 }

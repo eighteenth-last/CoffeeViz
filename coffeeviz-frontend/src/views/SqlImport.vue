@@ -1,5 +1,5 @@
 <template>
-  <section id="page-sql-import" class="page-view active">
+  <section id="page-sql-import" class="page-view active p-10">
     <div class="flex flex-col h-[calc(100vh-180px)]">
       <div class="flex items-center justify-between mb-8">
         <div>
@@ -228,7 +228,7 @@ CREATE TABLE orders (
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useProjectStore } from '@/store/project'
 import { useMessage, useDialog } from 'naive-ui'
 
@@ -257,6 +257,56 @@ const saveFormData = reactive({
   repositoryDescription: '',
   diagramName: '',
   diagramDescription: ''
+})
+
+// 页面加载时检查是否有临时数据（从 AI 生成或 JDBC 连接跳转过来）
+onMounted(() => {
+  const tempData = localStorage.getItem('tempDiagramData')
+  if (tempData) {
+    try {
+      const data = JSON.parse(tempData)
+      
+      // 设置 SQL 文本（如果有）
+      if (data.sqlDdl) {
+        sqlText.value = data.sqlDdl
+      }
+      
+      // 设置 diagram 数据到 store
+      if (data.mermaidCode) {
+        projectStore.diagramData.mermaidCode = data.mermaidCode
+        projectStore.diagramData.pngBase64 = data.pngBase64
+        projectStore.diagramData.sourceType = data.sourceType || 'AI'
+        projectStore.diagramData.dbType = data.dbType || 'mysql'
+        
+        // 如果有 SVG，也设置（通常从 JDBC 来的会有）
+        if (data.svgContent) {
+          projectStore.diagramData.svgContent = data.svgContent
+        }
+        
+        // 如果有表数量和关系数量
+        if (data.tableCount) {
+          projectStore.diagramData.tableCount = data.tableCount
+        }
+        if (data.relationCount) {
+          projectStore.diagramData.relationCount = data.relationCount
+        }
+        
+        addLog('success', `已加载 ${data.sourceType === 'AI' ? 'AI 生成' : 'JDBC 连接'}的架构图数据`)
+        
+        // 如果没有 SVG，需要重新渲染 Mermaid
+        if (!data.svgContent && data.mermaidCode) {
+          // 触发解析以生成 SVG
+          handleParse()
+        }
+      }
+      
+      // 清除临时数据
+      localStorage.removeItem('tempDiagramData')
+      
+    } catch (e) {
+      console.error('加载临时数据失败:', e)
+    }
+  }
 })
 
 // 模拟日志功能

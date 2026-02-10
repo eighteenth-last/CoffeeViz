@@ -1,5 +1,5 @@
 <template>
-  <section id="page-dashboard" class="page-view active">
+  <section id="page-dashboard" class="page-view active p-10">
     <div class="flex justify-between items-end mb-10">
       <div>
         <h1 class="text-4xl font-black text-white mb-2 tracking-tight">你好，<span class="text-amber-500">{{ userStore.displayName || '架构师' }}</span></h1>

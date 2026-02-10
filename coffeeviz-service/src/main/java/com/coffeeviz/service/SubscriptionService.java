@@ -1,5 +1,6 @@
 package com.coffeeviz.service;
 
+import com.coffeeviz.dto.SubscriptionCreateRequest;
 import com.coffeeviz.entity.SubscriptionPlan;
 import com.coffeeviz.entity.UserSubscription;
 
@@ -36,9 +37,11 @@ public interface SubscriptionService {
     UserSubscription upgradeSubscription(Long userId, Long newPlanId, String billingCycle);
     
     /**
-     * 取消订阅
+     * 取消用户订阅（旧方法）
+     * @deprecated 使用 {@link #cancelSubscription(Long, String)} 替代
      */
-    boolean cancelSubscription(Long userId, String reason);
+    @Deprecated
+    boolean cancelUserSubscription(Long userId, String reason);
     
     /**
      * 续费订阅
@@ -65,5 +68,40 @@ public interface SubscriptionService {
      * 获取用户当前有效订阅
      */
     UserSubscription getUserActiveSubscription(Long userId);
+    
+    // ========== 新增方法 ==========
+    
+    /**
+     * 创建带支付验证的新订阅
+     */
+    UserSubscription createSubscription(SubscriptionCreateRequest request);
+    
+    /**
+     * 验证订阅的支付订单
+     * @throws com.coffeeviz.exception.PaymentVerificationException 如果验证失败
+     */
+    void verifyPayment(Long paymentOrderId, Long planId, String billingCycle);
+    
+    /**
+     * 支付验证后激活订阅
+     */
+    UserSubscription activateSubscription(Long subscriptionId, Long paymentOrderId);
+    
+    /**
+     * 升级或降级用户订阅
+     */
+    UserSubscription changeSubscriptionPlan(Long userId, Long newPlanId, String billingCycle);
+    
+    /**
+     * 获取用户的活动订阅
+     */
+    UserSubscription getActiveSubscription(Long userId);
+    
+    /**
+     * 取消订阅
+     *
+     * @return
+     */
+    boolean cancelSubscription(Long subscriptionId, String reason);
 
 }

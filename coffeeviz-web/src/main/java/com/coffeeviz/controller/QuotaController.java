@@ -2,14 +2,13 @@ package com.coffeeviz.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.coffeeviz.common.Result;
-import com.coffeeviz.entity.UsageQuota;
+import com.coffeeviz.entity.UserQuotaTracking;
 import com.coffeeviz.service.QuotaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,16 +26,16 @@ public class QuotaController {
      * 获取用户所有配额信息
      */
     @GetMapping("/list")
-    public Result<Map<String, UsageQuota>> getUserQuotas() {
+    public Result<Map<String, UserQuotaTracking>> getUserQuotas() {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
-            Map<String, UsageQuota> quotas = new HashMap<>();
+            Map<String, UserQuotaTracking> quotas = new HashMap<>();
             
             // 获取各类配额
             String[] quotaTypes = {"repository", "diagram", "sql_parse", "ai_generate"};
             for (String type : quotaTypes) {
-                UsageQuota quota = quotaService.getQuota(userId, type);
+                UserQuotaTracking quota = quotaService.getUserQuotaTracking(userId, type);
                 if (quota != null) {
                     quotas.put(type, quota);
                 }
@@ -54,11 +53,11 @@ public class QuotaController {
      * 获取指定类型的配额信息
      */
     @GetMapping("/{quotaType}")
-    public Result<UsageQuota> getQuota(@PathVariable String quotaType) {
+    public Result<UserQuotaTracking> getQuota(@PathVariable String quotaType) {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
-            UsageQuota quota = quotaService.getQuota(userId, quotaType);
+            UserQuotaTracking quota = quotaService.getUserQuotaTracking(userId, quotaType);
             
             if (quota == null) {
                 return Result.error(404, "配额不存在");
@@ -80,7 +79,7 @@ public class QuotaController {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
-            boolean sufficient = quotaService.checkQuota(userId, quotaType);
+            boolean sufficient = quotaService.hasAvailableQuota(userId, quotaType);
             return Result.success(sufficient);
             
         } catch (Exception e) {

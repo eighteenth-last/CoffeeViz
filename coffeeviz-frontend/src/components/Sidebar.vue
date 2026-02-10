@@ -69,11 +69,14 @@
       </router-link>
     </nav>
 
+    <!-- 升级提示：仅 FREE 用户显示 -->
     <div class="p-4" v-if="subscriptionStore.planCode === 'FREE'">
       <div class="bg-gradient-to-br from-neutral-900 to-black border border-neutral-800 rounded-2xl p-4 relative overflow-hidden group">
         <div class="text-xs text-amber-500 font-bold mb-1">升级到 Pro</div>
         <p class="text-[10px] text-neutral-500 mb-3">解锁多方言 SQL 高级解析与云端同步功能</p>
-        <button @click="handleUpgradeClick" class="w-full py-2 bg-amber-600/10 border border-amber-600/30 rounded-lg text-[10px] font-bold text-amber-500 hover:bg-amber-600 hover:text-white transition-all">立即升级</button>
+        <button @click="handleUpgradeClick" class="w-full py-2 bg-amber-600/10 border border-amber-600/30 rounded-lg text-[10px] font-bold text-amber-500 hover:bg-amber-600 hover:text-white transition-all">
+          立即升级
+        </button>
       </div>
     </div>
   </aside>

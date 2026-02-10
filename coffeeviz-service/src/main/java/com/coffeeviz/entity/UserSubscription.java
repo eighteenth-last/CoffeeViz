@@ -22,6 +22,11 @@ public class UserSubscription {
     
     private String planCode;
     
+    /**
+     * 支付订单ID
+     */
+    private Long paymentOrderId;
+    
     private String billingCycle;
     
     private BigDecimal price;

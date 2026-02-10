@@ -1,5 +1,5 @@
 <template>
-  <div class="team-detail-container">
+  <div class="team-detail-container p-10">
     <n-spin :show="teamStore.loading">
       <div v-if="teamStore.currentTeam">
         <!-- 团队头部 -->

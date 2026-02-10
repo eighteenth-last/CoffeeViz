@@ -4,7 +4,7 @@
     
     <Header />
     
-    <main class="ml-64 p-10">
+    <main class="ml-64">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />

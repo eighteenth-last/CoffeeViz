@@ -6,31 +6,42 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 用户使用配额实体
+ * 计划配额实体
  * 
- * @deprecated 此类已废弃，请使用 {@link PlanQuota} 和 {@link UserQuotaTracking} 替代
- * @see PlanQuota
- * @see UserQuotaTracking
+ * @author CoffeeViz Team
+ * @since 2.0.0
  */
-@Deprecated
 @Data
-@TableName("biz_usage_quota")
-public class UsageQuota {
+@TableName("biz_plan_quota")
+public class PlanQuota {
     
     @TableId(type = IdType.AUTO)
     private Long id;
     
-    private Long userId;
+    /**
+     * 订阅计划ID
+     */
+    private Long planId;
     
+    /**
+     * 配额类型（repository/diagram/sql_parse/ai_generate）
+     */
     private String quotaType;
     
+    /**
+     * 配额限制（-1表示无限制）
+     */
     private Integer quotaLimit;
     
-    private Integer quotaUsed;
-    
+    /**
+     * 重置周期（daily/monthly/yearly/never）
+     */
     private String resetCycle;
     
-    private LocalDateTime lastResetTime;
+    /**
+     * 配额描述
+     */
+    private String description;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

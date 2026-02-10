@@ -37,6 +37,11 @@ public class ProjectCreateRequest {
     private Integer tableCount;
     
     /**
+     * 关系数量
+     */
+    private Integer relationCount;
+    
+    /**
      * 来源类型
      */
     private String sourceType;
@@ -45,6 +50,11 @@ public class ProjectCreateRequest {
      * 数据库类型
      */
     private String dbType;
+    
+    /**
+     * SQL DDL 代码（AI 生成的原始 SQL）
+     */
+    private String sqlDdl;
     
     /**
      * 视图模式

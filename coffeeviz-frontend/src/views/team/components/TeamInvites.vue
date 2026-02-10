@@ -34,6 +34,7 @@
                   text
                   type="primary"
                   size="small"
+                  :disabled="invite.status !== 'active'"
                   @click="copyInviteUrl(invite.inviteUrl)"
                 >
                   <template #icon>

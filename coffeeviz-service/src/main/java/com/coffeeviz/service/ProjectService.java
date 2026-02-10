@@ -3,9 +3,11 @@ package com.coffeeviz.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.coffeeviz.entity.Diagram;
 import com.coffeeviz.entity.Project;
 import com.coffeeviz.entity.ProjectConfig;
 import com.coffeeviz.entity.ProjectVersion;
+import com.coffeeviz.mapper.DiagramMapper;
 import com.coffeeviz.mapper.ProjectConfigMapper;
 import com.coffeeviz.mapper.ProjectMapper;
 import com.coffeeviz.mapper.ProjectVersionMapper;
@@ -35,6 +37,9 @@ public class ProjectService {
     
     @Autowired
     private ProjectVersionMapper projectVersionMapper;
+    
+    @Autowired
+    private DiagramMapper diagramMapper;
     
     @Autowired(required = false)
     private MinioService minioService;
@@ -67,6 +72,20 @@ public class ProjectService {
         version.setMermaidCode(project.getMermaidCode());
         version.setChangeLog("初始版本");
         projectVersionMapper.insert(version);
+        
+        // 4. 创建架构图记录
+        Diagram diagram = new Diagram();
+        diagram.setRepositoryId(projectId);
+        diagram.setDiagramName(project.getProjectName());
+        diagram.setDescription(project.getDescription());
+        diagram.setSourceType(project.getSourceType() != null ? project.getSourceType() : "SQL");
+        diagram.setDbType(project.getDbType());
+        diagram.setMermaidCode(project.getMermaidCode());
+        diagram.setImageUrl(project.getImageUrl());
+        diagram.setTableCount(project.getTableCount() != null ? project.getTableCount() : 0);
+        diagram.setRelationCount(project.getRelationCount() != null ? project.getRelationCount() : 0);
+        diagramMapper.insert(diagram);
+        log.info("架构图创建成功: diagramId={}", diagram.getId());
         
         log.info("项目创建成功: projectId={}", projectId);
         return projectId;

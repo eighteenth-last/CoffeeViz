@@ -7,6 +7,10 @@ spring:
   profiles:
     active: dev
   
+  # 允许循环引用（用于解决 QuotaService 和 SubscriptionService 的循环依赖）
+  main:
+    allow-circular-references: true
+  
   # 文件上传配置
   servlet:
     multipart:

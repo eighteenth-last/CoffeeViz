@@ -15,7 +15,8 @@ CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚�
 - 📦 **多格式导出**：支持 SVG、PNG、Mermaid 源码导出（支持动态分辨率）
 - 🔐 **用户系统**：完整的用户认证（账号/手机验证码/微信扫码）、项目管理、版本控制
 - 💳 **订阅系统**：多层级订阅计划（FREE/PRO/TEAM）、配额管理、权限控制
-- 💰 **支付集成**：支持微信支付、支付宝、Stripe 多种支付方式
+- � **团队协作**：创建团队、邀请成员、共享项目库、成员权限管理
+- � **支付集成**：支持微信支付、支付宝、Stripe 多种支付方式
 - 🚀 **高性能**：Redis 缓存、异步处理、API 限流
 - 🎯 **智能推断**：自动识别表关系、外键约束
 - 📱 **现代化 UI**：基于 Vue 3 + Naive UI + Tailwind CSS 的 Glassmorphism (磨砂玻璃) 风格界面
@@ -32,6 +33,7 @@ CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚�
 - **缓存**: Redis + Spring Data Redis
 - **SQL 解析**: JSqlParser 4.6 + Druid 1.2.20
 - **连接池**: Druid
+- **文件存储**: MinIO
 - **工具类**: Lombok, Hutool, Guava, FastJSON2
 
 ### 前端技术栈
@@ -85,10 +87,7 @@ cd coffeeviz
 mysql -u root -p
 
 # 执行初始化脚本
-mysql -u root -p coffeeviz < coffeeviz-web/src/main/resources/coffeeviz.sql
-
-# 初始化订阅系统（可选）
-mysql -u root -p coffeeviz < coffeeviz-web/src/main/resources/subscription_tables.sql
+mysql -u root -p coffeeviz < Database/coffeeviz.sql
 ```
 
 **默认管理员账号**：
@@ -118,6 +117,14 @@ spring:
       port: 6379
       password: 
       database: 0
+
+  # MinIO 配置
+  minio:
+    endpoint: http://localhost:9000
+    access-key: minioadmin
+    secret-key: minioadmin
+    bucket-name: coffeeviz
+    region: cn-beijing-1
 
 # 支付配置（可选，用于订阅功能）
 payment:

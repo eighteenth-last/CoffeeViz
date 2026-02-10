@@ -1,5 +1,5 @@
 <template>
-  <div class="team-list-container">
+  <div class="team-list-container p-10">
     <n-page-header title="我的团队" subtitle="管理您的团队和协作">
       <template #extra>
         <n-button type="primary" @click="showCreateModal = true">

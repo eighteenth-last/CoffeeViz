@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
  * @since 1.0.0
  * @deprecated 请使用 Repository 和 Diagram 实体
  */
+@Deprecated
 @Data
 @TableName("biz_repository")
 public class Project {
@@ -78,6 +79,12 @@ public class Project {
      */
     @TableField(exist = false)
     private Integer tableCount;
+    
+    /**
+     * 关系数量 - 临时字段，实际存在 diagram 表
+     */
+    @TableField(exist = false)
+    private Integer relationCount;
     
     /**
      * 架构图数量（实际字段 diagram_count）

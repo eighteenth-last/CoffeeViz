@@ -1,5 +1,5 @@
 <template>
-  <div class="repository-detail px-10 pb-10 fade-in">
+  <div class="repository-detail p-10 fade-in">
     <!-- Header Section -->
     <div class="flex justify-between items-end mb-8">
       <div>
@@ -159,7 +159,10 @@
           </button>
           <div class="w-px h-8 bg-neutral-800 mx-2"></div>
           <button @click="showMermaidCode = !showMermaidCode" class="px-4 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm text-neutral-400 hover:text-white hover:border-amber-600 transition-all">
-            <i class="fas fa-code mr-2"></i>{{ showMermaidCode ? '隐藏代码' : '查看代码' }}
+            <i class="fas fa-code mr-2"></i>{{ showMermaidCode ? '隐藏 Mermaid' : '查看 Mermaid' }}
+          </button>
+          <button @click="toggleSqlCode" class="px-4 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-sm text-neutral-400 hover:text-white hover:border-green-600 transition-all">
+            <i class="fas fa-database mr-2"></i>{{ showSqlCode ? '隐藏 SQL' : '查看 SQL' }}
           </button>
         </div>
 
@@ -172,6 +175,25 @@
             </button>
           </div>
           <pre class="bg-black border border-neutral-800 rounded-xl p-4 overflow-auto text-xs text-amber-100 font-mono max-h-64">{{ selectedDiagram.mermaidCode }}</pre>
+        </div>
+
+        <!-- SQL Code Section -->
+        <div v-if="showSqlCode" class="mt-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-white">SQL DDL 代码</h3>
+            <button @click="handleCopySql" class="px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-neutral-400 hover:text-white hover:border-green-600 transition-all">
+              <i class="fas fa-copy mr-1"></i>复制 SQL
+            </button>
+          </div>
+          <div v-if="loadingSql" class="bg-black border border-neutral-800 rounded-xl p-8 flex items-center justify-center">
+            <i class="fas fa-circle-notch fa-spin text-2xl text-green-500 mr-3"></i>
+            <span class="text-neutral-500">加载 SQL 代码中...</span>
+          </div>
+          <pre v-else-if="sqlCode" class="bg-black border border-neutral-800 rounded-xl p-4 overflow-auto text-xs text-green-100 font-mono max-h-64">{{ sqlCode }}</pre>
+          <div v-else class="bg-black border border-neutral-800 rounded-xl p-8 flex items-center justify-center text-neutral-500">
+            <i class="fas fa-info-circle mr-2"></i>
+            暂无 SQL 代码
+          </div>
         </div>
       </div>
     </div>
@@ -194,6 +216,9 @@ const selectedDiagram = ref(null)
 const showDiagramModal = ref(false)
 const diagramScale = ref(0.8)
 const showMermaidCode = ref(false)
+const showSqlCode = ref(false)
+const sqlCode = ref('')
+const loadingSql = ref(false)
 
 // 计算总表数量和总关系数量
 const totalTables = computed(() => {
@@ -278,6 +303,58 @@ const handleCopyMermaid = async (diagram) => {
   try {
     await navigator.clipboard.writeText(diagram.mermaidCode)
     message.success('Mermaid 代码已复制到剪贴板')
+  } catch (error) {
+    message.error('复制失败：' + (error.message || error))
+  }
+}
+
+// 切换 SQL 代码显示
+const toggleSqlCode = async () => {
+  showSqlCode.value = !showSqlCode.value
+  
+  // 如果是打开状态且还没有加载 SQL 代码，则加载
+  if (showSqlCode.value && !sqlCode.value) {
+    await loadSqlCode()
+  }
+}
+
+// 加载 SQL 代码
+const loadSqlCode = async () => {
+  loadingSql.value = true
+  try {
+    const response = await fetch(`/api/project/config/${route.params.id}`, {
+      headers: {
+        'Authorization': localStorage.getItem('token') || ''
+      }
+    })
+    const result = await response.json()
+    
+    if (result.code === 200 && result.data) {
+      sqlCode.value = result.data.sqlContent || ''
+      if (!sqlCode.value) {
+        message.warning('该架构库没有保存 SQL 代码')
+      }
+    } else {
+      message.warning('未找到 SQL 代码')
+    }
+  } catch (error) {
+    console.error('加载 SQL 代码失败:', error)
+    message.error('加载 SQL 代码失败：' + (error.message || error))
+  } finally {
+    loadingSql.value = false
+  }
+}
+
+// 复制 SQL 代码
+const handleCopySql = async () => {
+  if (!sqlCode.value) {
+    message.warning('没有可复制的 SQL 代码')
+    return
+  }
+  
+  try {
+    await navigator.clipboard.writeText(sqlCode.value)
+    message.success('SQL 代码已复制到剪贴板')
   } catch (error) {
     message.error('复制失败：' + (error.message || error))
   }
