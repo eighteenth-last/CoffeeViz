@@ -50,7 +50,7 @@ public class SubscriptionController {
         boolean success = subscriptionService.cancelSubscription(userId, reason);
         return success ? Result.success() : Result.error("取消订阅失败");
     }
-    
+
     /**
      * 检查功能权限
      */
