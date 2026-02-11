@@ -3,8 +3,8 @@ import api from '@/api'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    token: localStorage.getItem('token') || '',
-    userInfo: JSON.parse(localStorage.getItem('userInfo') || 'null')
+    token: sessionStorage.getItem('token') || '',
+    userInfo: JSON.parse(sessionStorage.getItem('userInfo') || 'null')
   }),
   
   getters: {
@@ -19,8 +19,8 @@ export const useUserStore = defineStore('user', {
         const res = await api.post('/api/auth/login', credentials)
         this.token = res.data.token
         this.userInfo = res.data.userInfo
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+        sessionStorage.setItem('token', this.token)
+        sessionStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         return res
       } catch (error) {
         throw error
@@ -44,7 +44,7 @@ export const useUserStore = defineStore('user', {
       try {
         const res = await api.get('/api/auth/userinfo')
         this.userInfo = res.data
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+        sessionStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         return res
       } catch (error) {
         this.logout()
@@ -80,8 +80,8 @@ export const useUserStore = defineStore('user', {
       } finally {
         this.token = ''
         this.userInfo = null
-        localStorage.removeItem('token')
-        localStorage.removeItem('userInfo')
+        sessionStorage.removeItem('token')
+        sessionStorage.removeItem('userInfo')
       }
     },
     
@@ -103,8 +103,8 @@ export const useUserStore = defineStore('user', {
           this.userInfo = {
             id: res.data.userId
           }
-          localStorage.setItem('token', res.data.token)
-          localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+          sessionStorage.setItem('token', res.data.token)
+          sessionStorage.setItem('userInfo', JSON.stringify(this.userInfo))
           await this.fetchUserInfo()
         }
         
@@ -128,8 +128,8 @@ export const useUserStore = defineStore('user', {
         const res = await api.post('/api/auth/sms/login', { phone, code })
         this.token = res.data.token
         this.userInfo = res.data.userInfo
-        localStorage.setItem('token', this.token)
-        localStorage.setItem('userInfo', JSON.stringify(this.userInfo))
+        sessionStorage.setItem('token', this.token)
+        sessionStorage.setItem('userInfo', JSON.stringify(this.userInfo))
         return res
       } catch (error) {
         throw error

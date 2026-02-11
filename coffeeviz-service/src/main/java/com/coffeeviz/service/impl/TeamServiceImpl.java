@@ -238,7 +238,7 @@ public class TeamServiceImpl implements TeamService {
         String inviteCode = UUID.randomUUID().toString().replace("-", "");
         
         // 生成邀请链接（这里使用占位符，实际应该从配置读取）
-        String inviteUrl = "https://coffeeviz.com/team/join/" + inviteCode;
+        String inviteUrl = "https://coffeeviz.pantoria.cn/team/join/" + inviteCode;
         
         // 创建邀请记录
         TeamInvitation invitation = new TeamInvitation();

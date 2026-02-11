@@ -3,8 +3,10 @@ package com.coffeeviz.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.coffeeviz.entity.Diagram;
 import com.coffeeviz.entity.Repository;
+import com.coffeeviz.entity.Team;
 import com.coffeeviz.mapper.DiagramMapper;
 import com.coffeeviz.mapper.RepositoryMapper;
+import com.coffeeviz.mapper.TeamMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,8 +30,29 @@ public class DiagramService {
     @Autowired
     private RepositoryMapper repositoryMapper;
     
+    @Autowired
+    private TeamMapper teamMapper;
+    
     @Autowired(required = false)
     private MinioService minioService;
+    
+    /**
+     * 检查用户是否有权限访问指定架构库（自己的或团队的）
+     */
+    private boolean hasRepositoryAccess(Repository repository, Long userId) {
+        if (repository.getUserId().equals(userId)) {
+            return true;
+        }
+        // 检查是否为团队架构库且用户是团队成员
+        if (Boolean.TRUE.equals(repository.getIsTeamRepository())) {
+            List<Team> teams = teamMapper.selectUserTeams(userId);
+            if (teams != null) {
+                return teams.stream()
+                        .anyMatch(t -> repository.getId().equals(t.getRepositoryId()));
+            }
+        }
+        return false;
+    }
     
     /**
      * 创建架构图
@@ -38,12 +61,12 @@ public class DiagramService {
     public Long createDiagram(Diagram diagram, Long userId) {
         log.info("创建架构图: {}, repositoryId: {}", diagram.getDiagramName(), diagram.getRepositoryId());
         
-        // 1. 校验架构库所有权
+        // 1. 校验架构库访问权限（自己的或团队的）
         Repository repository = repositoryMapper.selectById(diagram.getRepositoryId());
         if (repository == null) {
             throw new RuntimeException("架构库不存在");
         }
-        if (!repository.getUserId().equals(userId)) {
+        if (!hasRepositoryAccess(repository, userId)) {
             throw new RuntimeException("无权限在此架构库中创建架构图");
         }
         
@@ -69,7 +92,7 @@ public class DiagramService {
         
         // 2. 校验所有权
         Repository repository = repositoryMapper.selectById(existingDiagram.getRepositoryId());
-        if (repository == null || !repository.getUserId().equals(userId)) {
+        if (repository == null || !hasRepositoryAccess(repository, userId)) {
             throw new RuntimeException("无权限更新此架构图");
         }
         
@@ -92,7 +115,7 @@ public class DiagramService {
         
         // 2. 校验所有权
         Repository repository = repositoryMapper.selectById(diagram.getRepositoryId());
-        if (repository == null || !repository.getUserId().equals(userId)) {
+        if (repository == null || !hasRepositoryAccess(repository, userId)) {
             throw new RuntimeException("无权限删除此架构图");
         }
         
@@ -124,7 +147,7 @@ public class DiagramService {
         
         // 校验所有权
         Repository repository = repositoryMapper.selectById(diagram.getRepositoryId());
-        if (repository == null || !repository.getUserId().equals(userId)) {
+        if (repository == null || !hasRepositoryAccess(repository, userId)) {
             throw new RuntimeException("无权限访问此架构图");
         }
         
@@ -137,12 +160,12 @@ public class DiagramService {
     public List<Diagram> listDiagramsByRepository(Long repositoryId, Long userId) {
         log.info("查询架构库下的架构图列表: repositoryId={}", repositoryId);
         
-        // 1. 校验所有权
+        // 1. 校验访问权限
         Repository repository = repositoryMapper.selectById(repositoryId);
         if (repository == null) {
             throw new RuntimeException("架构库不存在");
         }
-        if (!repository.getUserId().equals(userId)) {
+        if (!hasRepositoryAccess(repository, userId)) {
             throw new RuntimeException("无权限访问此架构库");
         }
         

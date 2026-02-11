@@ -200,19 +200,8 @@
             { name: '用户管理', icon: 'fa-user-cog', bgClass: 'bg-blue-500/10', textClass: 'text-blue-500' },
             { name: '订阅订单', icon: 'fa-file-invoice-dollar', bgClass: 'bg-green-500/10', textClass: 'text-green-500' },
             { name: '项目概览', icon: 'fa-layer-group', bgClass: 'bg-amber-500/10', textClass: 'text-amber-500' },
-            { name: '系统设置', icon: 'fa-cogs', bgClass: 'bg-neutral-500/10', textClass: 'text-neutral-400' },
-            { name: '通知中心', icon: 'fa-bell', bgClass: 'bg-red-500/10', textClass: 'text-red-500' },
-            { name: '审计日志', icon: 'fa-clipboard-list', bgClass: 'bg-purple-500/10', textClass: 'text-purple-500' },
             { name: 'AI 模型', icon: 'fa-brain', bgClass: 'bg-cyan-500/10', textClass: 'text-cyan-500' },
-            { name: '数据库', icon: 'fa-database', bgClass: 'bg-indigo-500/10', textClass: 'text-indigo-500' },
-            { name: '文件存储', icon: 'fa-hdd', bgClass: 'bg-pink-500/10', textClass: 'text-pink-500' },
-            { name: 'API 密钥', icon: 'fa-key', bgClass: 'bg-yellow-500/10', textClass: 'text-yellow-500' },
-            { name: '工单支持', icon: 'fa-headset', bgClass: 'bg-teal-500/10', textClass: 'text-teal-500' },
-            { name: '营销活动', icon: 'fa-bullhorn', bgClass: 'bg-orange-500/10', textClass: 'text-orange-500' },
-            { name: '数据分析', icon: 'fa-chart-line', bgClass: 'bg-lime-500/10', textClass: 'text-lime-500' },
-            { name: '安全中心', icon: 'fa-shield-virus', bgClass: 'bg-emerald-500/10', textClass: 'text-emerald-500' },
-            { name: '备份恢复', icon: 'fa-trash-restore', bgClass: 'bg-rose-500/10', textClass: 'text-rose-500' },
-            { name: '开发者', icon: 'fa-code', bgClass: 'bg-sky-500/10', textClass: 'text-sky-500' },
+            { name: '系统设置', icon: 'fa-cogs', bgClass: 'bg-neutral-500/10', textClass: 'text-neutral-400' },
         ];
 
         const healthStats = [
@@ -339,40 +328,10 @@
                 case '系统设置':
                     html = generateSettingsTemplate();
                     break;
-                case '通知中心':
-                    html = generateNotificationsTemplate();
-                    break;
-                case 'API 密钥':
-                    html = generateApiKeysTemplate();
-                    break;
-                case '数据分析':
                 case 'AI 模型':
-                    html = generateAnalyticsTemplate(module);
+                    html = generateAnalyticsTemplate(module); // Reusing analytics template for AI stats for now, or check if specific AI template exists.
+                    // Wait, original code used generateAnalyticsTemplate for 'AI 模型' too.
                     shouldInitCharts = true;
-                    break;
-                case '数据库':
-                    html = generateDatabaseTemplate();
-                    break;
-                case '文件存储':
-                    html = generateFileStorageTemplate();
-                    break;
-                case '工单支持':
-                    html = generateTicketSupportTemplate();
-                    break;
-                case '审计日志':
-                    html = generateAuditLogsTemplate();
-                    break;
-                case '营销活动':
-                    html = generateMarketingTemplate();
-                    break;
-                case '安全中心':
-                    html = generateSecurityCenterTemplate();
-                    break;
-                case '备份恢复':
-                    html = generateBackupRestoreTemplate();
-                    break;
-                case '开发者':
-                    html = generateDevelopersTemplate();
                     break;
                 default:
                     html = generateDefaultTemplate(module);
@@ -383,552 +342,6 @@
             if (shouldInitCharts) {
                 initCharts();
             }
-        }
-
-        // --- Specific Templates ---
-
-        function generateAuditLogsTemplate() {
-            return `
-                <div class="flex flex-col h-full">
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex gap-3">
-                            <div class="relative">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"></i>
-                                <input type="text" placeholder="搜索日志..." class="bg-[#18181c] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-blue-500/50 focus:outline-none w-64">
-                            </div>
-                            <select class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-neutral-400 focus:outline-none">
-                                <option>所有操作</option>
-                                <option>登录</option>
-                                <option>创建</option>
-                                <option>删除</option>
-                                <option>更新</option>
-                            </select>
-                            <input type="date" class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-neutral-400 focus:outline-none">
-                        </div>
-                        <button class="px-3 py-2 bg-[#18181c] border border-white/10 rounded-lg text-neutral-400 hover:text-white transition-colors"><i class="fas fa-file-export"></i> 导出日志</button>
-                    </div>
-                    
-                    <div class="flex-1 overflow-auto bg-[#18181c] rounded-xl border border-white/5">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="sticky top-0 bg-[#202025] z-10">
-                                <tr class="text-xs uppercase text-neutral-400 tracking-wider">
-                                    <th class="p-4 font-medium border-b border-white/5">时间</th>
-                                    <th class="p-4 font-medium border-b border-white/5">操作人</th>
-                                    <th class="p-4 font-medium border-b border-white/5">行为</th>
-                                    <th class="p-4 font-medium border-b border-white/5">资源</th>
-                                    <th class="p-4 font-medium border-b border-white/5">IP 地址</th>
-                                    <th class="p-4 font-medium border-b border-white/5">状态</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm divide-y divide-white/5">
-                                ${Array(15).fill(0).map((_, i) => `
-                                <tr class="hover:bg-white/[0.02] transition-colors">
-                                    <td class="p-4 text-neutral-500 font-mono text-xs">2023-10-${20-i} 14:${30+i}:12</td>
-                                    <td class="p-4 text-white">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-5 h-5 rounded-full bg-neutral-700 flex items-center justify-center text-[10px]">U</div>
-                                            <span>User_${i+1}</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-4 text-neutral-300">${['登录', '创建项目', '删除文件', '更新设置', '导出数据'][i % 5]}</td>
-                                    <td class="p-4 text-neutral-400 font-mono text-xs">/api/v1/${['auth', 'projects', 'files', 'settings', 'export'][i % 5]}</td>
-                                    <td class="p-4 text-neutral-500 text-xs font-mono">192.168.1.${10+i}</td>
-                                    <td class="p-4">
-                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${i % 7 === 0 ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}">
-                                            ${i % 7 === 0 ? '失败' : '成功'}
-                                        </span>
-                                    </td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateDatabaseTemplate() {
-            return `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                    <div class="lg:col-span-2 flex flex-col gap-6">
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 relative overflow-hidden">
-                                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fas fa-database text-6xl text-blue-500"></i></div>
-                                <div class="text-xs text-neutral-500 mb-1">连接数</div>
-                                <div class="text-2xl font-bold text-white">342</div>
-                                <div class="text-xs text-neutral-400 mt-2">最大: 1000</div>
-                                <div class="w-full bg-neutral-800 h-1 mt-2 rounded-full overflow-hidden"><div class="bg-blue-500 h-full w-[34%]"></div></div>
-                            </div>
-                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 relative overflow-hidden">
-                                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fas fa-tachometer-alt text-6xl text-green-500"></i></div>
-                                <div class="text-xs text-neutral-500 mb-1">QPS</div>
-                                <div class="text-2xl font-bold text-white">1,205</div>
-                                <div class="text-xs text-green-500 mt-2"><i class="fas fa-arrow-up"></i> 5% 环比</div>
-                            </div>
-                            <div class="bg-[#18181c] p-4 rounded-xl border border-white/5 relative overflow-hidden">
-                                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fas fa-hdd text-6xl text-amber-500"></i></div>
-                                <div class="text-xs text-neutral-500 mb-1">存储使用</div>
-                                <div class="text-2xl font-bold text-white">45.2 GB</div>
-                                <div class="text-xs text-neutral-400 mt-2">总量: 100 GB</div>
-                                <div class="w-full bg-neutral-800 h-1 mt-2 rounded-full overflow-hidden"><div class="bg-amber-500 h-full w-[45%]"></div></div>
-                            </div>
-                        </div>
-
-                        <div class="bg-[#18181c] rounded-xl border border-white/5 flex-1 flex flex-col">
-                            <div class="p-4 border-b border-white/5 flex justify-between items-center">
-                                <h3 class="text-white font-bold text-sm">慢查询日志</h3>
-                                <button class="text-xs text-blue-400 hover:text-blue-300">查看全部</button>
-                            </div>
-                            <div class="overflow-auto flex-1">
-                                <table class="w-full text-left border-collapse">
-                                    <thead class="bg-[#202025]">
-                                        <tr class="text-xs uppercase text-neutral-400">
-                                            <th class="p-3 font-medium">SQL 语句</th>
-                                            <th class="p-3 font-medium">耗时</th>
-                                            <th class="p-3 font-medium">时间</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="text-xs divide-y divide-white/5">
-                                        ${Array(5).fill(0).map((_, i) => `
-                                        <tr>
-                                            <td class="p-3 font-mono text-neutral-300 truncate max-w-[200px]">SELECT * FROM large_table WHERE status = 'active' AND type = 'complex' JOIN other_table...</td>
-                                            <td class="p-3 text-amber-500">${(Math.random() * 2 + 0.5).toFixed(2)}s</td>
-                                            <td class="p-3 text-neutral-500">10:${10+i}:00</td>
-                                        </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#18181c] rounded-xl border border-white/5 flex flex-col h-full">
-                        <div class="p-4 border-b border-white/5">
-                            <h3 class="text-white font-bold text-sm">表统计信息</h3>
-                        </div>
-                        <div class="p-4 space-y-4 overflow-auto flex-1">
-                            ${['users', 'orders', 'projects', 'logs', 'audit_trails'].map(table => `
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-neutral-300 font-mono">${table}</span>
-                                    <span class="text-neutral-500 text-xs">${Math.floor(Math.random() * 100000)} 行</span>
-                                </div>
-                                <div class="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-                                    <div class="bg-blue-600 h-full" style="width: ${Math.random() * 80 + 10}%"></div>
-                                </div>
-                            </div>
-                            `).join('')}
-                        </div>
-                        <div class="p-4 border-t border-white/5">
-                            <button class="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold rounded transition-colors">
-                                优化分析
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateFileStorageTemplate() {
-            return `
-                <div class="flex flex-col h-full">
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex gap-2">
-                             <button class="text-neutral-400 hover:text-white transition-colors"><i class="fas fa-home"></i></button>
-                             <span class="text-neutral-600">/</span>
-                             <span class="text-neutral-300">uploads</span>
-                             <span class="text-neutral-600">/</span>
-                             <span class="text-white font-medium">images</span>
-                        </div>
-                        <div class="flex gap-3">
-                            <input type="text" placeholder="搜索文件..." class="bg-[#18181c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none w-48">
-                            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
-                                <i class="fas fa-cloud-upload-alt"></i> 上传
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 bg-[#18181c] rounded-xl border border-white/5 p-4 overflow-auto">
-                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            <!-- Folders -->
-                            ${['头像', '项目资源', '文档', '备份'].map(folder => `
-                            <div class="group p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors text-center">
-                                <i class="fas fa-folder text-4xl text-amber-400 mb-2 group-hover:scale-110 transition-transform"></i>
-                                <div class="text-sm text-neutral-300 truncate">${folder}</div>
-                                <div class="text-[10px] text-neutral-600">12 项</div>
-                            </div>
-                            `).join('')}
-                            
-                            <!-- Files -->
-                            ${Array(12).fill(0).map((_, i) => `
-                            <div class="group p-3 rounded-lg hover:bg-white/5 cursor-pointer transition-colors text-center relative">
-                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button class="text-neutral-400 hover:text-white"><i class="fas fa-ellipsis-v"></i></button>
-                                </div>
-                                <div class="w-full aspect-square bg-neutral-800 rounded mb-2 flex items-center justify-center overflow-hidden border border-white/5">
-                                    ${i % 3 === 0 
-                                        ? `<i class="fas fa-file-image text-3xl text-purple-400"></i>` 
-                                        : i % 3 === 1 
-                                            ? `<i class="fas fa-file-pdf text-3xl text-red-400"></i>` 
-                                            : `<i class="fas fa-file-code text-3xl text-blue-400"></i>`}
-                                </div>
-                                <div class="text-sm text-neutral-300 truncate">资源_${i+1}.${i%3===0?'png':i%3===1?'pdf':'json'}</div>
-                                <div class="text-[10px] text-neutral-600">${(Math.random() * 5).toFixed(1)} MB</div>
-                            </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 flex justify-between items-center text-xs text-neutral-500">
-                        <div>存储: 45.2GB / 100GB 已用</div>
-                        <div class="w-48 h-1.5 bg-[#27272a] rounded-full overflow-hidden">
-                            <div class="h-full bg-blue-600 w-[45%]"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateTicketSupportTemplate() {
-            return `
-                <div class="flex h-full gap-6">
-                    <!-- Ticket List -->
-                    <div class="w-1/3 flex flex-col bg-[#18181c] rounded-xl border border-white/5 overflow-hidden">
-                        <div class="p-4 border-b border-white/5">
-                            <h3 class="text-white font-bold mb-3">工单列表</h3>
-                            <div class="flex gap-2">
-                                <button class="flex-1 py-1.5 bg-white/10 text-white text-xs rounded text-center">待处理 (12)</button>
-                                <button class="flex-1 py-1.5 hover:bg-white/5 text-neutral-400 text-xs rounded text-center">已关闭</button>
-                            </div>
-                        </div>
-                        <div class="flex-1 overflow-auto divide-y divide-white/5">
-                            ${Array(8).fill(0).map((_, i) => `
-                            <div class="p-4 hover:bg-white/5 cursor-pointer transition-colors ${i===0 ? 'bg-white/[0.03] border-l-2 border-blue-500' : 'border-l-2 border-transparent'}">
-                                <div class="flex justify-between items-start mb-1">
-                                    <span class="text-xs font-mono text-neutral-500">#TKT-${202300+i}</span>
-                                    <span class="text-[10px] text-neutral-600">2小时前</span>
-                                </div>
-                                <h4 class="text-sm text-white font-medium mb-1 line-clamp-1">无法从外部 IP 连接数据库</h4>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 text-red-500 border border-red-500/20">高优先级</span>
-                                    <span class="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-500 border border-blue-500/20">技术问题</span>
-                                </div>
-                            </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    
-                    <!-- Ticket Detail -->
-                    <div class="flex-1 flex flex-col bg-[#18181c] rounded-xl border border-white/5 overflow-hidden">
-                        <div class="p-6 border-b border-white/5 flex justify-between items-start">
-                            <div>
-                                <h2 class="text-xl font-bold text-white mb-2">无法从外部 IP 连接数据库</h2>
-                                <div class="flex items-center gap-3 text-xs">
-                                    <span class="text-neutral-400"><i class="fas fa-user mr-1"></i> User_123</span>
-                                    <span class="text-neutral-400"><i class="fas fa-envelope mr-1"></i> user@example.com</span>
-                                    <span class="px-2 py-0.5 rounded bg-green-500/10 text-green-500 border border-green-500/20">待处理</span>
-                                </div>
-                            </div>
-                            <button class="px-3 py-1.5 bg-neutral-700 hover:bg-neutral-600 text-white text-xs rounded transition-colors">操作 <i class="fas fa-chevron-down ml-1"></i></button>
-                        </div>
-                        
-                        <div class="flex-1 overflow-auto p-6 space-y-6">
-                            <div class="flex gap-4">
-                                <div class="w-8 h-8 rounded-full bg-neutral-700 flex-shrink-0 flex items-center justify-center text-xs text-white">U</div>
-                                <div>
-                                    <div class="text-sm text-neutral-300 bg-[#202025] p-3 rounded-lg rounded-tl-none border border-white/5">
-                                        我尝试使用提供的凭据连接到我的托管数据库，但我一直收到超时错误。我的 IP 是 203.0.113.1。
-                                    </div>
-                                    <div class="text-[10px] text-neutral-600 mt-1">今天 10:23 AM</div>
-                                </div>
-                            </div>
-                            
-                            <div class="flex gap-4 flex-row-reverse">
-                                <div class="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-xs text-white">S</div>
-                                <div class="flex flex-col items-end">
-                                    <div class="text-sm text-white bg-blue-600/10 p-3 rounded-lg rounded-tr-none border border-blue-600/20">
-                                        您好，您是否检查过您的 IP 是否已添加到安全设置选项卡中的白名单？
-                                    </div>
-                                    <div class="text-[10px] text-neutral-600 mt-1">今天 10:45 AM</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4 border-t border-white/5 bg-[#202025]">
-                            <div class="relative">
-                                <textarea class="w-full bg-[#18181c] border border-white/10 rounded-lg p-3 text-sm text-white focus:border-blue-500/50 focus:outline-none min-h-[80px]" placeholder="输入回复..."></textarea>
-                                <div class="absolute bottom-2 right-2 flex gap-2">
-                                    <button class="text-neutral-400 hover:text-white"><i class="fas fa-paperclip"></i></button>
-                                    <button class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">回复</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateMarketingTemplate() {
-             return `
-                <div class="flex flex-col h-full">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                         <div class="bg-gradient-to-br from-purple-900/40 to-purple-800/10 p-5 rounded-xl border border-purple-500/20">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fas fa-bullhorn"></i></div>
-                                <span class="text-xs font-mono text-purple-300 bg-purple-500/10 px-2 py-1 rounded">进行中</span>
-                            </div>
-                            <div class="text-2xl font-bold text-white mb-1">夏季促销</div>
-                            <div class="text-sm text-neutral-400">12天后结束</div>
-                            <div class="mt-4 flex justify-between text-xs text-neutral-300">
-                                <span>转化率: 4.5%</span>
-                                <span>ROI: 320%</span>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-[#18181c] p-5 rounded-xl border border-white/5 flex flex-col justify-center">
-                            <div class="text-neutral-500 text-xs mb-1">潜在客户</div>
-                            <div class="text-2xl font-bold text-white">12,450</div>
-                            <div class="text-green-500 text-xs mt-1"><i class="fas fa-arrow-up"></i> 本周 15%</div>
-                        </div>
-                        
-                        <div class="bg-[#18181c] p-5 rounded-xl border border-white/5 flex flex-col justify-center">
-                            <div class="text-neutral-500 text-xs mb-1">邮件打开率</div>
-                            <div class="text-2xl font-bold text-white">24.8%</div>
-                            <div class="text-neutral-400 text-xs mt-1">行业平均: 21%</div>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-white font-bold">营销活动</h3>
-                        <button class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded transition-colors"><i class="fas fa-plus mr-1"></i> 新建活动</button>
-                    </div>
-
-                    <div class="flex-1 overflow-auto bg-[#18181c] rounded-xl border border-white/5">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-[#202025]">
-                                <tr class="text-xs uppercase text-neutral-400 tracking-wider">
-                                    <th class="p-4 font-medium border-b border-white/5">名称</th>
-                                    <th class="p-4 font-medium border-b border-white/5">渠道</th>
-                                    <th class="p-4 font-medium border-b border-white/5">状态</th>
-                                    <th class="p-4 font-medium border-b border-white/5">覆盖人数</th>
-                                    <th class="p-4 font-medium border-b border-white/5 text-right">预算</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm divide-y divide-white/5">
-                                ${['黑色星期五', '新功能发布', '通讯简报 #45', '重定向广告', '网红推广'].map((name, i) => `
-                                <tr class="hover:bg-white/[0.02] transition-colors">
-                                    <td class="p-4 text-white font-medium">${name}</td>
-                                    <td class="p-4 text-neutral-400 text-xs"><i class="fas ${['fa-envelope', 'fa-ad', 'fa-envelope', 'fa-bullseye', 'fa-hashtag'][i]} mr-2"></i> ${['邮件', '广告', '邮件', '广告', '社媒'][i]}</td>
-                                    <td class="p-4">
-                                        <span class="w-2 h-2 rounded-full ${i===0?'bg-green-500':i===3?'bg-amber-500':'bg-neutral-600'} inline-block mr-2"></span>
-                                        <span class="text-neutral-300 text-xs">${i===0?'进行中':i===3?'暂停':'已结束'}</span>
-                                    </td>
-                                    <td class="p-4 text-neutral-300">${Math.floor(Math.random() * 50000)}</td>
-                                    <td class="p-4 text-right text-white font-mono">$${Math.floor(Math.random() * 2000)}</td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateSecurityCenterTemplate() {
-            return `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                    <div class="lg:col-span-2 flex flex-col gap-6">
-                        <div class="bg-gradient-to-r from-green-900/20 to-green-800/10 border border-green-500/20 rounded-xl p-6 flex items-center justify-between">
-                            <div>
-                                <h3 class="text-lg font-bold text-white mb-1">系统安全</h3>
-                                <p class="text-sm text-neutral-400">未检测到严重漏洞。上次扫描: 2小时前。</p>
-                            </div>
-                            <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 text-2xl">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                        </div>
-
-                        <div class="bg-[#18181c] rounded-xl border border-white/5 flex-1 flex flex-col">
-                            <div class="p-4 border-b border-white/5">
-                                <h3 class="text-white font-bold text-sm">安全检查项</h3>
-                            </div>
-                            <div class="p-4 space-y-4">
-                                ${[
-                                    {name: '防火墙已启用', status: true},
-                                    {name: '强制双重认证', status: true},
-                                    {name: 'SSL 证书有效', status: true},
-                                    {name: '数据库已加密', status: true},
-                                    {name: 'API 速率限制', status: true},
-                                    {name: '登录尝试监控', status: false}
-                                ].map(item => `
-                                <div class="flex items-center justify-between p-3 rounded-lg bg-[#202025] border border-white/5">
-                                    <div class="flex items-center gap-3">
-                                        <i class="fas ${item.status ? 'fa-check-circle text-green-500' : 'fa-exclamation-triangle text-amber-500'}"></i>
-                                        <span class="text-sm text-neutral-300">${item.name}</span>
-                                    </div>
-                                    <button class="text-xs ${item.status ? 'text-neutral-500' : 'text-blue-500 hover:text-blue-400'}">${item.status ? '配置' : '立即启用'}</button>
-                                </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#18181c] rounded-xl border border-white/5 flex flex-col h-full">
-                        <div class="p-4 border-b border-white/5 flex justify-between items-center">
-                            <h3 class="text-white font-bold text-sm">最近警报</h3>
-                            <span class="px-2 py-0.5 rounded text-[10px] bg-neutral-700 text-neutral-300">过去24小时</span>
-                        </div>
-                        <div class="flex-1 overflow-auto p-4 space-y-4">
-                            ${Array(5).fill(0).map((_, i) => `
-                            <div class="flex gap-3">
-                                <div class="w-8 h-8 rounded bg-red-500/10 flex-shrink-0 flex items-center justify-center text-red-500 text-xs">
-                                    <i class="fas fa-exclamation"></i>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-white font-medium">登录失败尝试</div>
-                                    <div class="text-xs text-neutral-500 mt-0.5">IP: 45.23.12.${100+i} (中国)</div>
-                                    <div class="text-[10px] text-neutral-600 mt-1">20 分钟前</div>
-                                </div>
-                            </div>
-                            `).join('')}
-                        </div>
-                        <div class="p-4 border-t border-white/5">
-                            <button class="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold rounded transition-colors">
-                                查看安全日志
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateBackupRestoreTemplate() {
-            return `
-                <div class="flex flex-col h-full gap-6">
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
-                            <h3 class="text-white font-bold mb-4">上次备份</h3>
-                            <div class="flex items-end gap-2 mb-2">
-                                <span class="text-3xl font-bold text-green-500">成功</span>
-                                <span class="text-sm text-neutral-400 mb-1.5">通过计划任务</span>
-                            </div>
-                            <div class="text-sm text-neutral-300">2023年10月24日 02:00</div>
-                            <div class="text-xs text-neutral-500 mt-1">大小: 4.2 GB • 124 个表</div>
-                        </div>
-                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
-                            <h3 class="text-white font-bold mb-4">下次备份</h3>
-                            <div class="flex items-end gap-2 mb-2">
-                                <span class="text-3xl font-bold text-blue-500">14小时 32分</span>
-                                <span class="text-sm text-neutral-400 mb-1.5">后</span>
-                            </div>
-                            <div class="text-sm text-neutral-300">2023年10月25日 02:00</div>
-                            <div class="mt-4">
-                                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-colors w-full">
-                                    立即备份
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex-1 bg-[#18181c] rounded-xl border border-white/5 flex flex-col overflow-hidden">
-                        <div class="p-4 border-b border-white/5">
-                            <h3 class="text-white font-bold text-sm">备份历史</h3>
-                        </div>
-                        <div class="flex-1 overflow-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead class="bg-[#202025]">
-                                    <tr class="text-xs uppercase text-neutral-400">
-                                        <th class="p-4 font-medium">日期时间</th>
-                                        <th class="p-4 font-medium">类型</th>
-                                        <th class="p-4 font-medium">大小</th>
-                                        <th class="p-4 font-medium">耗时</th>
-                                        <th class="p-4 font-medium text-right">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-sm divide-y divide-white/5">
-                                    ${Array(8).fill(0).map((_, i) => `
-                                    <tr class="hover:bg-white/[0.02] transition-colors">
-                                        <td class="p-4 text-white">2023年10月${24-i}日 02:00</td>
-                                        <td class="p-4 text-neutral-400 text-xs uppercase bg-neutral-800/50 px-2 py-1 rounded w-max">全量</td>
-                                        <td class="p-4 text-neutral-300 font-mono">4.2 GB</td>
-                                        <td class="p-4 text-neutral-500">4分 12秒</td>
-                                        <td class="p-4 text-right">
-                                            <button class="text-blue-400 hover:text-blue-300 text-xs mr-3">下载</button>
-                                            <button class="text-neutral-500 hover:text-white text-xs">恢复</button>
-                                        </td>
-                                    </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function generateDevelopersTemplate() {
-            return `
-                <div class="flex h-full gap-6">
-                    <div class="w-64 bg-[#18181c] rounded-xl border border-white/5 p-2 h-full">
-                        <div class="space-y-1">
-                            <button class="w-full text-left px-4 py-2 rounded bg-blue-600/10 text-blue-500 text-sm font-medium">概览</button>
-                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">Webhooks</button>
-                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">访问令牌</button>
-                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">OAuth 应用</button>
-                            <button class="w-full text-left px-4 py-2 rounded hover:bg-white/5 text-neutral-400 text-sm font-medium transition-colors">日志</button>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 flex flex-col gap-6 overflow-auto">
-                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
-                            <h3 class="text-white font-bold mb-4">沙盒环境</h3>
-                            <p class="text-sm text-neutral-400 mb-6">安全地测试您的集成，而不影响生产数据。</p>
-                            <div class="flex items-center gap-4 bg-[#202025] p-4 rounded-lg border border-white/5">
-                                <div class="w-10 h-6 bg-green-600 rounded-full relative cursor-pointer">
-                                    <div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
-                                </div>
-                                <div>
-                                    <div class="text-white font-medium text-sm">沙盒模式已启用</div>
-                                    <div class="text-xs text-neutral-500">所有请求当前都路由到沙盒环境。</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-[#18181c] p-6 rounded-xl border border-white/5">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-white font-bold">活跃 Webhooks</h3>
-                                <button class="px-3 py-1.5 bg-neutral-800 border border-white/10 rounded text-xs text-white hover:bg-neutral-700 transition-colors">添加端点</button>
-                            </div>
-                            
-                            <div class="space-y-4">
-                                ${[
-                                    {url: 'https://api.myapp.com/hooks/orders', event: 'order.created'},
-                                    {url: 'https://api.myapp.com/hooks/users', event: 'user.signup'}
-                                ].map(hook => `
-                                <div class="flex items-center justify-between p-4 rounded-lg bg-[#202025] border border-white/5 group">
-                                    <div>
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-xs font-mono text-neutral-500 bg-neutral-800 px-1.5 py-0.5 rounded">POST</span>
-                                            <span class="text-white font-mono text-sm">${hook.url}</span>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xs text-neutral-500">事件:</span>
-                                            <span class="text-xs text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">${hook.event}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="flex items-center gap-1.5 text-xs text-green-500">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> 活跃
-                                        </span>
-                                        <button class="text-neutral-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-trash-alt"></i></button>
-                                    </div>
-                                </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
         }
 
         // --- Specific Templates ---
@@ -1236,99 +649,6 @@
                 </div>
             `;
         }
-        
-        function generateNotificationsTemplate() {
-             return `
-                <div class="flex flex-col h-full max-w-4xl mx-auto">
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex gap-2">
-                            <button class="px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold">全部</button>
-                            <button class="px-3 py-1.5 rounded-full bg-[#18181c] border border-white/10 text-neutral-400 hover:text-white text-xs font-bold transition-colors">未读 (3)</button>
-                            <button class="px-3 py-1.5 rounded-full bg-[#18181c] border border-white/10 text-neutral-400 hover:text-white text-xs font-bold transition-colors">系统公告</button>
-                        </div>
-                        <button class="text-xs text-blue-500 hover:text-blue-400">全部标记为已读</button>
-                    </div>
-
-                    <div class="space-y-3 overflow-y-auto pr-2">
-                        \${Array(6).fill(0).map((_, i) => \`
-                        <div class="p-4 rounded-xl bg-[#18181c] border \${i < 3 ? 'border-blue-500/30' : 'border-white/5'} hover:border-blue-500/50 transition-all group cursor-pointer relative overflow-hidden">
-                             \${i < 3 ? '<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>' : ''}
-                             <div class="flex gap-4">
-                                <div class="w-10 h-10 rounded-full \${i % 2 === 0 ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'} flex items-center justify-center shrink-0">
-                                    <i class="fas \${i % 2 === 0 ? 'fa-info-circle' : 'fa-exclamation-triangle'}"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex justify-between items-start mb-1">
-                                        <h4 class="text-white font-bold text-sm \${i < 3 ? '' : 'text-neutral-300'}">系统维护通知 \${i+1}</h4>
-                                        <span class="text-[10px] text-neutral-500">2小时前</span>
-                                    </div>
-                                    <p class="text-xs text-neutral-400 leading-relaxed">
-                                        系统将于本周六凌晨 02:00 进行例行维护，预计耗时 30 分钟。期间可能会出现短暂的服务中断，请提前做好准备。
-                                    </p>
-                                </div>
-                             </div>
-                        </div>
-                        \`).join('')}
-                    </div>
-                </div>
-             `;
-        }
-
-        function generateApiKeysTemplate() {
-            return `
-                 <div class="flex flex-col h-full">
-                    <div class="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/20 rounded-xl p-4 mb-6 flex items-start gap-3">
-                        <i class="fas fa-exclamation-circle text-yellow-500 mt-0.5"></i>
-                        <div>
-                            <h4 class="text-yellow-500 font-bold text-sm mb-1">安全提示</h4>
-                            <p class="text-xs text-yellow-200/70">API 密钥具有完全访问权限，请勿将密钥泄露给他人。建议定期轮换密钥以保证安全。</p>
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-white font-bold">活跃密钥列表</h3>
-                        <button class="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2">
-                            <i class="fas fa-plus"></i> 创建新密钥
-                        </button>
-                    </div>
-
-                    <div class="space-y-4">
-                        \${Array(4).fill(0).map((_, i) => \`
-                        <div class="bg-[#18181c] border border-white/5 rounded-xl p-4 flex items-center justify-between group hover:border-yellow-500/30 transition-all">
-                            <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-neutral-400">
-                                    <i class="fas fa-key"></i>
-                                </div>
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-white font-bold text-sm">开发密钥 \${i+1}</span>
-                                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-neutral-700 text-neutral-300">只读</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <code class="text-xs text-neutral-500 bg-black/30 px-2 py-0.5 rounded font-mono">sk_live_51Mz...Xy9z</code>
-                                        <button class="text-neutral-500 hover:text-white text-xs" title="Copy"><i class="fas fa-copy"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-6">
-                                <div class="text-right hidden sm:block">
-                                    <div class="text-[10px] text-neutral-500 uppercase tracking-wider">上次使用</div>
-                                    <div class="text-xs text-white">2分钟前</div>
-                                </div>
-                                <div class="text-right hidden sm:block">
-                                    <div class="text-[10px] text-neutral-500 uppercase tracking-wider">创建于</div>
-                                    <div class="text-xs text-white">2023年10月24日</div>
-                                </div>
-                                <button class="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-neutral-400 hover:text-red-500 hover:border-red-500/30 transition-all">
-                                    <i class="fas fa-trash-alt text-xs"></i>
-                                </button>
-                            </div>
-                        </div>
-                        \`).join('')}
-                    </div>
-                 </div>
-            `;
-        }
 
         function generateDefaultTemplate(module) {
             return `
@@ -1379,6 +699,16 @@
         }
 
         function generateAnalyticsTemplate(module) {
+            const resourceRows = Array(5).fill(0).map((_, i) => `
+                <div class="flex justify-between items-center text-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span class="text-neutral-300">资源 ${String.fromCharCode(65+i)}</span>
+                    </div>
+                    <span class="text-white font-mono">${Math.floor(Math.random() * 100)}%</span>
+                </div>
+            `).join('');
+
             return `
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                     <div class="lg:col-span-2 flex flex-col gap-6">
@@ -1425,15 +755,7 @@
                         
                         <div class="space-y-4 flex-1 overflow-auto">
                             <h4 class="text-xs font-bold text-neutral-500 uppercase">热门资源</h4>
-                            ${Array(5).fill(0).map((_, i) => `
-                            <div class="flex justify-between items-center text-sm">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                                    <span class="text-neutral-300">资源 ${String.fromCharCode(65+i)}</span>
-                                </div>
-                                <span class="text-white font-mono">${Math.floor(Math.random() * 100)}%</span>
-                            </div>
-                            `).join('')}
+                            ${resourceRows}
                         </div>
                     </div>
                 </div>
@@ -1443,7 +765,13 @@
         function initCharts() {
             // Wait for DOM update
             setTimeout(() => {
-                const ctx1 = document.getElementById('mainChart').getContext('2d');
+                const mainCanvas = document.getElementById('mainChart');
+                const pieCanvas = document.getElementById('pieChart');
+
+                // Safety check: Ensure canvas elements exist before initializing charts
+                if (!mainCanvas || !pieCanvas) return;
+
+                const ctx1 = mainCanvas.getContext('2d');
                 const chart1 = new Chart(ctx1, {
                     type: 'line',
                     data: {
@@ -1475,7 +803,7 @@
                     }
                 });
 
-                const ctx2 = document.getElementById('pieChart').getContext('2d');
+                const ctx2 = pieCanvas.getContext('2d');
                 const chart2 = new Chart(ctx2, {
                     type: 'doughnut',
                     data: {

@@ -136,7 +136,8 @@
         </div>
         <p class="text-sm text-neutral-300 mb-2">请使用<span class="font-bold text-white mx-1">{{ selectedMethod === 'ALIPAY' ? '支付宝' : '微信' }}</span>扫描二维码支付</p>
         <p class="text-xs text-neutral-500 mb-6 font-mono bg-neutral-800 px-2 py-1 rounded">订单号: {{ currentOrderNo }}</p>
-        <button @click="handlePaymentComplete" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold transition-colors shadow-lg shadow-green-900/20">
+        <button @click="handlePaymentComplete" :disabled="processing" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold transition-colors shadow-lg shadow-green-900/20 disabled:opacity-50 disabled:cursor-not-allowed">
+          <i v-if="processing" class="fas fa-spinner fa-spin mr-2"></i>
           我已完成支付
         </button>
       </div>
@@ -252,9 +253,23 @@ const confirmPayment = async () => {
   }
 }
 
-const handlePaymentComplete = () => {
-  showPaymentModal.value = false
-  message.success('支付成功')
-  router.push('/dashboard')
+const handlePaymentComplete = async () => {
+  if (!currentOrderNo.value) {
+    message.error('订单信息异常')
+    return
+  }
+  
+  processing.value = true
+  try {
+    await api.post(`/api/payment/confirm/${currentOrderNo.value}`)
+    showPaymentModal.value = false
+    message.success('支付成功，订阅已生效')
+    router.push('/dashboard')
+  } catch (error) {
+    console.error(error)
+    message.error(error.message || '支付确认失败，请稍后重试')
+  } finally {
+    processing.value = false
+  }
 }
 </script>

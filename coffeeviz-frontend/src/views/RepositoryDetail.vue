@@ -249,7 +249,7 @@ const loadRepository = async () => {
   try {
     const response = await fetch(`/api/repository/detail/${route.params.id}`, {
       headers: {
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       }
     })
     const result = await response.json()
@@ -269,7 +269,7 @@ const loadDiagrams = async () => {
   try {
     const response = await fetch(`/api/diagram/list/${route.params.id}`, {
       headers: {
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       }
     })
     const result = await response.json()
@@ -324,7 +324,7 @@ const loadSqlCode = async () => {
   try {
     const response = await fetch(`/api/project/config/${route.params.id}`, {
       headers: {
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       }
     })
     const result = await response.json()

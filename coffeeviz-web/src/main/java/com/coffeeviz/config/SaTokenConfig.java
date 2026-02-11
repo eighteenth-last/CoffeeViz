@@ -4,6 +4,7 @@ import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -34,6 +35,8 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     "/api/auth/wechat/**",
                     "/api/image/**",  // 图片代理接口不需要认证
                     "/api/ai/generate/stream",  // SSE 流式接口，在 Controller 内部验证 token
+                    "/api/team/join/*/info",  // 邀请链接信息（公开接口）
+                    "/api/team/register-and-join",  // 注册并加入团队（公开接口）
                     "/error",
                     "/favicon.ico"
                 )
@@ -42,5 +45,14 @@ public class SaTokenConfig implements WebMvcConfigurer {
         }))
         .addPathPatterns("/**")
         .excludePathPatterns("/static/**", "/public/**");
+    }
+    
+    /**
+     * 配置异步请求超时时间（与 SseEmitter 超时一致）
+     */
+    @Override
+    public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+        // 设置为 3 分钟，与 AiController 中 SseEmitter 超时一致
+        configurer.setDefaultTimeout(180000L);
     }
 }

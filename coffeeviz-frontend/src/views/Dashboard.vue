@@ -151,7 +151,7 @@
                 :style="{ width: subscriptionStore.sqlParseUsagePercent + '%' }">
               </div>
             </div>
-            <div class="text-[10px] text-neutral-500 mt-1">每日重置</div>
+            <div class="text-[10px] text-neutral-500 mt-1">每月重置</div>
           </div>
           
           <!-- AI生成配额 -->

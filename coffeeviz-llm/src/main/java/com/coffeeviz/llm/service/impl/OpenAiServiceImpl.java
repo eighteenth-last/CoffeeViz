@@ -103,6 +103,11 @@ public class OpenAiServiceImpl implements OpenAiService {
     
     @Override
     public void generateSqlFromPromptStream(AiRequest request, SseEmitter emitter) {
+        generateSqlFromPromptStream(request, emitter, null);
+    }
+    
+    @Override
+    public void generateSqlFromPromptStream(AiRequest request, SseEmitter emitter, java.util.function.Consumer<String> onComplete) {
         log.info("开始流式 AI 生成 SQL，提示词: {}", request.getPrompt());
         
         // 异步处理，避免阻塞主线程
@@ -122,7 +127,7 @@ public class OpenAiServiceImpl implements OpenAiService {
                 String userPrompt = buildUserPrompt(request);
                 
                 // 3. 流式调用 OpenAI API
-                callOpenAiApiStream(systemPrompt, userPrompt, emitter);
+                callOpenAiApiStream(systemPrompt, userPrompt, emitter, onComplete);
                 
             } catch (Exception e) {
                 log.error("流式 AI 生成失败", e);
@@ -147,9 +152,24 @@ public class OpenAiServiceImpl implements OpenAiService {
     /**
      * 流式调用 OpenAI API
      */
-    private void callOpenAiApiStream(String systemPrompt, String userPrompt, SseEmitter emitter) {
+    private void callOpenAiApiStream(String systemPrompt, String userPrompt, SseEmitter emitter, java.util.function.Consumer<String> onComplete) {
         HttpURLConnection connection = null;
         BufferedReader reader = null;
+        
+        // 用于跟踪 emitter 是否已完成（超时或客户端断开）
+        final java.util.concurrent.atomic.AtomicBoolean emitterCompleted = new java.util.concurrent.atomic.AtomicBoolean(false);
+        
+        emitter.onTimeout(() -> {
+            log.warn("SseEmitter 超时");
+            emitterCompleted.set(true);
+        });
+        emitter.onCompletion(() -> {
+            emitterCompleted.set(true);
+        });
+        emitter.onError(ex -> {
+            log.warn("SseEmitter 错误: {}", ex.getMessage());
+            emitterCompleted.set(true);
+        });
         
         try {
             String baseUrl = getBaseUrl();
@@ -237,10 +257,12 @@ public class OpenAiServiceImpl implements OpenAiService {
                                 fullContent.append(content);
                                 chunkCount++;
                                 
-                                // 发送增量内容
-                                emitter.send(SseEmitter.event()
-                                        .name("message")
-                                        .data(content));
+                                // 发送增量内容（检查 emitter 是否仍然活跃）
+                                if (!emitterCompleted.get()) {
+                                    emitter.send(SseEmitter.event()
+                                            .name("message")
+                                            .data(content));
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -251,18 +273,37 @@ public class OpenAiServiceImpl implements OpenAiService {
             
             // 发送完成事件
             log.info("流式生成完成，总长度: {}, 块数: {}", fullContent.length(), chunkCount);
-            emitter.send(SseEmitter.event()
-                    .name("done")
-                    .data("{\"message\":\"完成\"}"));
-            emitter.complete();
+            
+            // 调用完成回调（用于后续处理如 SQL 解析、ER 图生成）
+            if (onComplete != null) {
+                try {
+                    onComplete.accept(fullContent.toString());
+                } catch (Exception e) {
+                    log.error("完成回调执行失败", e);
+                    if (!emitterCompleted.get()) {
+                        emitter.send(SseEmitter.event()
+                                .name("error")
+                                .data("{\"message\":\"后处理失败: " + e.getMessage().replace("\"", "'") + "\"}"));
+                    }
+                }
+            }
+            
+            if (!emitterCompleted.get()) {
+                emitter.send(SseEmitter.event()
+                        .name("done")
+                        .data("{\"message\":\"完成\"}"));
+                emitter.complete();
+            }
             
         } catch (Exception e) {
             log.error("流式 API 调用失败", e);
             try {
-                emitter.send(SseEmitter.event()
-                        .name("error")
-                        .data("{\"message\":\"" + e.getMessage() + "\"}"));
-                emitter.completeWithError(e);
+                if (!emitterCompleted.get()) {
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("{\"message\":\"" + e.getMessage() + "\"}"));
+                    emitter.completeWithError(e);
+                }
             } catch (Exception ex) {
                 log.error("发送错误消息失败", ex);
             }

@@ -76,10 +76,7 @@ public class JSqlParserImpl implements SqlParser {
     @Override
     public boolean supports(String dialect) {
         // JSqlParser 支持标准 SQL 和大部分方言
-        return "mysql".equalsIgnoreCase(dialect) || 
-               "postgres".equalsIgnoreCase(dialect) ||
-               "postgresql".equalsIgnoreCase(dialect) ||
-               "auto".equalsIgnoreCase(dialect);
+        return true;
     }
     
     /**

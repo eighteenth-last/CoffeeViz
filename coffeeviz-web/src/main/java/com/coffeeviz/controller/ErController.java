@@ -112,11 +112,13 @@ public class ErController {
                 return Result.error(400, "JDBC URL 不能为空");
             }
             
-            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            // SQLite 等嵌入式数据库不需要用户名密码
+            boolean isEmbedded = "sqlite".equalsIgnoreCase(request.getDbType());
+            if (!isEmbedded && (request.getUsername() == null || request.getUsername().trim().isEmpty())) {
                 return Result.error(400, "用户名不能为空");
             }
             
-            if (request.getPassword() == null) {
+            if (!isEmbedded && request.getPassword() == null) {
                 return Result.error(400, "密码不能为空");
             }
             
@@ -181,11 +183,12 @@ public class ErController {
                 return Result.error(400, "JDBC URL 不能为空");
             }
             
-            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
+            boolean isEmbedded = "sqlite".equalsIgnoreCase(request.getDbType());
+            if (!isEmbedded && (request.getUsername() == null || request.getUsername().trim().isEmpty())) {
                 return Result.error(400, "用户名不能为空");
             }
             
-            if (request.getPassword() == null) {
+            if (!isEmbedded && request.getPassword() == null) {
                 return Result.error(400, "密码不能为空");
             }
             

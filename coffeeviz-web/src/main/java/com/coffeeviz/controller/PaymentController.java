@@ -58,10 +58,41 @@ public class PaymentController {
     }
     
     /**
+     * 确认支付（模拟支付场景：用户点击"我已完成支付"后调用）
+     */
+    @PostMapping("/confirm/{orderNo}")
+    public Result<String> confirmPayment(@PathVariable("orderNo") String orderNo) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        
+        // 校验订单归属
+        PaymentOrder order = orderService.getByOrderNo(orderNo);
+        if (order == null) {
+            return Result.error(404, "订单不存在");
+        }
+        if (!order.getUserId().equals(userId)) {
+            return Result.error(403, "无权操作此订单");
+        }
+        if ("paid".equals(order.getPaymentStatus())) {
+            return Result.success("订单已支付", "success");
+        }
+        
+        // 模拟支付成功，生成模拟交易号
+        String transactionId = "SIM_" + System.currentTimeMillis();
+        boolean success = orderService.handlePaymentSuccess(orderNo, transactionId);
+        
+        if (success) {
+            log.info("模拟支付确认成功: orderNo={}, userId={}", orderNo, userId);
+            return Result.success("支付成功，订阅已生效", "success");
+        } else {
+            return Result.error("支付确认失败");
+        }
+    }
+    
+    /**
      * 查询支付状态
      */
     @GetMapping("/query/{orderNo}")
-    public Result<PaymentOrder> queryPayment(@PathVariable String orderNo) {
+    public Result<PaymentOrder> queryPayment(@PathVariable("orderNo") String orderNo) {
         PaymentOrder order = orderService.getByOrderNo(orderNo);
         return Result.success(order);
     }

@@ -274,7 +274,7 @@ const fetchProjects = async () => {
   try {
     const response = await fetch(`/api/repository/list?page=${currentPage.value}&size=${pageSize.value}&keyword=${searchKeyword.value || ''}&status=${filterStatus.value || ''}`, {
       headers: {
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       }
     })
     const result = await response.json()
@@ -315,7 +315,7 @@ const handleCreate = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       },
       body: JSON.stringify(createFormData)
     })
@@ -360,7 +360,7 @@ const handleProjectMenu = async (key, repository) => {
           const response = await fetch(`/api/repository/delete/${repository.id}`, {
             method: 'DELETE',
             headers: {
-              'Authorization': localStorage.getItem('token') || ''
+              'Authorization': sessionStorage.getItem('token') || ''
             }
           })
           const result = await response.json()

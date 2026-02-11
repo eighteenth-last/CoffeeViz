@@ -3,7 +3,7 @@
     <div class="flex flex-col h-[calc(100vh-180px)]">
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h2 class="text-2xl font-black text-white">SQL 智能解析</h2>
+          <h2 class="text-2xl font-black text-white">E-R图生成</h2>
           <p class="text-neutral-500 text-sm italic font-mono">输入 DDL 脚本以生成 Mermaid 架构图。</p>
         </div>
         <div class="flex items-center space-x-3">
@@ -523,7 +523,7 @@ const handleSaveProject = async () => {
   try {
     const response = await fetch('/api/repository/list?page=1&size=100', {
       headers: {
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       }
     })
     const result = await response.json()
@@ -586,7 +586,7 @@ const handleConfirmSave = async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('token') || ''
+          'Authorization': sessionStorage.getItem('token') || ''
         },
         body: JSON.stringify({
           repositoryName: saveFormData.repositoryName,
@@ -610,7 +610,7 @@ const handleConfirmSave = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') || ''
+        'Authorization': sessionStorage.getItem('token') || ''
       },
       body: JSON.stringify({
         repositoryId: repositoryId,

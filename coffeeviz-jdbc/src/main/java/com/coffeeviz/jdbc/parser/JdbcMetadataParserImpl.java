@@ -27,7 +27,36 @@ public class JdbcMetadataParserImpl implements JdbcMetadataParser {
         try (Connection conn = createConnection(config)) {
             DatabaseMetaData metaData = conn.getMetaData();
             String catalog = conn.getCatalog();
-            String schema = config.getSchemaName() != null ? config.getSchemaName() : catalog;
+            String schema = config.getSchemaName();
+            
+            // 不同数据库的 catalog/schema 处理策略
+            String dbType = config.getDbType() != null ? config.getDbType().toLowerCase() : "";
+            switch (dbType) {
+                case "oracle", "dm", "kingbase" -> {
+                    // Oracle/达梦/金仓 使用 schema，catalog 为 null
+                    catalog = null;
+                    if (schema == null || schema.isEmpty()) {
+                        schema = config.getUsername() != null ? config.getUsername().toUpperCase() : null;
+                    }
+                }
+                case "sqlserver" -> {
+                    // SQL Server 使用 catalog=数据库名, schema 默认 dbo
+                    if (schema == null || schema.isEmpty()) schema = "dbo";
+                }
+                case "postgresql", "pg" -> {
+                    // PostgreSQL 使用 schema，默认 public
+                    if (schema == null || schema.isEmpty()) schema = "public";
+                }
+                case "sqlite" -> {
+                    // SQLite 没有 schema 概念
+                    catalog = null;
+                    schema = null;
+                }
+                default -> {
+                    // MySQL/MariaDB 等使用 catalog
+                    if (schema == null || schema.isEmpty()) schema = catalog;
+                }
+            }
             
             log.info("开始解析数据库元数据：{}", schema);
             
@@ -91,9 +120,18 @@ public class JdbcMetadataParserImpl implements JdbcMetadataParser {
             String dbVersion = metaData.getDatabaseProductName() + " " + 
                              metaData.getDatabaseProductVersion();
             
-            // 统计表数量
+            // 使用与 parseFromDatabase 相同的 catalog/schema 策略
             String catalog = conn.getCatalog();
-            String schema = config.getSchemaName() != null ? config.getSchemaName() : catalog;
+            String schema = config.getSchemaName();
+            String dbType = config.getDbType() != null ? config.getDbType().toLowerCase() : "";
+            switch (dbType) {
+                case "oracle", "dm", "kingbase" -> { catalog = null; if (schema == null || schema.isEmpty()) schema = config.getUsername() != null ? config.getUsername().toUpperCase() : null; }
+                case "sqlserver" -> { if (schema == null || schema.isEmpty()) schema = "dbo"; }
+                case "postgresql", "pg" -> { if (schema == null || schema.isEmpty()) schema = "public"; }
+                case "sqlite" -> { catalog = null; schema = null; }
+                default -> { if (schema == null || schema.isEmpty()) schema = catalog; }
+            }
+            
             ResultSet tables = metaData.getTables(catalog, schema, "%", new String[]{"TABLE"});
             
             int tableCount = 0;
@@ -121,12 +159,28 @@ public class JdbcMetadataParserImpl implements JdbcMetadataParser {
      */
     private Connection createConnection(JdbcConfig config) throws SQLException {
         Properties props = new Properties();
-        props.setProperty("user", config.getUsername());
-        props.setProperty("password", config.getPassword());
-        props.setProperty("connectTimeout", String.valueOf(config.getTimeout() * 1000));
+        // SQLite 等嵌入式数据库不需要用户名密码
+        if (config.getUsername() != null && !config.getUsername().isEmpty()) {
+            props.setProperty("user", config.getUsername());
+        }
+        if (config.getPassword() != null && !config.getPassword().isEmpty()) {
+            props.setProperty("password", config.getPassword());
+        }
+        if (config.getTimeout() > 0) {
+            props.setProperty("connectTimeout", String.valueOf(config.getTimeout() * 1000));
+            // Oracle 使用 oracle.net.CONNECT_TIMEOUT
+            props.setProperty("oracle.net.CONNECT_TIMEOUT", String.valueOf(config.getTimeout() * 1000));
+            // SQL Server 使用 loginTimeout（秒）
+            props.setProperty("loginTimeout", String.valueOf(config.getTimeout()));
+        }
         
         Connection conn = DriverManager.getConnection(config.getJdbcUrl(), props);
-        conn.setReadOnly(config.isReadOnly());
+        // SQLite 不支持 setReadOnly
+        try {
+            conn.setReadOnly(config.isReadOnly());
+        } catch (SQLException e) {
+            log.debug("设置只读模式失败（部分数据库不支持）: {}", e.getMessage());
+        }
         
         return conn;
     }

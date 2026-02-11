@@ -356,8 +356,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, onMounted, watch, computed } from 'vue';
+import { ref, reactive, nextTick, onMounted, onUnmounted, watch, computed } from 'vue';
 import { useMessage } from 'naive-ui';
+import { marked } from 'marked';
+
+// Configure marked
+marked.use({
+  breaks: true,
+  gfm: true
+});
 
 // Dynamic Load Helper
 const loadScript = (src) => {
@@ -395,7 +402,6 @@ const showCanvas = ref(false); // Controls the visibility of the right canvas pa
 const showSaveModal = ref(false); // Controls save modal
 const saving = ref(false); // Saving state
 const canvasView = ref('preview'); // 'preview' | 'code'
-const isMarkedLoaded = ref(false);
 
 const streamedExplanation = ref('');
 const streamedSql = ref('');
@@ -414,6 +420,9 @@ const streaming = reactive({
     sql: false,
     diagram: false
 });
+
+// 当前 EventSource 连接（用于 SSE 流式输出）
+let currentEventSource = null;
 
 const settings = reactive({
     apiUrl: 'http://localhost:8080/api/ai/generate'
@@ -436,10 +445,35 @@ const canSave = computed(() => {
 
 const renderedExplanation = computed(() => {
     if (!streamedExplanation.value) return '';
-    if (isMarkedLoaded.value && window.marked) {
-        return window.marked.parse(streamedExplanation.value);
+    try {
+        // Fix markdown headers (add space if missing)
+        // e.g. "##Title" -> "## Title"
+        let fixedMarkdown = streamedExplanation.value.replace(/(^|\n)(#{1,6})([^ #\n])/g, '$1$2 $3');
+        
+        // Fix unordered lists (add space if missing)
+        // e.g. "-Item" -> "- Item"
+        fixedMarkdown = fixedMarkdown.replace(/(^|\n)(\s*)([\-\+])([^\s\-\+\n])/g, '$1$2$3 $4');
+        
+        return marked.parse(fixedMarkdown);
+    } catch (e) {
+        console.error('Markdown parse error:', e);
+        return streamedExplanation.value;
     }
-    return streamedExplanation.value;
+});
+
+// Watch for explanation changes to trigger syntax highlighting
+watch(renderedExplanation, () => {
+    nextTick(() => {
+        if (window.Prism && outputContainer.value) {
+            const codeBlocks = outputContainer.value.querySelectorAll('pre code');
+            codeBlocks.forEach((block) => {
+                if (!block.classList.contains('prism-highlighted')) {
+                    window.Prism.highlightElement(block);
+                    block.classList.add('prism-highlighted');
+                }
+            });
+        }
+    });
 });
 
 // Watch for start to reset canvas
@@ -471,6 +505,14 @@ watch(
     },
     { deep: true }
 );
+
+// 页面卸载时关闭 EventSource 连接
+onUnmounted(() => {
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+});
 
 onMounted(async () => {
     // 1. 恢复会话状态
@@ -505,17 +547,24 @@ onMounted(async () => {
         console.error('恢复会话失败:', e);
     }
     
-    // 2. Dynamic Load Prism and Mermaid and Marked
+    // 2. Dynamic Load Prism and Mermaid
     try {
         loadStyle('https://cdn.bootcdn.net/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css');
         await Promise.all([
             loadScript('https://cdn.bootcdn.net/ajax/libs/mermaid/10.6.1/mermaid.min.js'),
-            loadScript('https://cdn.bootcdn.net/ajax/libs/prism/1.29.0/prism.min.js'),
-            loadScript('https://cdn.bootcdn.net/ajax/libs/marked/12.0.0/marked.min.js')
+            loadScript('https://cdn.bootcdn.net/ajax/libs/prism/1.29.0/prism.min.js')
         ]);
         await loadScript('https://cdn.bootcdn.net/ajax/libs/prism/1.29.0/components/prism-sql.min.js');
         
-        isMarkedLoaded.value = true;
+        // Trigger highlight after loading
+        nextTick(() => {
+            if (window.Prism && outputContainer.value) {
+                const codeBlocks = outputContainer.value.querySelectorAll('pre code');
+                codeBlocks.forEach((block) => {
+                    window.Prism.highlightElement(block);
+                });
+            }
+        });
 
         if (window.mermaid) {
             window.mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
@@ -547,32 +596,6 @@ const fillPrompt = (text) => {
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const streamText = async (fullText, targetRef, type) => {
-    streaming[type] = true;
-    targetRef.value = '';
-    
-    const chunkSize = 3; 
-    for (let i = 0; i < fullText.length; i += chunkSize) {
-        if (stopFlag.value) break;
-        targetRef.value += fullText.slice(i, i + chunkSize);
-        
-        if (outputContainer.value) {
-            outputContainer.value.scrollTop = outputContainer.value.scrollHeight;
-        }
-        
-        if (type === 'sql' && i % 50 === 0 && sqlCodeBlock.value && window.Prism) {
-            window.Prism.highlightElement(sqlCodeBlock.value);
-        }
-
-        await sleep(10 + Math.random() * 20); 
-    }
-    
-    if (type === 'sql' && sqlCodeBlock.value && window.Prism) {
-        window.Prism.highlightElement(sqlCodeBlock.value);
-    }
-    streaming[type] = false;
-};
-
 const renderMermaid = async (code) => {
     if (!mermaidContainer.value || !window.mermaid) return;
     streaming.diagram = true;
@@ -596,6 +619,12 @@ const stop = () => {
     loading.value = false;
     isThinking.value = false;
     Object.keys(streaming).forEach(k => streaming[k] = false);
+    
+    // 关闭 EventSource 连接
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
 };
 
 const getDiagramBlob = async () => {
@@ -669,7 +698,7 @@ const handleSave = async () => {
 // 加载架构库列表
 const loadRepositories = async () => {
     try {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (!token) {
             message.error('未登录，请先登录');
             return;
@@ -746,92 +775,247 @@ const generate = async () => {
     
     stopFlag.value = false;
     loading.value = true;
-    hasStarted.value = true; // Trigger layout change immediately
-    isThinking.value = true; // Show thinking state
+    hasStarted.value = true;
+    isThinking.value = true;
     
     // Reset outputs
     streamedExplanation.value = '';
     streamedSql.value = '';
     mermaidCode.value = '';
+    sqlDdl.value = '';
+    tableCount.value = 0;
+    relationCount.value = 0;
 
     // Reset textarea height after send
     if(textareaRef.value) {
          textareaRef.value.style.height = 'auto';
     }
 
+    // 关闭之前的 EventSource（如果有）
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+
     try {
-        let data;
-        
-        // 1. Thinking Phase (Simulate Backend Call or Mock)
-        // const startTime = Date.now();
-        
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (!token) {
             throw new Error('未登录，请先登录系统');
         }
 
-        const res = await fetch(settings.apiUrl, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': token
-            },
-            body: JSON.stringify({
-                prompt: textToSend,
-                dbType: 'mysql',
-                namingStyle: 'snake_case'
-            })
+        // 构建 SSE URL
+        const params = new URLSearchParams({
+            prompt: textToSend,
+            dbType: 'mysql',
+            namingStyle: 'snake_case',
+            generateIndexes: 'true',
+            generateComments: 'true',
+            generateJunctionTables: 'true',
+            token: token
         });
         
-        const json = await res.json();
-        if (json.code === 200) {
-            data = json.data;
-            // 保存表数量和关系数量
-            tableCount.value = data.tableCount || 0;
-            relationCount.value = data.relationCount || 0;
-            // 保存 SQL DDL
-            sqlDdl.value = data.sqlDdl || '';
-        } else {
-            throw new Error(json.message || 'API Error');
-        }
+        const sseUrl = `http://localhost:8080/api/ai/generate/stream?${params.toString()}`;
+        
+        // 创建 EventSource 连接
+        const eventSource = new EventSource(sseUrl);
+        currentEventSource = eventSource;
+        
+        // 标记是否已收到第一个 message（用于切换 thinking -> streaming 状态）
+        let firstMessageReceived = false;
+        
+        // 监听 message 事件（LLM 流式文本块）
+        let fullResponseBuffer = '';
+        
+        eventSource.addEventListener('message', (event) => {
+            if (stopFlag.value) return;
+            
+            if (!firstMessageReceived) {
+                firstMessageReceived = true;
+                isThinking.value = false;
+                streaming.explanation = true;
+            }
+            
+            // 累积完整响应
+            fullResponseBuffer += event.data;
+            
+            // 尝试分离 SQL 代码块和解释文本
+            // 支持 ```sql 或 纯 ``` (假设在数据库设计上下文中大部分代码块是 SQL)
+            // 使用非贪婪匹配捕获代码内容
+            const sqlBlockRegex = /```(?:sql)?\s*([\s\S]*?)(\s*```|$)/i;
+            const match = fullResponseBuffer.match(sqlBlockRegex);
+            
+            if (match) {
+                // 发现代码块，视为 SQL
+                const sqlContent = match[1];
+                // 截取代码块之前的内容作为解释
+                const explanationPart = fullResponseBuffer.substring(0, match.index).trim();
+                
+                // 更新解释文本（不包含 SQL）
+                streamedExplanation.value = explanationPart;
+                
+                // 实时更新 SQL 内容
+                // 只有当提取到的内容不为空时才更新，避免闪烁
+                if (sqlContent.trim()) {
+                    streamedSql.value = sqlContent;
+                }
+                
+                // 确保显示 SQL 编辑器
+                // 我们不需要手动切换 streaming.explanation = false，因为 UI 是并存的
+                // 但我们可以确保 SQL 区域可见
+                
+            } else {
+                // 尚未发现 SQL 代码块，全部作为解释文本
+                streamedExplanation.value = fullResponseBuffer;
+            }
+            
+            // 自动滚动到底部
+            if (outputContainer.value) {
+                nextTick(() => {
+                    outputContainer.value.scrollTop = outputContainer.value.scrollHeight;
+                });
+            }
+        });
+        
+        // 监听 result 事件（后端解析完成后发送的结构化数据）
+        eventSource.addEventListener('result', (event) => {
+            if (stopFlag.value) return;
+            
+            try {
+                const resultData = JSON.parse(event.data);
+                
+                if (resultData.success) {
+                    // 保存结构化数据
+                    sqlDdl.value = resultData.sqlDdl || '';
+                    tableCount.value = resultData.tableCount || 0;
+                    relationCount.value = resultData.relationCount || 0;
+                    
+                    // 显示 SQL 代码
+                    // streamedSql.value = resultData.sqlDdl || ''; // 已经在 message 事件中实时更新了，不需要覆盖，除非后端返回的更完整
+                    // 但为了保险起见，如果 message 解析的不完整，可以用最终结果覆盖
+                    if (resultData.sqlDdl && resultData.sqlDdl.length > streamedSql.value.length) {
+                         streamedSql.value = resultData.sqlDdl;
+                    }
+                    streaming.explanation = false;
 
-        // 2. Output Phase
-        if (stopFlag.value) return;
-        isThinking.value = false; // Hide thinking, start streaming
-        loading.value = false; // Enable input again
-
-        // Stream Explanation
-        await streamText(data.aiExplanation || data.explanation, streamedExplanation, 'explanation');
-        if (stopFlag.value) return;
+                    // 从 explanation 中移除可能残留的代码块标记 (二次保险)
+                    if (streamedExplanation.value) {
+                         // 移除 ``` ... ``` 代码块（如果还有残留）
+                         streamedExplanation.value = streamedExplanation.value.replace(/```[\s\S]*?```/gi, '').trim();
+                         // 移除未闭合的 ```
+                         streamedExplanation.value = streamedExplanation.value.replace(/```[\s\S]*/gi, '').trim();
+                         // 移除可能存在的 "Here is the SQL:" 等尾部提示语（简单处理）
+                         streamedExplanation.value = streamedExplanation.value.replace(/\n\s*Here is the SQL.*?:?\s*$/i, '').trim();
+                    }
+                    
+                    // 高亮 SQL 代码
+                    nextTick(() => {
+                        if (sqlCodeBlock.value && window.Prism) {
+                            window.Prism.highlightElement(sqlCodeBlock.value);
+                        }
+                    });
+                    
+                    // 渲染 Mermaid 图表
+                    if (resultData.mermaidCode) {
+                        showCanvas.value = true;
+                        
+                        let cleanMermaid = resultData.mermaidCode
+                            .replace(/```mermaid/g, '')
+                            .replace(/```/g, '')
+                            .trim();
+                        cleanMermaid = cleanMermaid.replace(/`([^`]+)`/g, '$1');
+                        
+                        mermaidCode.value = cleanMermaid;
+                        renderMermaid(cleanMermaid);
+                    }
+                } else {
+                    console.error('后处理失败:', resultData.message);
+                    message.error('ER 图生成失败: ' + (resultData.message || '未知错误'));
+                    
+                    // 即使 ER 图失败，也保存 SQL（如果有）
+                    if (resultData.sqlDdl) {
+                        sqlDdl.value = resultData.sqlDdl;
+                        streamedSql.value = resultData.sqlDdl;
+                        streaming.explanation = false;
+                        nextTick(() => {
+                            if (sqlCodeBlock.value && window.Prism) {
+                                window.Prism.highlightElement(sqlCodeBlock.value);
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('解析 result 事件失败:', e);
+            }
+        });
         
-        // Stream SQL
-        await streamText(data.sqlDdl, streamedSql, 'sql');
-        if (stopFlag.value) return;
-
-        // 3. Draw Phase - Open Canvas
-        showCanvas.value = true;
+        // 监听 done 事件（流式完成）
+        eventSource.addEventListener('done', () => {
+            loading.value = false;
+            streaming.explanation = false;
+            streaming.sql = false;
+            
+            eventSource.close();
+            currentEventSource = null;
+        });
         
-        // Sanitize Mermaid Code from LLM
-        // 1. Remove Markdown code blocks
-        // 2. Remove backticks from entity names (Fixes Parse error: Expecting 'EOF', 'SPACE'..., got '`')
-        let cleanMermaid = data.mermaidCode
-            .replace(/```mermaid/g, '')
-            .replace(/```/g, '')
-            .trim();
+        // 监听 error 事件（后端发送的错误）
+        eventSource.addEventListener('error', (event) => {
+            // EventSource 自身的连接错误
+            if (eventSource.readyState === EventSource.CLOSED) {
+                // 连接已关闭，可能是正常结束
+                loading.value = false;
+                streaming.explanation = false;
+                eventSource.close();
+                currentEventSource = null;
+                return;
+            }
+            
+            // 尝试解析后端发送的错误消息
+            let errorMsg = 'SSE 连接错误';
+            try {
+                if (event.data) {
+                    const errorData = JSON.parse(event.data);
+                    errorMsg = errorData.message || errorMsg;
+                }
+            } catch (e) {
+                // 忽略解析错误
+            }
+            
+            console.error('SSE 错误:', errorMsg);
+            message.error(errorMsg);
+            
+            loading.value = false;
+            isThinking.value = false;
+            streaming.explanation = false;
+            
+            eventSource.close();
+            currentEventSource = null;
+        });
         
-        // Remove backticks around entity names (e.g. `User` -> User)
-        cleanMermaid = cleanMermaid.replace(/`([^`]+)`/g, '$1');
-        
-        mermaidCode.value = cleanMermaid;
-        await renderMermaid(cleanMermaid);
+        // EventSource 原生 onerror（连接级别错误）
+        eventSource.onerror = (event) => {
+            // 如果已经被 done 事件关闭，忽略
+            if (!currentEventSource) return;
+            
+            // 如果还在 CONNECTING 状态，说明是重连，不处理
+            if (eventSource.readyState === EventSource.CONNECTING) {
+                return;
+            }
+            
+            console.error('EventSource 连接错误');
+            loading.value = false;
+            isThinking.value = false;
+            streaming.explanation = false;
+            
+            eventSource.close();
+            currentEventSource = null;
+        };
 
     } catch (error) {
         console.error(error);
-        alert('Error: ' + error.message);
+        message.error('Error: ' + error.message);
         loading.value = false;
         isThinking.value = false;
-    } finally {
-         // prompt.value = ''; 
     }
 };
 
@@ -849,6 +1033,12 @@ const clearSession = () => {
     // 确认对话框
     if (hasStarted.value && !confirm('确定要清空当前会话吗？所有未保存的内容将丢失。')) {
         return;
+    }
+    
+    // 关闭 EventSource 连接
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
     }
     
     // 清空所有状态
@@ -911,7 +1101,7 @@ const handleConfirmSave = async () => {
         reader.onloadend = async () => {
             try {
                 const base64 = reader.result;
-                const token = localStorage.getItem('token');
+                const token = sessionStorage.getItem('token');
                 if (!token) {
                     message.error('未登录，请先登录');
                     saving.value = false;
@@ -1072,31 +1262,102 @@ const handleConfirmSave = async () => {
 }
 
 /* Markdown Styles */
-.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+.markdown-body {
+    color: #E3E3E3;
+    line-height: 1.7;
+    font-size: 15px;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
     margin-top: 1.5em;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.75em;
     font-weight: 600;
+    color: #F5F5F5;
+    line-height: 1.3;
+}
+.markdown-body h1 { font-size: 1.8em; border-bottom: 1px solid #444746; padding-bottom: 0.3em; }
+.markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid #444746; padding-bottom: 0.3em; }
+.markdown-body h3 { font-size: 1.25em; }
+.markdown-body h4 { font-size: 1.1em; }
+
+.markdown-body p { margin-bottom: 1em; }
+
+.markdown-body ul, .markdown-body ol {
+    padding-left: 1.5em;
+    margin-bottom: 1em;
+}
+.markdown-body ul { list-style-type: disc; }
+.markdown-body ol { list-style-type: decimal; }
+.markdown-body li { margin-bottom: 0.25em; }
+
+.markdown-body strong { font-weight: 700; color: #fff; }
+.markdown-body em { font-style: italic; color: #d4d4d4; }
+
+.markdown-body blockquote {
+    border-left: 4px solid #4285F4;
+    padding: 0.5em 1em;
+    margin: 1em 0;
+    background-color: rgba(66, 133, 244, 0.1);
+    border-radius: 0 4px 4px 0;
+    color: #D1D5DB;
+}
+
+.markdown-body code {
+    background-color: rgba(255,255,255,0.1);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9em;
     color: #E3E3E3;
 }
-.markdown-body h2 { font-size: 1.25em; }
-.markdown-body h3 { font-size: 1.1em; }
-.markdown-body p { margin-bottom: 1em; }
-.markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-.markdown-body ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
-.markdown-body li { margin-bottom: 0.25em; }
-.markdown-body strong { font-weight: 700; color: #fff; }
-.markdown-body code { 
-    background-color: rgba(255,255,255,0.1); 
-    padding: 0.2em 0.4em; 
-    border-radius: 4px; 
-    font-family: monospace; 
-    font-size: 0.9em;
-}
+
 .markdown-body pre {
     background-color: #1E1F20;
     padding: 1em;
     border-radius: 8px;
     overflow-x: auto;
     margin-bottom: 1em;
+    border: 1px solid #444746;
+}
+.markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.9em;
+    color: #E3E3E3;
+}
+
+.markdown-body a {
+    color: #4285F4;
+    text-decoration: none;
+}
+.markdown-body a:hover {
+    text-decoration: underline;
+}
+
+.markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+    font-size: 0.9em;
+}
+.markdown-body th, .markdown-body td {
+    border: 1px solid #444746;
+    padding: 0.6em 0.8em;
+    text-align: left;
+}
+.markdown-body th {
+    background-color: #28292A;
+    font-weight: 600;
+}
+.markdown-body tr:nth-child(even) {
+    background-color: rgba(255,255,255,0.02);
+}
+
+.markdown-body hr {
+    height: 1px;
+    background-color: #444746;
+    border: none;
+    margin: 1.5em 0;
 }
 </style>

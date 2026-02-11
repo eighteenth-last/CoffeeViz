@@ -24,12 +24,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     
     private final SubscriptionPlanMapper planMapper;
     private final UserSubscriptionMapper subscriptionMapper;
+    private final com.coffeeviz.mapper.TeamMemberMapper teamMemberMapper;
+    private final com.coffeeviz.mapper.TeamMapper teamMapper;
     private QuotaService quotaService;
     
     public SubscriptionServiceImpl(SubscriptionPlanMapper planMapper, 
-                                   UserSubscriptionMapper subscriptionMapper) {
+                                   UserSubscriptionMapper subscriptionMapper,
+                                   com.coffeeviz.mapper.TeamMemberMapper teamMemberMapper,
+                                   com.coffeeviz.mapper.TeamMapper teamMapper) {
         this.planMapper = planMapper;
         this.subscriptionMapper = subscriptionMapper;
+        this.teamMemberMapper = teamMemberMapper;
+        this.teamMapper = teamMapper;
     }
     
     @org.springframework.beans.factory.annotation.Autowired
@@ -170,27 +176,55 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Override
     public boolean isSubscriptionValid(Long userId) {
         UserSubscription subscription = getCurrentSubscription(userId);
-        if (subscription == null) {
-            return false;
+        if (subscription != null && "active".equals(subscription.getStatus()) 
+                && subscription.getEndTime().isAfter(LocalDateTime.now())) {
+            return true;
         }
         
-        return "active".equals(subscription.getStatus()) 
-            && subscription.getEndTime().isAfter(LocalDateTime.now());
+        // 如果用户自身订阅无效，检查是否是团队成员（继承团队 owner 的订阅）
+        Long ownerId = resolveTeamOwnerId(userId);
+        if (ownerId != null && !ownerId.equals(userId)) {
+            UserSubscription ownerSubscription = getCurrentSubscription(ownerId);
+            if (ownerSubscription != null && "active".equals(ownerSubscription.getStatus())
+                    && ownerSubscription.getEndTime().isAfter(LocalDateTime.now())) {
+                log.debug("团队订阅共享: userId={} 继承 ownerId={} 的订阅", userId, ownerId);
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     @Override
     public boolean hasFeature(Long userId, String feature) {
         UserSubscription subscription = getCurrentSubscription(userId);
-        if (subscription == null) {
-            return false;
+        if (subscription != null) {
+            SubscriptionPlan plan = planMapper.selectById(subscription.getPlanId());
+            if (plan != null && checkPlanFeature(plan, feature)) {
+                return true;
+            }
         }
         
-        SubscriptionPlan plan = planMapper.selectById(subscription.getPlanId());
-        if (plan == null) {
-            return false;
+        // 如果用户自身计划不支持该功能，检查是否是团队成员
+        Long ownerId = resolveTeamOwnerId(userId);
+        if (ownerId != null && !ownerId.equals(userId)) {
+            UserSubscription ownerSubscription = getCurrentSubscription(ownerId);
+            if (ownerSubscription != null) {
+                SubscriptionPlan ownerPlan = planMapper.selectById(ownerSubscription.getPlanId());
+                if (ownerPlan != null && checkPlanFeature(ownerPlan, feature)) {
+                    log.debug("团队功能共享: userId={} 继承 ownerId={} 的 {} 功能", userId, ownerId, feature);
+                    return true;
+                }
+            }
         }
         
-        // 根据功能检查权限
+        return false;
+    }
+    
+    /**
+     * 检查计划是否支持指定功能
+     */
+    private boolean checkPlanFeature(SubscriptionPlan plan, String feature) {
         switch (feature) {
             case "jdbc":
                 return plan.getSupportJdbc() == 1;
@@ -202,6 +236,39 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 return plan.getSupportTeam() == 1;
             default:
                 return false;
+        }
+    }
+    
+    /**
+     * 解析团队 owner ID（团队订阅共享）
+     * 如果用户是某个活跃团队的成员（非 owner），返回团队 owner 的 ID。
+     * 否则返回 null。
+     */
+    private Long resolveTeamOwnerId(Long userId) {
+        try {
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.coffeeviz.entity.TeamMember> memberQuery = 
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+            memberQuery.eq(com.coffeeviz.entity.TeamMember::getUserId, userId)
+                    .eq(com.coffeeviz.entity.TeamMember::getStatus, "active")
+                    .eq(com.coffeeviz.entity.TeamMember::getRole, "member");
+            
+            java.util.List<com.coffeeviz.entity.TeamMember> memberships = teamMemberMapper.selectList(memberQuery);
+            
+            if (memberships == null || memberships.isEmpty()) {
+                return null;
+            }
+            
+            for (com.coffeeviz.entity.TeamMember membership : memberships) {
+                com.coffeeviz.entity.Team team = teamMapper.selectById(membership.getTeamId());
+                if (team != null && "active".equals(team.getStatus())) {
+                    return team.getOwnerId();
+                }
+            }
+            
+            return null;
+        } catch (Exception e) {
+            log.warn("解析团队 owner 失败: userId={}, error={}", userId, e.getMessage());
+            return null;
         }
     }
     

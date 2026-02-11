@@ -31,19 +31,23 @@ public class QuotaServiceImplV2 implements QuotaService {
     private final PlanQuotaMapper planQuotaMapper;
     private final UserQuotaTrackingMapper userQuotaTrackingMapper;
     private final SubscriptionService subscriptionService;
+    private final com.coffeeviz.mapper.TeamMemberMapper teamMemberMapper;
+    private final com.coffeeviz.mapper.TeamMapper teamMapper;
     
     // ========== 旧方法实现（使用新系统）==========
     
     @Override
     public boolean checkQuota(Long userId, String quotaType) {
-        return hasAvailableQuota(userId, quotaType);
+        Long effectiveUserId = resolveEffectiveUserId(userId);
+        return hasAvailableQuota(effectiveUserId, quotaType);
     }
     
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean useQuota(Long userId, String quotaType) {
+        Long effectiveUserId = resolveEffectiveUserId(userId);
         try {
-            consumeQuota(userId, quotaType, 1);
+            consumeQuota(effectiveUserId, quotaType, 1);
             return true;
         } catch (QuotaExceededException e) {
             log.warn("配额不足: {}", e.getMessage());
@@ -127,12 +131,17 @@ public class QuotaServiceImplV2 implements QuotaService {
             return;
         }
         
-        // 为每个计划配额创建用户跟踪记录
+        // 为每个计划配额创建或更新用户跟踪记录
         for (PlanQuota planQuota : planQuotas) {
             // 检查是否已存在
             UserQuotaTracking existing = getUserQuotaTracking(userId, planQuota.getQuotaType());
             if (existing != null) {
-                log.debug("用户配额跟踪已存在: userId={}, quotaType={}", userId, planQuota.getQuotaType());
+                // 已存在则更新配额限额（升级/降级计划时需要同步）
+                existing.setPlanQuotaId(planQuota.getId());
+                existing.setQuotaLimit(planQuota.getQuotaLimit());
+                userQuotaTrackingMapper.updateById(existing);
+                log.info("更新用户配额限额: userId={}, quotaType={}, newLimit={}", 
+                    userId, planQuota.getQuotaType(), planQuota.getQuotaLimit());
                 continue;
             }
             
@@ -254,5 +263,48 @@ public class QuotaServiceImplV2 implements QuotaService {
         }
         
         log.info("已重置 {} 个配额", trackings.size());
+    }
+    
+    // ========== 团队配额共享 ==========
+    
+    /**
+     * 解析有效用户ID（团队配额共享）
+     * 如果用户是某个团队的成员（非 owner），则返回团队 owner 的 ID，
+     * 这样团队成员的操作会消耗团队 owner 的配额。
+     * 如果用户不属于任何团队或本身就是 owner，则返回自身 ID。
+     * 
+     * @param userId 当前用户ID
+     * @return 有效用户ID（可能是团队 owner 的 ID）
+     */
+    private Long resolveEffectiveUserId(Long userId) {
+        try {
+            // 查询用户所在的活跃团队（作为成员，非 owner）
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.coffeeviz.entity.TeamMember> memberQuery = 
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+            memberQuery.eq(com.coffeeviz.entity.TeamMember::getUserId, userId)
+                    .eq(com.coffeeviz.entity.TeamMember::getStatus, "active")
+                    .eq(com.coffeeviz.entity.TeamMember::getRole, "member");
+            
+            java.util.List<com.coffeeviz.entity.TeamMember> memberships = teamMemberMapper.selectList(memberQuery);
+            
+            if (memberships == null || memberships.isEmpty()) {
+                return userId;
+            }
+            
+            // 遍历用户所在的团队，找到一个活跃的团队 owner
+            for (com.coffeeviz.entity.TeamMember membership : memberships) {
+                com.coffeeviz.entity.Team team = teamMapper.selectById(membership.getTeamId());
+                if (team != null && "active".equals(team.getStatus())) {
+                    Long ownerId = team.getOwnerId();
+                    log.debug("团队配额共享: userId={} -> ownerId={} (teamId={})", userId, ownerId, team.getId());
+                    return ownerId;
+                }
+            }
+            
+            return userId;
+        } catch (Exception e) {
+            log.warn("解析团队配额共享失败，使用原始用户ID: userId={}, error={}", userId, e.getMessage());
+            return userId;
+        }
     }
 }

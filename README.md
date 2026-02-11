@@ -3,20 +3,22 @@
   <h1>CoffeeViz</h1>
 </div>
 
-> 数据库架构可视化生成器 - 将 SQL 脚本和数据库连接转换为精美的 ER 图
+> 数据库架构可视化生成器 - 将 SQL 脚本和数据库连接转换为精美的 ER 图与系统功能结构图
 
-CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚本、JDBC 连接或 AI 生成的方式创建数据库 ER 图（实体关系图）。它使用 Mermaid 语法生成图表，并支持导出为 SVG、PNG 等多种格式。
+CoffeeViz 是一个强大的数据库架构可视化工具，支持从 SQL 脚本、JDBC 连接或 AI 生成的方式创建数据库 ER 图（实体关系图）和系统功能结构图（Functional Breakdown Structure）。它使用 Mermaid 语法生成图表，并支持导出为 SVG、PNG 等多种格式。
 
 ## ✨ 核心特性
 
 - 🔍 **多源解析**：支持 SQL 脚本解析、JDBC 数据库连接、AI 辅助生成
-- 🤖 **AI 架构对话引擎**：通过自然语言描述业务需求，自动生成规范化数据库模型（NEW!）
-- 🎨 **可视化渲染**：基于 Mermaid 生成清晰的 ER 图
+- 🤖 **AI 架构对话引擎**：通过自然语言描述业务需求，自动生成规范化数据库模型
+- 🏗️ **系统功能结构图**：从 DDL 或项目文档提取功能模块层级，生成树状结构图（NEW!）
+- 🗄️ **多数据库支持**：MySQL、PostgreSQL、Oracle、SQL Server、MariaDB、SQLite、达梦 DM、人大金仓（NEW!）
+- 🎨 **可视化渲染**：基于 Mermaid 生成清晰的 ER 图和功能结构图
 - 📦 **多格式导出**：支持 SVG、PNG、Mermaid 源码导出（支持动态分辨率）
 - 🔐 **用户系统**：完整的用户认证（账号/手机验证码/微信扫码）、项目管理、版本控制
 - 💳 **订阅系统**：多层级订阅计划（FREE/PRO/TEAM）、配额管理、权限控制
-- � **团队协作**：创建团队、邀请成员、共享项目库、成员权限管理
-- � **支付集成**：支持微信支付、支付宝、Stripe 多种支付方式
+- 👥 **团队协作**：创建团队、邀请成员、共享项目库、成员权限管理
+- 💰 **支付集成**：支持微信支付、支付宝、Stripe 多种支付方式
 - 🚀 **高性能**：Redis 缓存、异步处理、API 限流
 - 🎯 **智能推断**：自动识别表关系、外键约束
 - 📱 **现代化 UI**：基于 Vue 3 + Naive UI + Tailwind CSS 的 Glassmorphism (磨砂玻璃) 风格界面
@@ -180,21 +182,38 @@ npm run dev
 5. 查看、编辑、导出生成的图表
 
 **支持的 SQL 语法**：
-- MySQL DDL (CREATE TABLE, ALTER TABLE)
+- MySQL / MariaDB DDL
 - PostgreSQL DDL
+- Oracle DDL
+- SQL Server (T-SQL) DDL
+- SQLite DDL
+- 达梦 DM DDL
+- 人大金仓 KingbaseES DDL
 - 标准 SQL DDL
+
+> 解析引擎采用三层策略：L1 JSqlParser（精确解析）→ L2 Druid（方言解析）→ L3 正则降级，覆盖绝大多数 DDL 语法。
 
 ### JDBC 连接模式
 
 1. 选择 "数据库连接"
-2. 填写数据库连接信息：
-   - 数据库类型（MySQL/PostgreSQL）
-   - JDBC URL
-   - 用户名/密码
-   - Schema 名称（可选）
-3. 点击 "测试连接" 验证
-4. 配置渲染选项
-5. 点击 "生成 ER 图"
+2. 选择数据库类型（支持 8 种）：
+
+| 数据库 | 驱动状态 | 说明 |
+|--------|---------|------|
+| MySQL | ✅ 内置 | 支持 v5.7, v8.0 及 MariaDB |
+| PostgreSQL | ✅ 内置 | 多 Schema 结构优化 |
+| SQL Server | ✅ 内置 | 支持 2012+，Azure SQL |
+| MariaDB | ✅ 内置 | 原生驱动，Galera 集群 |
+| SQLite | ✅ 内置 | 嵌入式，直接读取 .db 文件 |
+| Oracle | ⚠️ 需手动安装 | ojdbc 不在 Maven Central |
+| 达梦 DM | ⚠️ 需手动安装 | 从达梦官网下载驱动 |
+| 人大金仓 | ⚠️ 需手动安装 | 从金仓官网下载驱动 |
+
+3. 填写 JDBC URL、用户名/密码、Schema（可选）
+4. 点击 "测试连接" 验证
+5. 点击 "建立同步通道" 生成 ER 图
+
+> Oracle/达梦/人大金仓驱动安装方法见 `coffeeviz-jdbc/pom.xml` 中的注释。
 
 ### AI 生成模式（NEW!）
 
@@ -220,6 +239,27 @@ npm run dev
 6. 保存到架构库或下载 SQL 文件
 
 **注意**：AI 功能需要 PRO 或 TEAM 订阅，并配置 OpenAI API Key。详见 [AI 功能使用指南](AI_FEATURE_GUIDE.md)
+
+### 系统功能结构图（NEW!）
+
+从 DDL 或项目文档中提取功能模块层级，生成树状功能结构图（类似组织结构图/WBS）。
+
+**三种模式**：
+
+- **DDL 解析**（零 AI）：按表名前缀自动聚类为子系统 → 功能模块
+  ```
+  sys_user, sys_role → 系统管理子系统
+  ord_order, ord_item → 订单管理子系统
+  ```
+- **项目文档**（规则优先，降级 AI）：从 Markdown 标题层级（# → ## → ###）提取结构
+- **混合模式**：DDL + 文档合并生成
+
+**使用方式**：
+1. 访问 "系统架构图" 页面
+2. 选择模式，输入 DDL 或 Markdown 文档
+3. 点击 "生成功能结构图"
+4. 支持图表/Mermaid 源码/树形三种视图切换
+5. 点击 "保存到归档库" 保存到架构库（与 ER 图共享同一归档库）
 
 ### 项目管理
 
@@ -364,6 +404,38 @@ Content-Type: application/json
   "jdbcUrl": "jdbc:mysql://localhost:3306/mydb",
   "username": "root",
   "password": "password"
+}
+```
+
+### 系统功能结构图接口
+
+#### 生成功能结构图
+```http
+POST /api/architecture/generate
+Authorization: {token}
+Content-Type: application/json
+
+{
+  "mode": "ddl",
+  "sqlText": "CREATE TABLE sys_user (...); CREATE TABLE ord_order (...);",
+  "docContent": null,
+  "forceAi": false
+}
+```
+
+**mode 可选值**：`ddl` / `document` / `hybrid`
+
+**响应示例**：
+```json
+{
+  "code": 200,
+  "data": {
+    "mermaidCode": "graph TD\n    n0[\"数据库系统\"]\n    ...",
+    "tree": { "id": "root", "name": "数据库系统", "level": 0, "children": [...] },
+    "extractMethod": "rule",
+    "nodeCount": 15,
+    "warnings": ["使用 DDL 规则提取（零 AI），共 12 张表"]
+  }
 }
 ```
 
@@ -700,6 +772,29 @@ A: 在"订阅管理"页面可以查看当前配额使用情况和剩余配额。
 
 ### 已知问题修复记录
 
+### v1.3.0 (2026-02-11)
+
+**新功能**
+- 🏗️ **系统功能结构图**
+  - 从 DDL 按表名前缀自动聚类生成树状功能结构图（零 AI）
+  - 从 Markdown 项目文档提取标题层级结构（规则优先，降级 AI）
+  - 混合模式：DDL + 文档合并生成
+  - 支持图表/Mermaid 源码/树形三种视图切换
+  - 保存到归档库（与 ER 图共享同一归档库，PNG 上传 MinIO）
+- 🗄️ **多数据库 JDBC 连接**
+  - 新增 Oracle、SQL Server、MariaDB、SQLite、达梦 DM、人大金仓支持
+  - 按数据库类型适配 catalog/schema 策略
+  - SQLite 嵌入式数据库免用户名密码连接
+- 📝 **多方言 SQL DDL 解析**
+  - Druid SQL Parser 扩展支持 Oracle、SQL Server、SQLite、DM、KingbaseES 方言
+  - JSqlParser 放开方言限制，支持所有标准 SQL
+
+**技术改进**
+- 🔧 新增 JDBC 驱动：mssql-jdbc、mariadb-java-client、sqlite-jdbc
+- 🔧 Oracle/达梦/金仓驱动标记为 optional，附 mvn install 命令
+- 🔧 JdbcMetadataParserImpl 兼容无密码数据库和不支持 readOnly 的驱动
+- 🔧 ErController 放宽 SQLite 的用户名密码校验
+
 ### v1.2.1 (2026-02-08)
 
 **新功能与改进**
@@ -775,6 +870,18 @@ eighteenthstuai@gmail.com
 - 邮箱: eighteenthstuai@gmail.com
 
 ## 📋 更新日志
+
+### v1.3.0 (2026-02-11)
+
+**新功能**
+- 🎉 **系统功能结构图**：DDL 聚类 / 文档提取 / AI 生成树状功能分解图，保存到归档库
+- 🎉 **多数据库支持**：新增 Oracle、SQL Server、MariaDB、SQLite、达梦 DM、人大金仓（共 8 种）
+- 🎉 **多方言 DDL 解析**：Druid + JSqlParser 扩展支持 Oracle/SQL Server/SQLite/DM/KingbaseES
+
+**技术改进**
+- 🔧 JDBC 连接层按数据库类型适配 catalog/schema 策略
+- 🔧 新增 mssql-jdbc、mariadb-java-client、sqlite-jdbc 驱动
+- 🔧 架构图 PNG 截图使用 data URI 避免 tainted canvas 跨域问题
 
 ### v1.2.1 (2026-02-08)
 

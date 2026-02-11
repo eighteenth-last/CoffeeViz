@@ -73,21 +73,24 @@ public class DruidSqlParserImpl implements SqlParser {
     
     @Override
     public boolean supports(String dialect) {
-        return "mysql".equalsIgnoreCase(dialect) || 
-               "postgres".equalsIgnoreCase(dialect) ||
-               "postgresql".equalsIgnoreCase(dialect);
+        return getDbType(dialect) != null;
     }
     
     /**
      * 获取 Druid DbType
      */
     private DbType getDbType(String dialect) {
-        if ("mysql".equalsIgnoreCase(dialect)) {
-            return DbType.mysql;
-        } else if ("postgres".equalsIgnoreCase(dialect) || "postgresql".equalsIgnoreCase(dialect)) {
-            return DbType.postgresql;
-        }
-        return DbType.mysql; // 默认
+        if (dialect == null) return DbType.mysql;
+        return switch (dialect.toLowerCase()) {
+            case "mysql", "mariadb" -> DbType.mysql;
+            case "postgres", "postgresql", "pg", "kingbase" -> DbType.postgresql;
+            case "oracle" -> DbType.oracle;
+            case "sqlserver", "mssql" -> DbType.sqlserver;
+            case "sqlite" -> DbType.sqlite;
+            case "dm" -> DbType.dm;
+            case "auto" -> DbType.mysql; // 默认用 MySQL 方言尝试
+            default -> DbType.mysql;
+        };
     }
     
     /**

@@ -10,6 +10,12 @@ const routes = [
   },
   {
     path: '/',
+    name: 'Home',
+    component: () => import('@/views/Home.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/app',
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
@@ -18,67 +24,73 @@ const routes = [
         redirect: '/dashboard'
       },
       {
-        path: 'dashboard',
+        path: '/dashboard',
         name: 'Dashboard',
         component: () => import('@/views/Dashboard.vue'),
         meta: { title: '仪表盘' }
       },
       {
-        path: 'sql-import',
+        path: '/sql-import',
         name: 'SqlImport',
         component: () => import('@/views/SqlImport.vue'),
         meta: { title: 'SQL 导入' }
       },
       {
-        path: 'db-connect',
+        path: '/db-connect',
         name: 'DbConnect',
         component: () => import('@/views/DbConnect.vue'),
         meta: { title: '数据库连接' }
       },
       {
-        path: 'ai-generate',
+        path: '/ai-generate',
         name: 'AiGenerate',
         component: () => import('@/views/AiGenerate.vue'),
         meta: { title: 'AI 生成' }
       },
       {
-        path: 'projects',
+        path: '/arch-generate',
+        name: 'ArchGenerate',
+        component: () => import('@/views/ArchGenerate.vue'),
+        meta: { title: '系统架构图' }
+      },
+      {
+        path: '/projects',
         name: 'Projects',
         component: () => import('@/views/Projects.vue'),
         meta: { title: '项目管理' }
       },
       {
-        path: 'repository/:id',
+        path: '/repository/:id',
         name: 'RepositoryDetail',
         component: () => import('@/views/RepositoryDetail.vue'),
         meta: { title: '架构库详情' }
       },
       {
-        path: 'project/:id',
+        path: '/project/:id',
         name: 'ProjectDetail',
         component: () => import('@/views/ProjectDetail.vue'),
         meta: { title: '项目详情' }
       },
       {
-        path: 'subscribe',
+        path: '/subscribe',
         name: 'Subscribe',
         component: () => import('@/views/Subscribe.vue'),
         meta: { title: '订阅计划' }
       },
       {
-        path: 'settings',
+        path: '/settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
         meta: { title: '设置' }
       },
       {
-        path: 'team',
+        path: '/team',
         name: 'TeamList',
         component: () => import('@/views/team/TeamList.vue'),
         meta: { title: '我的团队' }
       },
       {
-        path: 'team/:id',
+        path: '/team/:id',
         name: 'TeamDetail',
         component: () => import('@/views/team/TeamDetail.vue'),
         meta: { title: '团队详情' }
@@ -110,7 +122,7 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if (to.name === 'Login' && userStore.isLoggedIn) {
+  } else if ((to.name === 'Login' || to.path === '/') && userStore.isLoggedIn) {
     next({ name: 'Dashboard' })
   } else {
     next()

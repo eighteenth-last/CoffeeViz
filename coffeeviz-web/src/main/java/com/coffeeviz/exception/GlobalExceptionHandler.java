@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
 import java.util.stream.Collectors;
 
@@ -29,6 +30,16 @@ public class GlobalExceptionHandler {
     public Result<String> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("业务异常: {}", e.getMessage());
         return Result.error(400, e.getMessage());
+    }
+    
+    /**
+     * 处理异步请求超时异常（SSE 等场景）
+     * 不返回 Result，避免与 text/event-stream Content-Type 冲突
+     */
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    public void handleAsyncRequestTimeoutException(AsyncRequestTimeoutException e) {
+        log.warn("异步请求超时（SSE 连接超时）");
+        // 不返回任何内容，响应已经以 text/event-stream 提交，无法再写入 JSON
     }
     
     /**

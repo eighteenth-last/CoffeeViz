@@ -20,7 +20,14 @@
       <router-link to="/sql-import" custom v-slot="{ navigate, isActive }">
         <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
           <i :class="['fas fa-terminal w-8 text-lg transition-transform', isActive ? '' : 'group-hover:rotate-12']"></i>
-          <span>SQL 智能导入</span>
+          <span>E-R图生成</span>
+        </a>
+      </router-link>
+
+      <router-link to="/arch-generate" custom v-slot="{ navigate, isActive }">
+        <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
+          <i :class="['fas fa-sitemap w-8 text-lg transition-transform', isActive ? '' : 'group-hover:scale-110']"></i>
+          <span>系统架构图</span>
         </a>
       </router-link>
 

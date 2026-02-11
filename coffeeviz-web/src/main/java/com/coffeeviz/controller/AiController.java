@@ -36,6 +36,12 @@ public class AiController {
     @Autowired
     private com.coffeeviz.service.ConfigService configService;
     
+    @Autowired
+    private com.coffeeviz.service.QuotaService quotaService;
+    
+    @Autowired
+    private com.coffeeviz.service.SubscriptionService subscriptionService;
+    
     /**
      * AI 生成 SQL 并渲染 ER 图
      * 需要 AI 功能权限且消耗 ai_generate 配额
@@ -110,6 +116,7 @@ public class AiController {
     /**
      * AI 流式生成 SQL
      * 使用 SSE (Server-Sent Events) 实现流式输出
+     * 流式输出完成后，自动解析 SQL 并生成 ER 图，通过 result 事件发送给前端
      * 注意：由于 EventSource 不支持自定义 headers，token 通过 URL 参数传递
      */
     @GetMapping("/generate/stream")
@@ -138,6 +145,7 @@ public class AiController {
                 return emitter;
             }
             
+            Long userId;
             try {
                 // 使用 token 进行登录验证
                 Object loginId = StpUtil.getLoginIdByToken(token);
@@ -149,14 +157,39 @@ public class AiController {
                     emitter.complete();
                     return emitter;
                 }
-                
-                log.info("流式请求验证成功，用户ID: {}", loginId);
+                userId = Long.parseLong(loginId.toString());
+                log.info("流式请求验证成功，用户ID: {}", userId);
                 
             } catch (Exception e) {
                 log.warn("Token 验证失败: {}", e.getMessage());
                 emitter.send(SseEmitter.event()
                         .name("error")
                         .data("{\"message\":\"未登录或登录已过期\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            
+            // 手动检查订阅权限（因为 SSE 端点无法使用 @RequireSubscription 注解）
+            if (!subscriptionService.isSubscriptionValid(userId)) {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"订阅已过期，请续费或升级订阅计划\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            if (!subscriptionService.hasFeature(userId, "ai")) {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"当前订阅计划不支持 AI 功能，请升级到 PRO 或 TEAM 计划\"}"));
+                emitter.complete();
+                return emitter;
+            }
+            
+            // 手动检查配额（因为 SSE 端点无法使用 @RequireQuota 注解）
+            if (!quotaService.checkQuota(userId, "ai_generate")) {
+                emitter.send(SseEmitter.event()
+                        .name("error")
+                        .data("{\"message\":\"AI 生成配额不足，请升级订阅计划或等待配额重置\"}"));
                 emitter.complete();
                 return emitter;
             }
@@ -191,8 +224,87 @@ public class AiController {
                     .generateJunctionTables(generateJunctionTables)
                     .build();
             
-            // 调用流式生成
-            openAiService.generateSqlFromPromptStream(request, emitter);
+            // 捕获 userId 用于回调中消耗配额
+            final Long finalUserId = userId;
+            
+            // 调用流式生成（带完成回调）
+            openAiService.generateSqlFromPromptStream(request, emitter, (fullContent) -> {
+                try {
+                    log.info("流式输出完成，开始后处理，内容长度: {}", fullContent.length());
+                    
+                    // 1. 解析完整内容提取 SQL DDL
+                    String sqlDdl = extractSqlFromMarkdown(fullContent);
+                    String explanation = extractExplanation(fullContent);
+                    
+                    if (sqlDdl == null || sqlDdl.isEmpty()) {
+                        log.warn("未能从 AI 输出中提取 SQL DDL");
+                        emitter.send(SseEmitter.event()
+                                .name("result")
+                                .data(com.alibaba.fastjson2.JSON.toJSONString(java.util.Map.of(
+                                        "success", false,
+                                        "message", "未能从 AI 输出中提取 SQL DDL"
+                                ))));
+                        return;
+                    }
+                    
+                    // 2. 生成 ER 图
+                    com.coffeeviz.core.model.RenderOptions options = com.coffeeviz.core.model.RenderOptions.builder()
+                            .viewMode(com.coffeeviz.core.enums.ViewMode.PHYSICAL)
+                            .direction(com.coffeeviz.core.enums.LayoutDirection.TB)
+                            .showComments(true)
+                            .build();
+                    
+                    ErService.ErResult erResult = erService.generateFromSql(sqlDdl, options);
+                    
+                    if (!erResult.isSuccess()) {
+                        log.warn("ER 图生成失败: {}", erResult.getMessage());
+                        emitter.send(SseEmitter.event()
+                                .name("result")
+                                .data(com.alibaba.fastjson2.JSON.toJSONString(java.util.Map.of(
+                                        "success", false,
+                                        "message", "ER 图生成失败: " + erResult.getMessage(),
+                                        "sqlDdl", sqlDdl,
+                                        "explanation", explanation
+                                ))));
+                        return;
+                    }
+                    
+                    // 3. 构建结果并发送 result 事件
+                    java.util.Map<String, Object> resultData = new java.util.LinkedHashMap<>();
+                    resultData.put("success", true);
+                    resultData.put("mermaidCode", erResult.getMermaidCode());
+                    resultData.put("sqlDdl", sqlDdl);
+                    resultData.put("tableCount", erResult.getTableCount());
+                    resultData.put("relationCount", erResult.getRelationCount());
+                    resultData.put("explanation", explanation);
+                    
+                    emitter.send(SseEmitter.event()
+                            .name("result")
+                            .data(com.alibaba.fastjson2.JSON.toJSONString(resultData)));
+                    
+                    log.info("后处理完成，表数量: {}, 关系数量: {}", 
+                            erResult.getTableCount(), erResult.getRelationCount());
+                    
+                    // 4. 消耗配额（成功后才消耗）
+                    boolean used = quotaService.useQuota(finalUserId, "ai_generate");
+                    if (!used) {
+                        log.error("使用配额失败: userId={}", finalUserId);
+                    }
+                    
+                } catch (Exception e) {
+                    log.error("流式后处理失败", e);
+                    try {
+                        emitter.send(SseEmitter.event()
+                                .name("result")
+                                .data(com.alibaba.fastjson2.JSON.toJSONString(java.util.Map.of(
+                                        "success", false,
+                                        "message", "后处理失败: " + e.getMessage()
+                                ))));
+                    } catch (Exception ex) {
+                        log.error("发送后处理错误消息失败", ex);
+                    }
+                }
+            });
             
         } catch (Exception e) {
             log.error("流式 AI 生成失败", e);
@@ -224,6 +336,45 @@ public class AiController {
             log.error("检查 AI 可用性失败", e);
             return Result.error("检查失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 从 Markdown 中提取 SQL DDL
+     */
+    private String extractSqlFromMarkdown(String text) {
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("```sql\\s*\\n(.*?)\\n```", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(text);
+        
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        
+        // 如果没有 Markdown 标记，尝试提取所有 CREATE TABLE 语句
+        pattern = java.util.regex.Pattern.compile("(CREATE TABLE.*?;)", java.util.regex.Pattern.DOTALL | java.util.regex.Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(text);
+        
+        StringBuilder sql = new StringBuilder();
+        while (matcher.find()) {
+            sql.append(matcher.group(1)).append("\n\n");
+        }
+        
+        return sql.toString().trim();
+    }
+    
+    /**
+     * 提取业务说明（移除 SQL 代码块后的文本）
+     */
+    private String extractExplanation(String text) {
+        String cleaned = text.replaceAll("```sql.*?```", "").trim();
+        
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(?:业务说明|设计思路|说明)[：:](.*)", java.util.regex.Pattern.DOTALL);
+        java.util.regex.Matcher matcher = pattern.matcher(cleaned);
+        
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        
+        return cleaned.length() > 500 ? cleaned.substring(0, 500) + "..." : cleaned;
     }
     
     /**

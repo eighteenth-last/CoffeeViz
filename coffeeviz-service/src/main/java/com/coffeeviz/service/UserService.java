@@ -137,11 +137,13 @@ public class UserService {
      * @throws IllegalArgumentException 如果用户名或密码错误
      */
     public User login(String username, String password) {
-        log.info("用户尝试登录，用户名: {}", username);
+        log.info("用户尝试登录，用户名/邮箱: {}", username);
         
-        // 1. 查询用户
+        // 1. 查询用户（支持用户名或邮箱登录）
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUsername, username);
+        wrapper.eq(User::getUsername, username)
+               .or()
+               .eq(User::getEmail, username);
         User user = userMapper.selectOne(wrapper);
         
         if (user == null) {
