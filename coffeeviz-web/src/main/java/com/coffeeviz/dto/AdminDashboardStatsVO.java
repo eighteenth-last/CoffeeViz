@@ -16,4 +16,10 @@ public class AdminDashboardStatsVO {
     private Double revenueGrowth;
     private Long aiCalls;
     private Double aiCallGrowth;
+
+    // Chart Data
+    private java.util.List<String> chartDates;
+    private java.util.List<Long> chartNewUsers;
+    private java.util.List<Long> chartApiCalls;
+    private java.util.Map<String, Long> subscriptionDistribution;
 }

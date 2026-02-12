@@ -11,7 +11,7 @@
  Target Server Version : 80045 (8.0.45-0ubuntu0.24.04.1)
  File Encoding         : 65001
 
- Date: 11/02/2026 16:53:11
+ Date: 12/02/2026 18:55:15
 */
 
 SET NAMES utf8mb4;
@@ -87,7 +87,7 @@ CREATE TABLE `biz_payment_order`  (
   INDEX `idx_payment_status`(`payment_status` ASC) USING BTREE,
   INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
   CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '支付订单表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '支付订单表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of biz_payment_order
@@ -99,6 +99,23 @@ INSERT INTO `biz_payment_order` VALUES (4, 'PAY20260208175818157234', 1, NULL, 2
 INSERT INTO `biz_payment_order` VALUES (5, 'PAY20260211150912990917', 5, NULL, 2, 'PRO', 'monthly', 29.00, 'CNY', 'ALIPAY', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-11 15:09:12', '2026-02-11 15:09:12');
 INSERT INTO `biz_payment_order` VALUES (6, 'PAY20260211151434569007', 5, 6, 2, 'PRO', 'monthly', 29.00, 'CNY', 'ALIPAY', 'paid', 'SIM_1770794164315', '2026-02-11 15:16:04', NULL, NULL, NULL, '2026-02-11 15:14:34', '2026-02-11 15:14:34');
 INSERT INTO `biz_payment_order` VALUES (7, 'PAY20260211152105289632', 6, 8, 2, 'PRO', 'monthly', 29.00, 'CNY', 'ALIPAY', 'paid', 'SIM_1770794466945', '2026-02-11 15:21:07', NULL, NULL, NULL, '2026-02-11 15:21:06', '2026-02-11 15:21:06');
+INSERT INTO `biz_payment_order` VALUES (8, 'PAY20260212154944878557', 1, NULL, 2, 'PRO', 'monthly', 29.00, 'CNY', 'ALIPAY', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-12 15:49:45', '2026-02-12 15:49:45');
+INSERT INTO `biz_payment_order` VALUES (9, 'PAY20260212155111157994', 1, NULL, 2, 'PRO', 'monthly', 29.00, 'CNY', 'ALIPAY', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-12 15:51:12', '2026-02-12 15:51:12');
+INSERT INTO `biz_payment_order` VALUES (10, 'PAY20260212160140551153', 3, NULL, 2, 'PRO', 'monthly', 0.01, 'CNY', 'ALIPAY', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-12 16:01:41', '2026-02-12 16:01:41');
+INSERT INTO `biz_payment_order` VALUES (11, 'PAY20260212161020879815', 3, 10, 2, 'PRO', 'monthly', 0.01, 'CNY', 'WECHAT', 'paid', '4200003049202602127023879237', '2026-02-12 16:11:21', NULL, NULL, NULL, '2026-02-12 16:10:20', '2026-02-12 16:10:20');
+INSERT INTO `biz_payment_order` VALUES (12, 'PAY20260212161541036667', 3, NULL, 2, 'PRO', 'monthly', 0.01, 'CNY', 'WECHAT', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-12 16:15:42', '2026-02-12 16:15:42');
+INSERT INTO `biz_payment_order` VALUES (13, 'PAY20260212161651921439', 3, NULL, 2, 'PRO', 'monthly', 0.01, 'CNY', 'WECHAT', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-12 16:16:52', '2026-02-12 16:16:52');
+INSERT INTO `biz_payment_order` VALUES (14, 'PAY20260212162230711327', 3, NULL, 2, 'PRO', 'monthly', 0.01, 'CNY', 'WECHAT', 'cancelled', NULL, NULL, NULL, NULL, NULL, '2026-02-12 16:22:31', '2026-02-12 16:22:31');
+INSERT INTO `biz_payment_order` VALUES (15, 'PAY20260212162407442284', 3, NULL, 2, 'PRO', 'monthly', 0.01, 'CNY', 'ALIPAY', 'pending', NULL, NULL, NULL, NULL, NULL, '2026-02-12 16:24:08', '2026-02-12 16:24:08');
+INSERT INTO `biz_payment_order` VALUES (16, 'PAY20260212162416970034', 3, NULL, 2, 'PRO', 'monthly', 0.01, 'CNY', 'ALIPAY', 'cancelled', NULL, NULL, NULL, NULL, NULL, '2026-02-12 16:24:17', '2026-02-12 16:24:17');
+INSERT INTO `biz_payment_order` VALUES (17, 'PAY20260212163913889755', 3, 11, 2, 'PRO', 'monthly', 0.01, 'CNY', 'TEST', 'paid', 'TEST_1770885553296', '2026-02-12 16:39:13', NULL, NULL, NULL, '2026-02-12 16:39:13', '2026-02-12 16:39:13');
+INSERT INTO `biz_payment_order` VALUES (18, 'PAY20260212164641798810', 3, 11, 2, 'PRO', 'monthly', 0.01, 'CNY', 'TEST', 'paid', 'TEST_1770886001729', '2026-02-12 16:46:42', NULL, NULL, NULL, '2026-02-12 16:46:42', '2026-02-12 16:46:42');
+INSERT INTO `biz_payment_order` VALUES (19, 'PAY20260212180611897691', 7, 13, 2, 'PRO', 'monthly', 29.00, 'CNY', 'TEST', 'paid', 'TEST_1770890771570', '2026-02-12 18:06:12', NULL, NULL, NULL, '2026-02-12 18:06:12', '2026-02-12 18:06:12');
+INSERT INTO `biz_payment_order` VALUES (20, 'PAY20260212180717996075', 1, 14, 2, 'PRO', 'monthly', 29.00, 'CNY', 'TEST', 'paid', 'TEST_1770890837805', '2026-02-12 18:07:18', NULL, NULL, NULL, '2026-02-12 18:07:18', '2026-02-12 18:07:18');
+INSERT INTO `biz_payment_order` VALUES (21, 'PAY20260212180748069624', 1, 14, 2, 'PRO', 'monthly', 29.00, 'CNY', 'TEST', 'paid', 'TEST_1770890868167', '2026-02-12 18:07:48', NULL, NULL, NULL, '2026-02-12 18:07:48', '2026-02-12 18:07:48');
+INSERT INTO `biz_payment_order` VALUES (22, 'PAY20260212180855764284', 1, 14, 2, 'PRO', 'monthly', 29.00, 'CNY', 'TEST', 'paid', 'TEST_1770890935548', '2026-02-12 18:08:56', NULL, NULL, NULL, '2026-02-12 18:08:56', '2026-02-12 18:08:56');
+INSERT INTO `biz_payment_order` VALUES (23, 'PAY20260212181431489037', 1, 14, 2, 'PRO', 'monthly', 29.00, 'CNY', 'TEST', 'paid', 'TEST_1770891272002', '2026-02-12 18:14:32', NULL, NULL, NULL, '2026-02-12 18:14:32', '2026-02-12 18:14:32');
+INSERT INTO `biz_payment_order` VALUES (24, 'PAY20260212181519276120', 1, 14, 2, 'PRO', 'monthly', 29.00, 'CNY', 'TEST', 'paid', 'TEST_1770891319566', '2026-02-12 18:15:20', NULL, NULL, NULL, '2026-02-12 18:15:20', '2026-02-12 18:15:20');
 
 -- ----------------------------
 -- Table structure for biz_plan_quota
@@ -126,14 +143,14 @@ INSERT INTO `biz_plan_quota` VALUES (1, 1, 'ai_generate', 0, 'never', 'AI生成�
 INSERT INTO `biz_plan_quota` VALUES (2, 1, 'diagram', 10, 'monthly', '每月10次架构图保存', '2026-02-10 17:31:37', '2026-02-10 17:43:01');
 INSERT INTO `biz_plan_quota` VALUES (3, 1, 'repository', 3, 'never', '最多3个归档库', '2026-02-10 17:31:37', '2026-02-10 17:35:37');
 INSERT INTO `biz_plan_quota` VALUES (4, 1, 'sql_parse', 50, 'monthly', '每月50次SQL解析操作', '2026-02-10 17:31:37', '2026-02-10 17:35:37');
-INSERT INTO `biz_plan_quota` VALUES (5, 3, 'ai_generate', 1000, 'monthly', '每月1000次AI生成', '2026-02-10 17:31:37', '2026-02-10 17:43:01');
+INSERT INTO `biz_plan_quota` VALUES (5, 3, 'ai_generate', 150, 'monthly', '每月1000次AI生成', '2026-02-10 17:31:37', '2026-02-10 17:43:01');
 INSERT INTO `biz_plan_quota` VALUES (6, 3, 'diagram', -1, 'never', '无限架构图保存', '2026-02-10 17:31:37', '2026-02-10 17:43:01');
 INSERT INTO `biz_plan_quota` VALUES (7, 3, 'repository', -1, 'never', '无限归档库', '2026-02-10 17:31:37', '2026-02-10 17:43:01');
 INSERT INTO `biz_plan_quota` VALUES (8, 3, 'sql_parse', -1, 'never', '无限SQL解析', '2026-02-10 17:31:37', '2026-02-10 17:43:01');
 INSERT INTO `biz_plan_quota` VALUES (20, 2, 'repository', 20, 'never', '最多20个归档库', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
-INSERT INTO `biz_plan_quota` VALUES (21, 2, 'diagram', 500, 'monthly', '每月500次架构图保存', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
-INSERT INTO `biz_plan_quota` VALUES (22, 2, 'sql_parse', 1000, 'monthly', '每月1000次SQL解析', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
-INSERT INTO `biz_plan_quota` VALUES (23, 2, 'ai_generate', 100, 'monthly', '每月100次AI生成', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
+INSERT INTO `biz_plan_quota` VALUES (21, 2, 'diagram', 100, 'monthly', '每月100次架构图保存', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
+INSERT INTO `biz_plan_quota` VALUES (22, 2, 'sql_parse', 100, 'monthly', '每月100次SQL解析', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
+INSERT INTO `biz_plan_quota` VALUES (23, 2, 'ai_generate', 40, 'monthly', '每月40次AI生成', '2026-02-10 17:35:37', '2026-02-10 17:43:01');
 
 -- ----------------------------
 -- Table structure for biz_project_config
@@ -226,9 +243,6 @@ CREATE TABLE `biz_subscription_plan`  (
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '计划描述',
   `price_monthly` decimal(10, 2) NULL DEFAULT 0.00 COMMENT '月付价格',
   `price_yearly` decimal(10, 2) NULL DEFAULT 0.00 COMMENT '年付价格',
-  `max_repositories` int NULL DEFAULT -1 COMMENT '最大架构库数量（-1表示无限制）',
-  `max_diagrams_per_repo` int NULL DEFAULT -1 COMMENT '每个库最大架构图数量（-1表示无限制）',
-  `max_sql_size_mb` int NULL DEFAULT 10 COMMENT '最大SQL文件大小（MB）',
   `support_jdbc` tinyint NULL DEFAULT 0 COMMENT '是否支持JDBC连接（0=否，1=是）',
   `support_ai` tinyint NULL DEFAULT 0 COMMENT '是否支持AI功能（0=否，1=是）',
   `support_export` tinyint NULL DEFAULT 1 COMMENT '是否支持导出（0=否，1=是）',
@@ -249,9 +263,9 @@ CREATE TABLE `biz_subscription_plan`  (
 -- ----------------------------
 -- Records of biz_subscription_plan
 -- ----------------------------
-INSERT INTO `biz_subscription_plan` VALUES (1, 'FREE', '社区版', 'Community', '适合个人开发者和小型项目使用', 0.00, 0.00, 3, 10, 5, 0, 0, 1, 0, 0, 0, 0, '[\"3个架构库\", \"10次架构图/月\", \"50次SQL解析/月\", \"基础ER图生成\", \"MySQL支持\", \"社区支持\"]', 1, 'active', '2026-02-08 14:16:32', '2026-02-10 13:07:08');
-INSERT INTO `biz_subscription_plan` VALUES (2, 'PRO', '专业版', 'Professional', '适合开发者和生产力工具使用', 29.00, 290.00, 20, 500, 50, 1, 1, 1, 0, 0, 0, 0, '[\"20个架构库\", \"500次架构图/月\", \"1000次SQL解析/月\", \"100次AI生成/月\", \"多数据库支持\", \"JDBC实时连接\", \"高清导出\", \"优先支持\"]', 2, 'active', '2026-02-08 14:16:32', '2026-02-10 13:06:45');
-INSERT INTO `biz_subscription_plan` VALUES (3, 'TEAM', '团队版', 'Team', '适合企业团队协作使用', 99.00, 990.00, -1, -1, 200, 1, 1, 1, 1, 1, 10, 1, '[\"无限架构库\", \"无限架构图\", \"无限SQL解析\", \"1000次AI生成/月\", \"团队协作\", \"版本控制\", \"API集成\", \"私有部署\", \"专属支持\"]', 3, 'active', '2026-02-08 14:16:32', '2026-02-10 12:19:31');
+INSERT INTO `biz_subscription_plan` VALUES (1, 'FREE', '社区版', 'Community', '适合个人开发者和小型项目使用', 0.00, 0.00, 0, 0, 1, 0, 0, 0, 0, '[\"3个架构库\", \"10次架构图/月\", \"50次SQL解析/月\", \"基础ER图生成\", \"MySQL支持\", \"社区支持\"]', 1, 'active', '2026-02-08 14:16:32', '2026-02-10 13:07:08');
+INSERT INTO `biz_subscription_plan` VALUES (2, 'PRO', '专业版', 'Professional', '适合开发者和生产力工具使用', 29.00, 290.00, 1, 1, 1, 0, 0, 0, 0, '[\"20个架构库\", \"100次架构图/月\", \"100次SQL解析/月\", \"40次AI生成/月\", \"多数据库支持\", \"JDBC实时连接\", \"高清导出\", \"优先支持\"]', 2, 'active', '2026-02-08 14:16:32', '2026-02-12 15:53:32');
+INSERT INTO `biz_subscription_plan` VALUES (3, 'TEAM', '团队版', 'Team', '适合企业团队协作使用', 99.00, 990.00, 1, 1, 1, 1, 1, 10, 1, '[\"无限架构库\", \"无限架构图\", \"无限SQL解析\", \"150次AI生成/月\", \"团队协作\", \"版本控制\", \"API集成\", \"私有部署\", \"专属支持\"]', 3, 'active', '2026-02-08 14:16:32', '2026-02-10 12:19:31');
 
 -- ----------------------------
 -- Table structure for biz_team
@@ -308,7 +322,7 @@ CREATE TABLE `biz_team_invitation`  (
 -- Records of biz_team_invitation
 -- ----------------------------
 INSERT INTO `biz_team_invitation` VALUES (1, 1, '2238df34b218468ab55d205c23fbe8e9', 'https://coffeeviz.com/team/join/2238df34b218468ab55d205c23fbe8e9', 1, 10, 0, 'disabled', NULL, '2026-02-10 13:24:53', '2026-02-10 18:17:33');
-INSERT INTO `biz_team_invitation` VALUES (2, 1, '30a9c691a91142279be2e1fa97535b46', 'https://coffeeviz.com/team/join/30a9c691a91142279be2e1fa97535b46', 1, 2, 2, 'active', NULL, '2026-02-11 14:04:26', '2026-02-11 15:20:56');
+INSERT INTO `biz_team_invitation` VALUES (2, 1, '30a9c691a91142279be2e1fa97535b46', 'https://coffeeviz.pantoria.cn/team/join/30a9c691a91142279be2e1fa97535b46', 1, 2, 2, 'active', NULL, '2026-02-11 14:04:26', '2026-02-11 15:20:56');
 
 -- ----------------------------
 -- Table structure for biz_team_invitation_log
@@ -418,35 +432,39 @@ CREATE TABLE `biz_user_quota_tracking`  (
   INDEX `idx_plan_quota_id`(`plan_quota_id` ASC) USING BTREE,
   CONSTRAINT `fk_user_quota_plan_quota` FOREIGN KEY (`plan_quota_id`) REFERENCES `biz_plan_quota` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_user_quota_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户配额使用跟踪表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 29 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户配额使用跟踪表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of biz_user_quota_tracking
 -- ----------------------------
-INSERT INTO `biz_user_quota_tracking` VALUES (1, 1, 5, 'ai_generate', 100, 34, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (2, 1, 6, 'diagram', 500, 9, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (3, 1, 7, 'repository', 20, 8, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (4, 1, 8, 'sql_parse', 1000, 5, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (5, 2, 1, 'ai_generate', 0, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (6, 2, 2, 'diagram', 10, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (7, 2, 3, 'repository', 3, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (8, 2, 4, 'sql_parse', 50, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (9, 3, 1, 'ai_generate', 0, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (10, 3, 2, 'diagram', 10, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (11, 3, 3, 'repository', 3, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (12, 3, 4, 'sql_parse', 50, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (1, 1, 23, 'ai_generate', 40, 35, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (2, 1, 21, 'diagram', 100, 9, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (3, 1, 20, 'repository', 20, 8, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (4, 1, 22, 'sql_parse', 100, 5, '2026-02-09 15:30:34', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (5, 2, 23, 'ai_generate', 40, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (6, 2, 21, 'diagram', 100, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (7, 2, 20, 'repository', 20, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (8, 2, 22, 'sql_parse', 100, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (9, 3, 23, 'ai_generate', 40, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (10, 3, 21, 'diagram', 100, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (11, 3, 20, 'repository', 20, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
+INSERT INTO `biz_user_quota_tracking` VALUES (12, 3, 22, 'sql_parse', 100, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
 INSERT INTO `biz_user_quota_tracking` VALUES (13, 4, 1, 'ai_generate', 0, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
 INSERT INTO `biz_user_quota_tracking` VALUES (14, 4, 2, 'diagram', 10, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
 INSERT INTO `biz_user_quota_tracking` VALUES (15, 4, 3, 'repository', 3, 0, '2026-02-08 14:16:32', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
 INSERT INTO `biz_user_quota_tracking` VALUES (16, 4, 4, 'sql_parse', 50, 0, '2026-02-08 17:47:27', '2026-02-10 17:31:37', '2026-02-10 17:31:37');
-INSERT INTO `biz_user_quota_tracking` VALUES (17, 5, 1, 'ai_generate', 0, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
-INSERT INTO `biz_user_quota_tracking` VALUES (18, 5, 2, 'diagram', 10, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
-INSERT INTO `biz_user_quota_tracking` VALUES (19, 5, 3, 'repository', 3, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
-INSERT INTO `biz_user_quota_tracking` VALUES (20, 5, 4, 'sql_parse', 50, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
-INSERT INTO `biz_user_quota_tracking` VALUES (21, 6, 23, 'ai_generate', 100, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
-INSERT INTO `biz_user_quota_tracking` VALUES (22, 6, 21, 'diagram', 500, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
+INSERT INTO `biz_user_quota_tracking` VALUES (17, 5, 23, 'ai_generate', 40, 1, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
+INSERT INTO `biz_user_quota_tracking` VALUES (18, 5, 21, 'diagram', 100, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
+INSERT INTO `biz_user_quota_tracking` VALUES (19, 5, 20, 'repository', 20, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
+INSERT INTO `biz_user_quota_tracking` VALUES (20, 5, 22, 'sql_parse', 100, 0, '2026-02-11 14:08:35', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
+INSERT INTO `biz_user_quota_tracking` VALUES (21, 6, 23, 'ai_generate', 40, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
+INSERT INTO `biz_user_quota_tracking` VALUES (22, 6, 21, 'diagram', 100, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
 INSERT INTO `biz_user_quota_tracking` VALUES (23, 6, 20, 'repository', 20, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
-INSERT INTO `biz_user_quota_tracking` VALUES (24, 6, 22, 'sql_parse', 1000, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
+INSERT INTO `biz_user_quota_tracking` VALUES (24, 6, 22, 'sql_parse', 100, 0, '2026-02-11 15:20:56', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
+INSERT INTO `biz_user_quota_tracking` VALUES (25, 7, 23, 'ai_generate', 40, 0, '2026-02-12 18:05:48', '2026-02-12 18:05:48', '2026-02-12 18:05:48');
+INSERT INTO `biz_user_quota_tracking` VALUES (26, 7, 21, 'diagram', 100, 0, '2026-02-12 18:05:48', '2026-02-12 18:05:48', '2026-02-12 18:05:48');
+INSERT INTO `biz_user_quota_tracking` VALUES (27, 7, 20, 'repository', 20, 0, '2026-02-12 18:05:48', '2026-02-12 18:05:48', '2026-02-12 18:05:48');
+INSERT INTO `biz_user_quota_tracking` VALUES (28, 7, 22, 'sql_parse', 100, 0, '2026-02-12 18:05:48', '2026-02-12 18:05:48', '2026-02-12 18:05:48');
 
 -- ----------------------------
 -- Table structure for biz_user_subscription
@@ -479,19 +497,25 @@ CREATE TABLE `biz_user_subscription`  (
   CONSTRAINT `fk_subscription_payment` FOREIGN KEY (`payment_order_id`) REFERENCES `biz_payment_order` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_subscription_plan` FOREIGN KEY (`plan_id`) REFERENCES `biz_subscription_plan` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_subscription_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户订阅表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户订阅表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of biz_user_subscription
 -- ----------------------------
-INSERT INTO `biz_user_subscription` VALUES (1, 1, 3, 'TEAM', NULL, 'monthly', 99.00, '2026-02-08 14:16:32', '2027-02-09 15:30:34', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-08 14:16:32', '2026-02-10 13:21:53');
-INSERT INTO `biz_user_subscription` VALUES (2, 2, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-08 14:16:32', '2026-03-08 14:16:32', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-08 14:16:32', '2026-02-08 18:42:16');
-INSERT INTO `biz_user_subscription` VALUES (3, 3, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-08 14:16:32', '2026-03-08 14:16:32', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-08 14:16:32', '2026-02-08 18:42:19');
+INSERT INTO `biz_user_subscription` VALUES (1, 1, 3, 'TEAM', NULL, 'monthly', 99.00, '2026-02-08 14:16:32', '2027-02-09 15:30:34', 0, 'cancelled', NULL, NULL, '2026-02-12 18:07:18', '升级到新计划', '2026-02-08 14:16:32', '2026-02-10 13:21:53');
+INSERT INTO `biz_user_subscription` VALUES (2, 2, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-08 14:16:32', '2026-03-08 14:16:32', 0, 'cancelled', NULL, NULL, '2026-02-12 12:50:41', '升级到新计划', '2026-02-08 14:16:32', '2026-02-08 18:42:16');
+INSERT INTO `biz_user_subscription` VALUES (3, 3, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-08 14:16:32', '2026-03-08 14:16:32', 0, 'cancelled', NULL, NULL, '2026-02-12 16:11:21', '升级到新计划', '2026-02-08 14:16:32', '2026-02-08 18:42:19');
 INSERT INTO `biz_user_subscription` VALUES (4, 4, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-08 14:16:32', '2026-03-08 14:16:32', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-08 14:16:32', '2026-02-08 18:42:21');
 INSERT INTO `biz_user_subscription` VALUES (5, 5, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-11 14:08:35', '2026-03-11 14:08:35', 0, 'cancelled', NULL, NULL, '2026-02-11 15:16:04', '升级到新计划', '2026-02-11 14:08:35', '2026-02-11 14:08:35');
 INSERT INTO `biz_user_subscription` VALUES (6, 5, 2, 'PRO', NULL, 'monthly', 29.00, '2026-02-11 15:16:04', '2026-03-11 15:16:04', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-11 15:16:04', '2026-02-11 15:16:04');
 INSERT INTO `biz_user_subscription` VALUES (7, 6, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-11 15:20:56', '2026-03-11 15:20:56', 0, 'cancelled', NULL, NULL, '2026-02-11 15:21:07', '升级到新计划', '2026-02-11 15:20:56', '2026-02-11 15:20:56');
 INSERT INTO `biz_user_subscription` VALUES (8, 6, 2, 'PRO', NULL, 'monthly', 29.00, '2026-02-11 15:21:07', '2026-03-11 15:21:07', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-11 15:21:07', '2026-02-11 15:21:07');
+INSERT INTO `biz_user_subscription` VALUES (9, 2, 2, 'PRO', NULL, 'monthly', 29.00, '2026-02-12 12:50:41', '2026-03-12 12:50:41', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-12 12:50:41', '2026-02-12 12:50:41');
+INSERT INTO `biz_user_subscription` VALUES (10, 3, 2, 'PRO', NULL, 'monthly', 0.01, '2026-02-12 16:11:21', '2026-03-12 16:11:21', 0, 'cancelled', NULL, NULL, '2026-02-12 16:39:13', '升级到新计划', '2026-02-12 16:11:21', '2026-02-12 16:11:21');
+INSERT INTO `biz_user_subscription` VALUES (11, 3, 2, 'PRO', NULL, 'monthly', 0.01, '2026-02-12 16:39:13', '2026-05-12 16:39:13', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-12 16:39:13', '2026-02-12 16:44:46');
+INSERT INTO `biz_user_subscription` VALUES (12, 7, 1, 'FREE', NULL, 'monthly', 0.00, '2026-02-12 18:05:48', '2026-03-12 18:05:48', 0, 'cancelled', NULL, NULL, '2026-02-12 18:06:12', '升级到新计划', '2026-02-12 18:05:48', '2026-02-12 18:05:48');
+INSERT INTO `biz_user_subscription` VALUES (13, 7, 2, 'PRO', NULL, 'monthly', 29.00, '2026-02-12 18:06:12', '2026-03-12 18:06:12', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-12 18:06:12', '2026-02-12 18:06:12');
+INSERT INTO `biz_user_subscription` VALUES (14, 1, 2, 'PRO', NULL, 'monthly', 29.00, '2026-02-12 18:07:18', '2026-07-12 18:07:18', 0, 'active', NULL, NULL, NULL, NULL, '2026-02-12 18:07:18', '2026-02-12 18:07:18');
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -512,7 +536,7 @@ CREATE TABLE `sys_config`  (
 -- ----------------------------
 -- Records of sys_config
 -- ----------------------------
-INSERT INTO `sys_config` VALUES (1, 'openai.api.key', '*************************', 'OpenAI API密钥', '2026-02-07 11:42:16', '2026-02-09 15:49:32');
+INSERT INTO `sys_config` VALUES (1, 'openai.api.key', 'Api-key', 'OpenAI API密钥', '2026-02-07 11:42:16', '2026-02-09 15:49:32');
 INSERT INTO `sys_config` VALUES (2, 'openai.api.base_url', 'https://api-inference.modelscope.cn/v1', 'OpenAI API基础地址', '2026-02-07 11:42:16', '2026-02-07 11:42:16');
 INSERT INTO `sys_config` VALUES (3, 'openai.model.name', 'moonshotai/Kimi-K2.5', 'OpenAI模型名称', '2026-02-07 11:42:16', '2026-02-07 11:42:16');
 INSERT INTO `sys_config` VALUES (4, 'mermaid.cli.path', 'mmdc', 'Mermaid CLI路径', '2026-02-07 11:42:16', '2026-02-07 11:42:16');
@@ -524,6 +548,113 @@ INSERT INTO `sys_config` VALUES (9, 'jdbc.connection.timeout', '10', 'JDBC连接
 INSERT INTO `sys_config` VALUES (10, 'jdbc.query.timeout', '30', 'JDBC查询超时时间（秒）', '2026-02-07 11:42:16', '2026-02-07 11:42:16');
 INSERT INTO `sys_config` VALUES (11, 'rate.limit.per.second', '10', 'API限流：每秒请求数', '2026-02-07 11:42:16', '2026-02-07 11:42:16');
 INSERT INTO `sys_config` VALUES (12, 'cache.expire.seconds', '3600', '缓存过期时间（秒）', '2026-02-07 11:42:16', '2026-02-07 11:42:16');
+
+-- ----------------------------
+-- Table structure for sys_config_group
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_config_group`;
+CREATE TABLE `sys_config_group`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `group_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '分组编码',
+  `group_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '分组名称',
+  `group_icon` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '分组图标',
+  `config_value` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '配置值(JSON格式)',
+  `sort` int NULL DEFAULT 0 COMMENT '排序',
+  `status` tinyint NULL DEFAULT 1 COMMENT '状态(0-禁用 1-启用)',
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_group_code`(`group_code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统配置分组表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for sys_email_log
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_email_log`;
+CREATE TABLE `sys_email_log`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `template_code` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '使用的模板编码',
+  `to_email` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '收件人邮箱',
+  `subject` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '邮件主题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '实际发送内容',
+  `target` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT 'specific' COMMENT '发送目标: all/pro/specific',
+  `status` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'pending' COMMENT 'pending/sent/failed',
+  `error_msg` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '失败原因',
+  `sender_id` bigint NULL DEFAULT NULL COMMENT '操作人ID',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_to_email`(`to_email` ASC) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '邮件发送日志' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_email_log
+-- ----------------------------
+INSERT INTO `sys_email_log` VALUES (1, 'subscription_success', '3385760690@qq.com', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 3385760690@qq.com，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 17:53:11');
+INSERT INTO `sys_email_log` VALUES (2, 'subscription_success', '3273495516@qq.com', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 3273495516@qq.com，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 17:53:29');
+INSERT INTO `sys_email_log` VALUES (3, 'subscription_success', '3273495516@qq.com', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 3273495516@qq.com，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 17:54:35');
+INSERT INTO `sys_email_log` VALUES (4, 'subscription_success', '3273495516@qq.com', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 3273495516@qq.com，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 17:58:27');
+INSERT INTO `sys_email_log` VALUES (5, 'welcome', '743547919@qq.com', '欢迎加入 CoffeeViz', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">欢迎加入 CoffeeViz 🎉</h2><p>Hi 743547919@qq.com，</p><p>感谢你注册 CoffeeViz，你的数据库可视化之旅从这里开始。</p><p>如有任何问题，随时联系我们。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 18:02:04');
+INSERT INTO `sys_email_log` VALUES (6, 'subscription_success', 'admin@coffeeviz.com', '你的 CoffeeViz 专业版 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 系统管理员，</p><p>你已成功订阅 <strong>专业版</strong> 计划，有效期至 2026-03-12。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'auto', 'sent', NULL, NULL, '2026-02-12 18:07:19');
+INSERT INTO `sys_email_log` VALUES (7, 'subscription_success', 'admin@coffeeviz.com', '你的 CoffeeViz 专业版 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 系统管理员，</p><p>你已成功订阅 <strong>专业版</strong> 计划，有效期至 2026-04-12。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'auto', 'sent', NULL, NULL, '2026-02-12 18:07:49');
+INSERT INTO `sys_email_log` VALUES (8, 'subscription_success', '2703772950@qq.com', '你的 CoffeeViz 专业版 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 系统管理员，</p><p>你已成功订阅 <strong>专业版</strong> 计划，有效期至 2026-05-12。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'auto', 'sent', NULL, NULL, '2026-02-12 18:08:56');
+INSERT INTO `sys_email_log` VALUES (9, 'subscription_success', '2703772950@qq.com', '你的 CoffeeViz 专业版 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 系统管理员，</p><p>你已成功订阅 <strong>专业版</strong> 计划，有效期至 2026-06-12。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'auto', 'sent', NULL, NULL, '2026-02-12 18:14:38');
+INSERT INTO `sys_email_log` VALUES (10, 'subscription_success', '2703772950@qq.com', '你的 CoffeeViz 专业版 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 系统管理员，</p><p>你已成功订阅 <strong>专业版</strong> 计划，有效期至 2026-07-12。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'auto', 'sent', NULL, NULL, '2026-02-12 18:15:20');
+INSERT INTO `sys_email_log` VALUES (11, 'custom', '2703772950@qq.com', '来自 CoffeeViz 的通知', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#3b82f6\">{{title}}</h2><p>Hi 系统管理员，</p><div>{{content}}</div><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'pro', 'sent', NULL, NULL, '2026-02-12 18:20:42');
+INSERT INTO `sys_email_log` VALUES (12, 'custom', 'eighteenthstuai@gmail.com', '来自 CoffeeViz 的通知', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#3b82f6\">{{title}}</h2><p>Hi 神阁绘9e3981fd55，</p><div>{{content}}</div><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'pro', 'sent', NULL, NULL, '2026-02-12 18:20:43');
+INSERT INTO `sys_email_log` VALUES (13, 'custom', '2525363658@qq.com', '来自 CoffeeViz 的通知', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#3b82f6\">{{title}}</h2><p>Hi 神阁绘f70a27000e，</p><div>{{content}}</div><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'pro', 'sent', NULL, NULL, '2026-02-12 18:20:43');
+INSERT INTO `sys_email_log` VALUES (14, 'custom', '2323565689@qq.com', '来自 CoffeeViz 的通知', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#3b82f6\">{{title}}</h2><p>Hi 神阁绘23d5bedc92，</p><div>{{content}}</div><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'pro', 'sent', NULL, NULL, '2026-02-12 18:20:44');
+INSERT INTO `sys_email_log` VALUES (15, 'subscription_success', '3061323436@qq.com', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 3061323436@qq.com，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 18:23:48');
+INSERT INTO `sys_email_log` VALUES (16, 'subscription_success', '2789613697@qq.com', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi 2789613697@qq.com，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', 'specific', 'sent', NULL, NULL, '2026-02-12 18:25:01');
+
+-- ----------------------------
+-- Table structure for sys_email_template
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_email_template`;
+CREATE TABLE `sys_email_template`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `template_code` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '模板编码（唯一）',
+  `template_name` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '模板名称',
+  `subject` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '邮件主题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '邮件正文（HTML），支持变量 {{username}} {{planName}} 等',
+  `description` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '模板说明',
+  `status` int NULL DEFAULT 1 COMMENT '状态 1=启用 0=禁用',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_template_code`(`template_code` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '邮件模板表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_email_template
+-- ----------------------------
+INSERT INTO `sys_email_template` VALUES (1, 'welcome', '欢迎注册', '欢迎加入 CoffeeViz', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">欢迎加入 CoffeeViz 🎉</h2><p>Hi {{username}}，</p><p>感谢你注册 CoffeeViz，你的数据库可视化之旅从这里开始。</p><p>如有任何问题，随时联系我们。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', '用户注册后自动发送', 1, '2026-02-12 17:23:32', '2026-02-12 17:23:32');
+INSERT INTO `sys_email_template` VALUES (2, 'subscription_success', '订阅成功', '你的 CoffeeViz {{planName}} 订阅已生效', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#10b981\">订阅成功 ✅</h2><p>Hi {{username}}，</p><p>你已成功订阅 <strong>{{planName}}</strong> 计划，有效期至 {{endTime}}。</p><p>现在可以使用全部高级功能了。</p><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', '订阅支付成功后自动发送', 1, '2026-02-12 17:23:32', '2026-02-12 17:23:32');
+INSERT INTO `sys_email_template` VALUES (3, 'custom', '自定义通知', '来自 CoffeeViz 的通知', '<div style=\"max-width:600px;margin:0 auto;font-family:sans-serif;color:#333\"><h2 style=\"color:#3b82f6\">{{title}}</h2><p>Hi {{username}}，</p><div>{{content}}</div><p style=\"color:#999;font-size:12px;margin-top:32px\">— CoffeeViz 团队</p></div>', '管理员手动发送自定义邮件', 1, '2026-02-12 17:23:32', '2026-02-12 17:23:32');
+
+-- ----------------------------
+-- Table structure for sys_notification
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_notification`;
+CREATE TABLE `sys_notification`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `target` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all' COMMENT '发送目标: all, pro, team, specific',
+  `channels` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'inbox' COMMENT '发送渠道: inbox,email,sms',
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '通知标题',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '通知内容',
+  `sender_id` bigint NULL DEFAULT NULL COMMENT '发送人ID',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sent' COMMENT '状态: sent, failed',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_create_time`(`create_time` ASC) USING BTREE,
+  INDEX `idx_target`(`target` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '系统通知表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_notification
+-- ----------------------------
+INSERT INTO `sys_notification` VALUES (1, 'all', 'inbox', 'ff', 'f', 1, 'sent', '2026-02-12 12:52:29');
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -546,33 +677,18 @@ CREATE TABLE `sys_user`  (
   INDEX `idx_username`(`username` ASC) USING BTREE,
   INDEX `idx_email`(`email` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$rJrh3nvpyBQ1QDDsTkmIG.nAXiwjTF0lwRHuEQz/JY/DDRpMhO9j.', 'admin@coffeeviz.com', NULL, '系统管理员', 'Administrator', NULL, 1, '2026-02-07 11:42:16', '2026-02-07 13:51:38');
+INSERT INTO `sys_user` VALUES (1, 'admin', '$2a$10$rJrh3nvpyBQ1QDDsTkmIG.nAXiwjTF0lwRHuEQz/JY/DDRpMhO9j.', '2703772950@qq.com', '', '系统管理员', 'Administrator', NULL, 1, '2026-02-07 11:42:16', '2026-02-07 13:51:38');
 INSERT INTO `sys_user` VALUES (2, '3273495516@qq.com', '$2a$12$Wgmk1lSoAJWlwSDwNMXGQu6ux2k/IUiiEjoGsj9gLvnHuSRJ3Yke.', NULL, NULL, '神阁绘8d67833604', NULL, NULL, 1, '2026-02-07 19:23:26', '2026-02-07 19:45:51');
 INSERT INTO `sys_user` VALUES (3, 'user_6154', '$2a$12$Fc2luHllb37KJeAaGTFwy.QcW8ABaD5TKSXmSiy2c4wtmjRVk41qm', NULL, '13272796154', '用户6154', NULL, NULL, 1, '2026-02-07 19:30:56', '2026-02-07 19:30:56');
 INSERT INTO `sys_user` VALUES (4, '2703772950@qq.com', '$2a$12$4bnoZcppTnPR3eeaTLG2c.cbkl1UsIYh/2DG5fp0eT.JhCm9j6.c6', 'eighteenthstuai@gmail.com', '13245456565', '神阁绘9e3981fd55', NULL, NULL, 1, '2026-02-07 19:39:43', '2026-02-07 19:39:43');
 INSERT INTO `sys_user` VALUES (5, '测试加入团队', '$2a$12$G5Fsc3tM68h/5DHvuIY0yeOw4tL7nHVehtDsZdMcLoUPgtlOVnfHm', '2525363658@qq.com', NULL, '神阁绘f70a27000e', NULL, NULL, 1, '2026-02-11 14:08:35', '2026-02-11 14:08:35');
 INSERT INTO `sys_user` VALUES (6, '测试订阅', '$2a$12$SKm/lsg6ejO6W1KY7t27JOv3tS/1eCUcrwJaOaiiCtucqoJ5mdc9m', '2323565689@qq.com', NULL, '神阁绘23d5bedc92', NULL, NULL, 1, '2026-02-11 15:20:55', '2026-02-11 15:20:55');
-
--- 系统通知表
-CREATE TABLE IF NOT EXISTS `sys_notification` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `target` VARCHAR(50) NOT NULL DEFAULT 'all' COMMENT '发送目标: all, pro, team, specific',
-    `channels` VARCHAR(100) NOT NULL DEFAULT 'inbox' COMMENT '发送渠道: inbox,email,sms',
-    `title` VARCHAR(200) NOT NULL COMMENT '通知标题',
-    `content` TEXT COMMENT '通知内容',
-    `sender_id` BIGINT COMMENT '发送人ID',
-    `status` VARCHAR(20) NOT NULL DEFAULT 'sent' COMMENT '状态: sent, failed',
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    PRIMARY KEY (`id`),
-    INDEX `idx_create_time` (`create_time`),
-    INDEX `idx_target` (`target`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统通知表';
-
+INSERT INTO `sys_user` VALUES (7, '743547919@qq.com', '$2a$12$gl2S2R0neHVIPa/qme2SQeBpHxJCVjzhOZMoHdu0EsFXnUJ5KRTmu', NULL, NULL, '神阁绘13e70ce5ee', NULL, NULL, 1, '2026-02-12 18:05:47', '2026-02-12 18:05:47');
 
 -- ----------------------------
 -- Triggers structure for table biz_diagram

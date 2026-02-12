@@ -27,6 +27,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final com.coffeeviz.mapper.TeamMemberMapper teamMemberMapper;
     private final com.coffeeviz.mapper.TeamMapper teamMapper;
     private QuotaService quotaService;
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
     
     public SubscriptionServiceImpl(SubscriptionPlanMapper planMapper, 
                                    UserSubscriptionMapper subscriptionMapper,
@@ -42,6 +43,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @org.springframework.context.annotation.Lazy
     public void setQuotaService(QuotaService quotaService) {
         this.quotaService = quotaService;
+    }
+    
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setEventPublisher(org.springframework.context.ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
     
     @Override
@@ -82,17 +88,40 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new IllegalArgumentException("订阅计划不存在");
         }
         
-        // 取消当前订阅（如果存在）
+        LocalDateTime now = LocalDateTime.now();
         UserSubscription current = getCurrentSubscription(userId);
-        if (current != null && "active".equals(current.getStatus())) {
-            current.setStatus("cancelled");
-            current.setCancelTime(LocalDateTime.now());
-            current.setCancelReason("升级到新计划");
+        
+        // 同计划续费：在现有到期时间基础上累加，不取消旧订阅
+        if (current != null && "active".equals(current.getStatus())
+                && current.getPlanId().equals(planId)
+                && current.getEndTime().isAfter(now)) {
+            log.info("同计划续费，时间累加: userId={}, planId={}, 当前到期={}", userId, planId, current.getEndTime());
+            LocalDateTime newEndTime = "yearly".equals(billingCycle)
+                    ? current.getEndTime().plusYears(1)
+                    : current.getEndTime().plusMonths(1);
+            current.setEndTime(newEndTime);
             subscriptionMapper.updateById(current);
+            // 续费也发送订阅邮件
+            try {
+                eventPublisher.publishEvent(new com.coffeeviz.event.SubscriptionCreatedEvent(
+                        this, userId, plan.getPlanName(), billingCycle, newEndTime.toString()));
+            } catch (Exception e) {
+                log.warn("发布续费事件失败: {}", e.getMessage());
+            }
+            return current;
         }
         
-        // 计算结束时间
-        LocalDateTime startTime = LocalDateTime.now();
+        // 不同计划（升级/降级）或无活跃订阅：取消旧订阅，创建新订阅
+        // 不同计划时，将旧订阅剩余时间作为新订阅的起始偏移
+        LocalDateTime startTime = now;
+        if (current != null && "active".equals(current.getStatus())) {
+            current.setStatus("cancelled");
+            current.setCancelTime(now);
+            current.setCancelReason("升级到新计划");
+            subscriptionMapper.updateById(current);
+            // 如果旧订阅还没过期，新订阅从当前时间开始（不累加不同计划的剩余时间）
+        }
+        
         LocalDateTime endTime = "yearly".equals(billingCycle) 
             ? startTime.plusYears(1) 
             : startTime.plusMonths(1);
@@ -112,6 +141,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         
         // 使用 QuotaService 初始化用户配额
         quotaService.initializeUserQuotas(userId, planId);
+        
+        // 发布订阅成功事件（非 FREE 计划才发邮件）
+        if (!"FREE".equalsIgnoreCase(plan.getPlanCode())) {
+            try {
+                eventPublisher.publishEvent(new com.coffeeviz.event.SubscriptionCreatedEvent(
+                        this, userId, plan.getPlanName(), billingCycle, endTime.toString()));
+            } catch (Exception e) {
+                log.warn("发布订阅事件失败，不影响订阅流程: {}", e.getMessage());
+            }
+        }
         
         return subscription;
     }

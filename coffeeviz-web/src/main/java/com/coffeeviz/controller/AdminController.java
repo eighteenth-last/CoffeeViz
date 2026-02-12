@@ -21,6 +21,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 /**
  * 管理端 Controller
  * 
@@ -58,6 +61,102 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SysConfigGroupMapper configGroupMapper;
+
+    @Autowired
+    private PlanQuotaMapper planQuotaMapper;
+
+    @Autowired(required = false)
+    private com.coffeeviz.service.QuotaService quotaService;
+
+    @Autowired
+    private com.coffeeviz.mapper.UserQuotaTrackingMapper userQuotaTrackingMapper;
+
+    @Autowired(required = false)
+    private com.coffeeviz.service.PaymentConfigService paymentConfigService;
+
+    @Autowired
+    private EmailTemplateMapper emailTemplateMapper;
+
+    @Autowired
+    private EmailLogMapper emailLogMapper;
+
+    @Autowired
+    private com.coffeeviz.service.EmailService emailService;
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * 根据请求中的配额列表同步 biz_plan_quota 表（upsert 逻辑，避免外键冲突）
+     */
+    private void syncPlanQuotas(Long planId, List<AdminPlanRequest.QuotaItem> quotas) {
+        // 查出该计划现有的配额记录，按 quotaType 索引
+        List<PlanQuota> existing = planQuotaMapper.selectList(
+                new LambdaQueryWrapper<PlanQuota>().eq(PlanQuota::getPlanId, planId));
+        Map<String, PlanQuota> existingMap = existing.stream()
+                .collect(Collectors.toMap(PlanQuota::getQuotaType, q -> q, (a, b) -> a));
+
+        Set<String> incomingTypes = new HashSet<>();
+        if (quotas != null) {
+            for (AdminPlanRequest.QuotaItem item : quotas) {
+                if (item.getQuotaType() == null) continue;
+                incomingTypes.add(item.getQuotaType());
+                PlanQuota old = existingMap.get(item.getQuotaType());
+                if (old != null) {
+                    // 更新已有记录
+                    old.setQuotaLimit(item.getQuotaLimit() != null ? item.getQuotaLimit() : 0);
+                    old.setResetCycle(item.getResetCycle() != null ? item.getResetCycle() : "monthly");
+                    old.setDescription(item.getDescription());
+                    planQuotaMapper.updateById(old);
+                } else {
+                    // 插入新记录
+                    PlanQuota q = new PlanQuota();
+                    q.setPlanId(planId);
+                    q.setQuotaType(item.getQuotaType());
+                    q.setQuotaLimit(item.getQuotaLimit() != null ? item.getQuotaLimit() : 0);
+                    q.setResetCycle(item.getResetCycle() != null ? item.getResetCycle() : "monthly");
+                    q.setDescription(item.getDescription());
+                    planQuotaMapper.insert(q);
+                }
+            }
+        }
+
+        // 删除不再需要的配额（先把 user_quota_tracking 的引用指向 null，再删除）
+        for (PlanQuota old : existing) {
+            if (!incomingTypes.contains(old.getQuotaType())) {
+                try {
+                    planQuotaMapper.deleteById(old.getId());
+                } catch (Exception e) {
+                    // 外键约束阻止删除，将限额设为 0 标记为废弃
+                    log.warn("配额记录有外键引用无法删除，设为0: planId={}, type={}", planId, old.getQuotaType());
+                    old.setQuotaLimit(0);
+                    old.setDescription("[已废弃]");
+                    planQuotaMapper.updateById(old);
+                }
+            }
+        }
+    }
+
+    /**
+     * 计划配额变更后，同步所有该计划活跃用户的 quota_limit
+     */
+    private void syncActiveUserQuotas(Long planId) {
+        if (quotaService == null) return;
+        try {
+            List<UserSubscription> activeSubs = subscriptionMapper.selectList(
+                    new LambdaQueryWrapper<UserSubscription>()
+                            .eq(UserSubscription::getPlanId, planId)
+                            .eq(UserSubscription::getStatus, "active"));
+            for (UserSubscription sub : activeSubs) {
+                quotaService.updateUserQuotaLimits(sub.getUserId(), planId);
+            }
+            log.info("已同步 {} 个用户的配额限制: planId={}", activeSubs.size(), planId);
+        } catch (Exception e) {
+            log.warn("同步用户配额限制失败: planId={}, error={}", planId, e.getMessage());
+        }
+    }
 
     // ==================== Dashboard ====================
 
@@ -104,9 +203,81 @@ public class AdminController {
             stats.setMonthlyRevenue(monthlyRevenue);
             stats.setRevenueGrowth(-1.4); // 简化处理
 
-            // AI调用次数（从配额跟踪表统计）
-            stats.setAiCalls(0L);
-            stats.setAiCallGrowth(24.0);
+            // AI调用次数（从配额跟踪表统计所有用户 ai_generate 的 quota_used 总和）
+            List<com.coffeeviz.entity.UserQuotaTracking> aiTrackings = userQuotaTrackingMapper.selectList(
+                    new LambdaQueryWrapper<com.coffeeviz.entity.UserQuotaTracking>()
+                            .eq(com.coffeeviz.entity.UserQuotaTracking::getQuotaType, "ai_generate"));
+            long totalAiCalls = aiTrackings.stream()
+                    .mapToLong(t -> t.getQuotaUsed() != null ? t.getQuotaUsed() : 0)
+                    .sum();
+            stats.setAiCalls(totalAiCalls);
+            stats.setAiCallGrowth(0.0);
+
+            // Chart Data - Growth Trend (Last 7 Days)
+            List<String> dates = new ArrayList<>();
+            List<Long> newUsers = new ArrayList<>();
+            List<Long> apiCalls = new ArrayList<>();
+            
+            LocalDate today = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
+            
+            for (int i = 6; i >= 0; i--) {
+                LocalDate date = today.minusDays(i);
+                dates.add(date.format(formatter));
+                
+                // New Users
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.plusDays(1).atStartOfDay();
+                Long count = userMapper.selectCount(new LambdaQueryWrapper<User>()
+                        .ge(User::getCreateTime, start)
+                        .lt(User::getCreateTime, end));
+                newUsers.add(count);
+                
+                // API Calls (Placeholder - 0 for now as no tracking table exists)
+                apiCalls.add(0L); 
+            }
+            stats.setChartDates(dates);
+            stats.setChartNewUsers(newUsers);
+            stats.setChartApiCalls(apiCalls);
+
+            // Chart Data - Subscription Distribution
+            Map<String, Long> distribution = new LinkedHashMap<>(); // Use LinkedHashMap for order
+            
+            // Get all plans
+            List<SubscriptionPlan> plans = planMapper.selectList(
+                new LambdaQueryWrapper<SubscriptionPlan>().orderByAsc(SubscriptionPlan::getSortOrder));
+            
+            Long totalPaid = 0L;
+            String freePlanName = "Free";
+
+            for (SubscriptionPlan plan : plans) {
+                boolean isFree = "FREE".equalsIgnoreCase(plan.getPlanCode());
+                if (isFree) {
+                    freePlanName = plan.getPlanName();
+                    // Reserve spot in LinkedHashMap to maintain sort order
+                    distribution.put(freePlanName, 0L); 
+                    continue; // Skip counting for free plan, will calculate as residual
+                }
+
+                // Count active subscriptions for this plan
+                Long count = subscriptionMapper.selectCount(new LambdaQueryWrapper<UserSubscription>()
+                        .eq(UserSubscription::getStatus, "active")
+                        .eq(UserSubscription::getPlanId, plan.getId()));
+                
+                if (count > 0) {
+                    distribution.put(plan.getPlanName(), count);
+                    totalPaid += count;
+                }
+            }
+            
+            // Free Users = Total Users - Total Active Paid Subscriptions
+            Long freeUsers = stats.getTotalUsers() - totalPaid;
+            if (freeUsers < 0) freeUsers = 0L;
+            
+            // Update Free plan count
+            distribution.put(freePlanName, freeUsers);
+            
+            stats.setSubscriptionDistribution(distribution);
 
             return Result.success(stats);
         } catch (Exception e) {
@@ -376,15 +547,41 @@ public class AdminController {
     // ==================== Plans ====================
 
     /**
-     * 获取所有订阅计划
+     * 获取所有订阅计划（附带配额列表）
      */
     @GetMapping("/plans")
-    public Result<List<SubscriptionPlan>> getPlanList() {
+    public Result<List<Map<String, Object>>> getPlanList() {
         log.info("获取订阅计划列表");
         try {
             List<SubscriptionPlan> plans = planMapper.selectList(
                     new LambdaQueryWrapper<SubscriptionPlan>().orderByAsc(SubscriptionPlan::getSortOrder));
-            return Result.success(plans);
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (SubscriptionPlan plan : plans) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("id", plan.getId());
+                item.put("planCode", plan.getPlanCode());
+                item.put("planName", plan.getPlanName());
+                item.put("planNameEn", plan.getPlanNameEn());
+                item.put("description", plan.getDescription());
+                item.put("priceMonthly", plan.getPriceMonthly());
+                item.put("priceYearly", plan.getPriceYearly());
+                item.put("supportJdbc", plan.getSupportJdbc());
+                item.put("supportAi", plan.getSupportAi());
+                item.put("supportExport", plan.getSupportExport());
+                item.put("supportTeam", plan.getSupportTeam());
+                item.put("maxTeams", plan.getMaxTeams());
+                item.put("maxTeamMembers", plan.getMaxTeamMembers());
+                item.put("prioritySupport", plan.getPrioritySupport());
+                item.put("features", plan.getFeatures());
+                item.put("sortOrder", plan.getSortOrder());
+                item.put("status", plan.getStatus());
+                // 附带配额列表
+                List<PlanQuota> quotas = planQuotaMapper.selectList(
+                        new LambdaQueryWrapper<PlanQuota>().eq(PlanQuota::getPlanId, plan.getId()));
+                item.put("quotas", quotas);
+                result.add(item);
+            }
+            return Result.success(result);
         } catch (Exception e) {
             log.error("获取计划列表失败", e);
             return Result.error("获取计划列表失败: " + e.getMessage());
@@ -403,14 +600,20 @@ public class AdminController {
             plan.setPlanCode(request.getName().toUpperCase().replace(" ", "_"));
             plan.setPriceMonthly(request.getPrice());
             plan.setPriceYearly(request.getPrice() != null ? request.getPrice().multiply(BigDecimal.TEN) : null);
-            plan.setMaxRepositories(request.getProjectLimit());
-            plan.setMaxDiagramsPerRepo(request.getGenerateLimit());
-            plan.setSupportAi(1);
             plan.setFeatures(request.getBenefits());
             plan.setStatus(Boolean.TRUE.equals(request.getEnabled()) ? "active" : "inactive");
             plan.setSortOrder(99);
+            // 功能开关
+            if (request.getSupportJdbc() != null) plan.setSupportJdbc(request.getSupportJdbc());
+            if (request.getSupportAi() != null) plan.setSupportAi(request.getSupportAi());
+            if (request.getSupportExport() != null) plan.setSupportExport(request.getSupportExport());
+            if (request.getSupportTeam() != null) plan.setSupportTeam(request.getSupportTeam());
+            if (request.getMaxTeams() != null) plan.setMaxTeams(request.getMaxTeams());
+            if (request.getMaxTeamMembers() != null) plan.setMaxTeamMembers(request.getMaxTeamMembers());
+            if (request.getPrioritySupport() != null) plan.setPrioritySupport(request.getPrioritySupport());
 
             planMapper.insert(plan);
+            syncPlanQuotas(plan.getId(), request.getQuotas());
             log.info("订阅计划创建成功: id={}", plan.getId());
             return Result.success(plan);
         } catch (Exception e) {
@@ -436,14 +639,25 @@ public class AdminController {
                 plan.setPriceMonthly(request.getPrice());
                 plan.setPriceYearly(request.getPrice().multiply(BigDecimal.TEN));
             }
-            if (request.getProjectLimit() != null) plan.setMaxRepositories(request.getProjectLimit());
-            if (request.getGenerateLimit() != null) plan.setMaxDiagramsPerRepo(request.getGenerateLimit());
             if (request.getBenefits() != null) plan.setFeatures(request.getBenefits());
             if (request.getEnabled() != null) {
                 plan.setStatus(request.getEnabled() ? "active" : "inactive");
             }
+            // 功能开关
+            if (request.getSupportJdbc() != null) plan.setSupportJdbc(request.getSupportJdbc());
+            if (request.getSupportAi() != null) plan.setSupportAi(request.getSupportAi());
+            if (request.getSupportExport() != null) plan.setSupportExport(request.getSupportExport());
+            if (request.getSupportTeam() != null) plan.setSupportTeam(request.getSupportTeam());
+            if (request.getMaxTeams() != null) plan.setMaxTeams(request.getMaxTeams());
+            if (request.getMaxTeamMembers() != null) plan.setMaxTeamMembers(request.getMaxTeamMembers());
+            if (request.getPrioritySupport() != null) plan.setPrioritySupport(request.getPrioritySupport());
 
             planMapper.updateById(plan);
+            if (request.getQuotas() != null) {
+                syncPlanQuotas(plan.getId(), request.getQuotas());
+            }
+            // 同步所有该计划活跃用户的配额限制
+            syncActiveUserQuotas(planId);
             return Result.success(plan);
         } catch (Exception e) {
             log.error("更新计划失败", e);
@@ -510,6 +724,147 @@ public class AdminController {
         }
     }
 
+    // ==================== Payment Config ====================
+
+    /**
+     * 获取支付配置（从三条独立记录读取）
+     */
+    @GetMapping("/settings/payment")
+    public Result<AdminPaymentConfigVO> getPaymentConfig() {
+        log.info("获取支付配置");
+        try {
+            java.util.List<SysConfigGroup> groups = configGroupMapper.selectList(
+                    new LambdaQueryWrapper<SysConfigGroup>()
+                            .likeRight(SysConfigGroup::getGroupCode, "payment_"));
+
+            AdminPaymentConfigVO config = new AdminPaymentConfigVO();
+
+            for (SysConfigGroup group : groups) {
+                String code = group.getGroupCode();
+                boolean enabled = group.getStatus() != null && group.getStatus() == 1;
+                com.alibaba.fastjson2.JSONObject json = StringUtils.hasText(group.getConfigValue())
+                        ? com.alibaba.fastjson2.JSON.parseObject(group.getConfigValue())
+                        : new com.alibaba.fastjson2.JSONObject();
+
+                switch (code) {
+                    case "payment_wechat" -> {
+                        AdminPaymentConfigVO.WechatPayConfig wc = json.toJavaObject(AdminPaymentConfigVO.WechatPayConfig.class);
+                        if (wc == null) wc = new AdminPaymentConfigVO.WechatPayConfig();
+                        wc.setEnabled(enabled);
+                        config.setWechatPay(wc);
+                    }
+                    case "payment_alipay" -> {
+                        AdminPaymentConfigVO.AlipayConfig ac = json.toJavaObject(AdminPaymentConfigVO.AlipayConfig.class);
+                        if (ac == null) ac = new AdminPaymentConfigVO.AlipayConfig();
+                        ac.setEnabled(enabled);
+                        config.setAlipay(ac);
+                    }
+                    case "payment_test" -> {
+                        AdminPaymentConfigVO.TestConfig tc = json.toJavaObject(AdminPaymentConfigVO.TestConfig.class);
+                        if (tc == null) tc = new AdminPaymentConfigVO.TestConfig();
+                        tc.setEnabled(enabled);
+                        config.setTest(tc);
+                    }
+                }
+            }
+
+            // 确保返回非null对象
+            if (config.getWechatPay() == null) {
+                AdminPaymentConfigVO.WechatPayConfig wc = new AdminPaymentConfigVO.WechatPayConfig();
+                wc.setEnabled(false);
+                config.setWechatPay(wc);
+            }
+            if (config.getAlipay() == null) {
+                AdminPaymentConfigVO.AlipayConfig ac = new AdminPaymentConfigVO.AlipayConfig();
+                ac.setEnabled(false);
+                ac.setSignType("RSA2");
+                ac.setCharset("UTF-8");
+                ac.setGatewayUrl("https://openapi.alipay.com/gateway.do");
+                config.setAlipay(ac);
+            }
+            if (config.getTest() == null) {
+                AdminPaymentConfigVO.TestConfig tc = new AdminPaymentConfigVO.TestConfig();
+                tc.setEnabled(false);
+                tc.setDescription("测试环境模拟支付，无需真实支付");
+                config.setTest(tc);
+            }
+
+            return Result.success(config);
+        } catch (Exception e) {
+            log.error("获取支付配置失败", e);
+            return Result.error("获取支付配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存支付配置（分别保存三条独立记录，status 控制启用/禁用）
+     */
+    @PostMapping("/settings/payment")
+    public Result<String> savePaymentConfig(@RequestBody AdminPaymentConfigVO config) {
+        log.info("保存支付配置");
+        try {
+            // 保存微信支付
+            if (config.getWechatPay() != null) {
+                savePaymentGroup("payment_wechat", "微信支付", "wechat",
+                        config.getWechatPay(), Boolean.TRUE.equals(config.getWechatPay().getEnabled()), 1);
+            }
+            // 保存支付宝
+            if (config.getAlipay() != null) {
+                savePaymentGroup("payment_alipay", "支付宝", "alipay",
+                        config.getAlipay(), Boolean.TRUE.equals(config.getAlipay().getEnabled()), 2);
+            }
+            // 保存测试支付
+            if (config.getTest() != null) {
+                savePaymentGroup("payment_test", "测试支付", "test",
+                        config.getTest(), Boolean.TRUE.equals(config.getTest().getEnabled()), 3);
+            }
+
+            refreshPaymentRuntime();
+            return Result.success("支付配置已保存", "success");
+        } catch (Exception e) {
+            log.error("保存支付配置失败", e);
+            return Result.error("保存支付配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存单条支付配置记录
+     */
+    private void savePaymentGroup(String groupCode, String groupName, String icon,
+                                   Object configObj, boolean enabled, int sort) {
+        // 序列化时排除 enabled 字段（enabled 由 status 字段控制）
+        String jsonStr = com.alibaba.fastjson2.JSON.toJSONString(configObj);
+        com.alibaba.fastjson2.JSONObject json = com.alibaba.fastjson2.JSON.parseObject(jsonStr);
+        json.remove("enabled"); // enabled 存在 status 字段，不重复存 JSON 里
+
+        SysConfigGroup group = configGroupMapper.selectOne(
+                new LambdaQueryWrapper<SysConfigGroup>().eq(SysConfigGroup::getGroupCode, groupCode));
+
+        if (group == null) {
+            group = new SysConfigGroup();
+            group.setGroupCode(groupCode);
+            group.setGroupName(groupName);
+            group.setGroupIcon(icon);
+            group.setConfigValue(json.toJSONString());
+            group.setStatus(enabled ? 1 : 0);
+            group.setSort(sort);
+            configGroupMapper.insert(group);
+        } else {
+            group.setConfigValue(json.toJSONString());
+            group.setStatus(enabled ? 1 : 0);
+            configGroupMapper.updateById(group);
+        }
+    }
+
+    /**
+     * 保存后刷新运行时支付配置
+     */
+    private void refreshPaymentRuntime() {
+        if (paymentConfigService != null) {
+            paymentConfigService.refreshPaymentConfig();
+        }
+    }
+
     // ==================== Notifications ====================
 
     /**
@@ -570,6 +925,138 @@ public class AdminController {
             log.error("获取通知历史失败", e);
             return Result.error("获取通知历史失败: " + e.getMessage());
         }
+    }
+
+    // ==================== Email Config ====================
+
+    /**
+     * 获取邮件配置
+     */
+    @GetMapping("/settings/email")
+    public Result<AdminEmailConfigVO> getEmailConfig() {
+        log.info("获取邮件配置");
+        try {
+            SysConfigGroup group = configGroupMapper.selectOne(
+                    new LambdaQueryWrapper<SysConfigGroup>().eq(SysConfigGroup::getGroupCode, "email"));
+            AdminEmailConfigVO vo = new AdminEmailConfigVO();
+            if (group != null && group.getConfigValue() != null) {
+                com.alibaba.fastjson2.JSONObject json = com.alibaba.fastjson2.JSON.parseObject(group.getConfigValue());
+                vo = json.toJavaObject(AdminEmailConfigVO.class);
+                if (vo == null) vo = new AdminEmailConfigVO();
+            }
+            vo.setEnabled(group != null && group.getStatus() != null && group.getStatus() == 1);
+            return Result.success(vo);
+        } catch (Exception e) {
+            log.error("获取邮件配置失败", e);
+            return Result.error("获取邮件配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存邮件配置
+     */
+    @PostMapping("/settings/email")
+    public Result<String> saveEmailConfig(@RequestBody AdminEmailConfigVO config) {
+        log.info("保存邮件配置");
+        try {
+            String jsonStr = com.alibaba.fastjson2.JSON.toJSONString(config);
+            com.alibaba.fastjson2.JSONObject json = com.alibaba.fastjson2.JSON.parseObject(jsonStr);
+            json.remove("enabled");
+
+            SysConfigGroup group = configGroupMapper.selectOne(
+                    new LambdaQueryWrapper<SysConfigGroup>().eq(SysConfigGroup::getGroupCode, "email"));
+            if (group == null) {
+                group = new SysConfigGroup();
+                group.setGroupCode("email");
+                group.setGroupName("邮件推送");
+                group.setGroupIcon("mail");
+                group.setConfigValue(json.toJSONString());
+                group.setStatus(Boolean.TRUE.equals(config.getEnabled()) ? 1 : 0);
+                group.setSort(10);
+                configGroupMapper.insert(group);
+            } else {
+                group.setConfigValue(json.toJSONString());
+                group.setStatus(Boolean.TRUE.equals(config.getEnabled()) ? 1 : 0);
+                configGroupMapper.updateById(group);
+            }
+            return Result.success("邮件配置已保存", "success");
+        } catch (Exception e) {
+            log.error("保存邮件配置失败", e);
+            return Result.error("保存失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 发送测试邮件
+     */
+    @PostMapping("/email/test")
+    public Result<String> sendTestEmail(@RequestBody java.util.Map<String, String> body) {
+        String toEmail = body.get("email");
+        if (!StringUtils.hasText(toEmail)) return Result.error(400, "请输入测试邮箱");
+        String msg = emailService.sendTestEmail(toEmail);
+        return msg.startsWith("发送失败") ? Result.error(msg) : Result.success(msg, "success");
+    }
+
+    /**
+     * 发送邮件（手动）
+     */
+    @PostMapping("/email/send")
+    public Result<String> sendEmail(@RequestBody SendEmailRequest request) {
+        log.info("管理员发送邮件: target={}, template={}", request.getTarget(), request.getTemplateCode());
+        emailService.sendEmail(request);
+        return Result.success("邮件发送任务已提交", "success");
+    }
+
+    // ==================== Email Templates ====================
+
+    /**
+     * 获取邮件模板列表
+     */
+    @GetMapping("/email/templates")
+    public Result<List<EmailTemplate>> getEmailTemplates() {
+        List<EmailTemplate> list = emailTemplateMapper.selectList(
+                new LambdaQueryWrapper<EmailTemplate>().orderByAsc(EmailTemplate::getId));
+        return Result.success(list);
+    }
+
+    /**
+     * 创建/更新邮件模板
+     */
+    @PostMapping("/email/templates")
+    public Result<EmailTemplate> saveEmailTemplate(@RequestBody EmailTemplate template) {
+        if (template.getId() != null) {
+            emailTemplateMapper.updateById(template);
+        } else {
+            emailTemplateMapper.insert(template);
+        }
+        return Result.success(template);
+    }
+
+    /**
+     * 删除邮件模板
+     */
+    @DeleteMapping("/email/templates/{id}")
+    public Result<String> deleteEmailTemplate(@PathVariable("id") Long id) {
+        emailTemplateMapper.deleteById(id);
+        return Result.success("删除成功", "success");
+    }
+
+    // ==================== Email Logs ====================
+
+    /**
+     * 获取邮件发送日志
+     */
+    @GetMapping("/email/logs")
+    public Result<java.util.Map<String, Object>> getEmailLogs(
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "20") Integer size) {
+        Page<EmailLog> pageResult = emailLogMapper.selectPage(
+                new Page<>(page, size),
+                new LambdaQueryWrapper<EmailLog>().orderByDesc(EmailLog::getCreateTime));
+        java.util.Map<String, Object> result = new LinkedHashMap<>();
+        result.put("list", pageResult.getRecords());
+        result.put("total", pageResult.getTotal());
+        return Result.success(result);
     }
 
     // ==================== Helper ====================

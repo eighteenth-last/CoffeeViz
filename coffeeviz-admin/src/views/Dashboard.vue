@@ -60,23 +60,8 @@ const stats = ref([
 ])
 
 const lineChartData = ref({
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [
-    {
-      label: 'API Calls',
-      data: [120, 190, 300, 500, 200, 300, 450],
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59,130,246,0.1)',
-      fill: true, tension: 0.4
-    },
-    {
-      label: 'New Users',
-      data: [50, 80, 100, 150, 120, 180, 220],
-      borderColor: '#10b981',
-      backgroundColor: 'transparent',
-      borderDash: [5, 5], tension: 0.4
-    }
-  ]
+  labels: [],
+  datasets: []
 })
 
 const lineChartOptions = {
@@ -89,8 +74,8 @@ const lineChartOptions = {
 }
 
 const doughnutData = ref({
-  labels: ['Free', 'Pro', 'Team'],
-  datasets: [{ data: [65, 25, 10], backgroundColor: ['#374151', '#3b82f6', '#8b5cf6'], borderWidth: 0 }]
+  labels: [],
+  datasets: []
 })
 
 const doughnutOptions = {
@@ -111,7 +96,53 @@ const loadStats = async () => {
     stats.value[2].trend = d.revenueGrowth ?? 0
     stats.value[3].value = (d.aiCalls ?? 0).toLocaleString()
     stats.value[3].trend = d.aiCallGrowth ?? 0
-  } catch {
+
+    // Update Charts
+    if (d.chartDates) {
+      lineChartData.value = {
+        labels: d.chartDates,
+        datasets: [
+          {
+            label: 'API Calls',
+            data: d.chartApiCalls || [],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.1)',
+            fill: true, tension: 0.4
+          },
+          {
+            label: 'New Users',
+            data: d.chartNewUsers || [],
+            borderColor: '#10b981',
+            backgroundColor: 'transparent',
+            borderDash: [5, 5], tension: 0.4
+          }
+        ]
+      }
+    }
+
+    if (d.subscriptionDistribution) {
+      const labels = Object.keys(d.subscriptionDistribution)
+      const data = Object.values(d.subscriptionDistribution)
+      // Dynamic colors based on plan names if possible, or just cycle
+      const colorMap = {
+        'Free': '#374151', '免费版': '#374151',
+        'Pro': '#3b82f6', '专业版': '#3b82f6',
+        'Team': '#8b5cf6', '团队版': '#8b5cf6',
+        'Enterprise': '#f59e0b', '企业版': '#f59e0b'
+      }
+      const bgColors = labels.map((label, i) => colorMap[label] || ['#ec4899', '#14b8a6', '#f43f5e'][i % 3])
+
+      doughnutData.value = {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: bgColors,
+          borderWidth: 0
+        }]
+      }
+    }
+  } catch (e) {
+    console.error('Dashboard 加载失败:', e)
     stats.value[0].value = '0'; stats.value[0].trend = 0
     stats.value[1].value = '0'; stats.value[1].trend = 0
     stats.value[2].value = '¥ 0'; stats.value[2].trend = 0

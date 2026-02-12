@@ -25,18 +25,21 @@
             ¥{{ plan.priceMonthly || 0 }}/月
           </n-tag>
         </div>
-        <div class="space-y-3 mb-6">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-400">图表上限/库</span>
-            <span class="text-white">{{ plan.maxDiagramsPerRepo === -1 ? '无限' : plan.maxDiagramsPerRepo }}</span>
+        <!-- 配额展示 -->
+        <div class="space-y-3 mb-4">
+          <div v-for="q in (plan.quotas || [])" :key="q.quotaType" class="flex justify-between text-sm">
+            <span class="text-gray-400">{{ quotaTypeLabel(q.quotaType) }}</span>
+            <span class="text-white">{{ formatQuotaValue(q) }}</span>
           </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-400">项目数量</span>
-            <span class="text-white">{{ plan.maxRepositories }} 个</span>
-          </div>
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-400">AI 支持</span>
-            <span class="text-white">{{ plan.supportAi ? '是' : '否' }}</span>
+          <div v-if="!plan.quotas || plan.quotas.length === 0" class="text-gray-500 text-sm">暂无配额配置</div>
+        </div>
+        <!-- 功能开关展示 -->
+        <div class="space-y-2 mb-6 border-t border-white/5 pt-3">
+          <div class="flex flex-wrap gap-2">
+            <n-tag v-if="plan.supportJdbc === 1" size="tiny" type="success">JDBC</n-tag>
+            <n-tag v-if="plan.supportAi === 1" size="tiny" type="info">AI</n-tag>
+            <n-tag v-if="plan.supportExport === 1" size="tiny" type="warning">导出</n-tag>
+            <n-tag v-if="plan.supportTeam === 1" size="tiny" type="primary">团队</n-tag>
           </div>
         </div>
         <div class="flex gap-2">
@@ -49,23 +52,53 @@
     </div>
 
     <!-- Plan Modal -->
-    <n-modal v-model:show="showPlanModal" preset="card" :title="editingPlan ? '编辑计划' : '新增计划'" style="width: 520px;" class="bg-bg-card">
+    <n-modal v-model:show="showPlanModal" preset="card" :title="editingPlan ? '编辑计划' : '新增计划'" style="width: 620px;" class="bg-bg-card">
       <n-form :model="planForm" label-placement="top">
         <div class="grid grid-cols-2 gap-4">
           <n-form-item label="计划名称"><n-input v-model:value="planForm.name" placeholder="例如: Pro Plan" /></n-form-item>
           <n-form-item label="价格 (CNY/月)"><n-input-number v-model:value="planForm.price" :min="0" placeholder="29" class="w-full" /></n-form-item>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <n-form-item label="生成次数/月 (-1无限)"><n-input-number v-model:value="planForm.generateLimit" :min="-1" class="w-full" /></n-form-item>
-          <n-form-item label="项目上限"><n-input-number v-model:value="planForm.projectLimit" :min="1" class="w-full" /></n-form-item>
+
+        <!-- 功能开关 -->
+        <div class="grid grid-cols-4 gap-4 mb-4">
+          <n-form-item label="JDBC"><n-switch v-model:value="planForm.supportJdbc" :checked-value="1" :unchecked-value="0" /></n-form-item>
+          <n-form-item label="AI"><n-switch v-model:value="planForm.supportAi" :checked-value="1" :unchecked-value="0" /></n-form-item>
+          <n-form-item label="导出"><n-switch v-model:value="planForm.supportExport" :checked-value="1" :unchecked-value="0" /></n-form-item>
+          <n-form-item label="团队"><n-switch v-model:value="planForm.supportTeam" :checked-value="1" :unchecked-value="0" /></n-form-item>
         </div>
-        <n-form-item label="可用模型">
-          <n-checkbox-group v-model:value="planForm.models">
-            <n-space><n-checkbox value="gpt-3.5">GPT-3.5</n-checkbox><n-checkbox value="gpt-4">GPT-4</n-checkbox><n-checkbox value="claude-3">Claude 3</n-checkbox></n-space>
-          </n-checkbox-group>
+
+        <!-- 配额列表 -->
+        <n-form-item label="配额配置">
+          <div class="w-full space-y-3">
+            <div v-for="(q, idx) in planForm.quotas" :key="idx" class="flex gap-2 items-end">
+              <n-select v-model:value="q.quotaType" :options="quotaTypeOptions" placeholder="类型" style="width: 140px;" />
+              <n-input-number v-model:value="q.quotaLimit" :min="-1" placeholder="限额 (-1无限)" style="width: 130px;" />
+              <n-select v-model:value="q.resetCycle" :options="resetCycleOptions" placeholder="周期" style="width: 110px;" />
+              <n-input v-model:value="q.description" placeholder="描述(可选)" style="width: 140px;" />
+              <n-button type="error" ghost @click="removeQuota(idx)">
+                <template #icon><n-icon><TrashOutline /></n-icon></template>
+              </n-button>
+            </div>
+            <n-button dashed block @click="addQuota">
+              <template #icon><n-icon><AddOutline /></n-icon></template>
+              添加配额
+            </n-button>
+          </div>
         </n-form-item>
-        <n-form-item label="权益描述 (每行一项)">
-          <n-input v-model:value="planForm.benefits" type="textarea" :rows="3" placeholder="支持导出高清图片&#10;优先客服支持" />
+
+        <n-form-item label="权益描述">
+          <div class="w-full space-y-2">
+            <div v-for="(benefit, index) in planForm.benefits" :key="index" class="flex gap-2">
+              <n-input v-model:value="planForm.benefits[index]" placeholder="输入权益内容" />
+              <n-button type="error" ghost @click="removeBenefit(index)">
+                <template #icon><n-icon><TrashOutline /></n-icon></template>
+              </n-button>
+            </div>
+            <n-button dashed block @click="addBenefit">
+              <template #icon><n-icon><AddOutline /></n-icon></template>
+              添加权益
+            </n-button>
+          </div>
         </n-form-item>
         <n-form-item label="上架状态">
           <n-switch v-model:value="planForm.enabled" />
@@ -93,10 +126,42 @@ const showPlanModal = ref(false)
 const saving = ref(false)
 const editingPlan = ref(null)
 
+const quotaTypeOptions = [
+  { label: '架构库数量', value: 'repository' },
+  { label: '架构图/库', value: 'diagram' },
+  { label: 'SQL解析', value: 'sql_parse' },
+  { label: 'AI生成', value: 'ai_generate' }
+]
+const resetCycleOptions = [
+  { label: '每天', value: 'daily' },
+  { label: '每月', value: 'monthly' },
+  { label: '每年', value: 'yearly' },
+  { label: '永不重置', value: 'never' }
+]
+
+const quotaTypeLabel = (type) => {
+  const map = { repository: '架构库数量', diagram: '架构图/库', sql_parse: 'SQL解析额度', ai_generate: 'AI生成额度' }
+  return map[type] || type
+}
+const formatQuotaValue = (q) => {
+  if (q.quotaLimit === -1) return '无限'
+  const cycleMap = { daily: '/天', monthly: '/月', yearly: '/年', never: '' }
+  return q.quotaLimit + (cycleMap[q.resetCycle] || '')
+}
+
 const planForm = reactive({
-  name: '', price: 0, generateLimit: -1, projectLimit: 10,
-  models: ['gpt-3.5'], benefits: '', enabled: true
+  name: '', price: 0,
+  supportJdbc: 0, supportAi: 0, supportExport: 0, supportTeam: 0,
+  quotas: [],
+  benefits: [], enabled: true
 })
+
+const addQuota = () => {
+  planForm.quotas.push({ quotaType: null, quotaLimit: 0, resetCycle: 'monthly', description: '' })
+}
+const removeQuota = (idx) => { planForm.quotas.splice(idx, 1) }
+const addBenefit = () => { planForm.benefits.push('') }
+const removeBenefit = (index) => { planForm.benefits.splice(index, 1) }
 
 const plans = ref([])
 
@@ -105,7 +170,6 @@ const iconForPlan = (code) => {
   if (code === 'TEAM') return BusinessOutline
   return PaperPlaneOutline
 }
-
 const tagTypeForPlan = (code) => {
   if (code === 'PRO') return 'info'
   if (code === 'TEAM') return 'warning'
@@ -123,7 +187,11 @@ const loadPlans = async () => {
 
 const openCreateModal = () => {
   editingPlan.value = null
-  Object.assign(planForm, { name: '', price: 0, generateLimit: -1, projectLimit: 10, models: ['gpt-3.5'], benefits: '', enabled: true })
+  Object.assign(planForm, {
+    name: '', price: 0,
+    supportJdbc: 0, supportAi: 0, supportExport: 0, supportTeam: 0,
+    quotas: [], benefits: [], enabled: true
+  })
   showPlanModal.value = true
 }
 
@@ -131,10 +199,24 @@ const editPlan = (plan) => {
   editingPlan.value = plan
   planForm.name = plan.planName
   planForm.price = plan.priceMonthly ? Number(plan.priceMonthly) : 0
-  planForm.generateLimit = plan.maxDiagramsPerRepo || -1
-  planForm.projectLimit = plan.maxRepositories || 10
-  planForm.models = ['gpt-3.5']
-  planForm.benefits = plan.features || ''
+  planForm.supportJdbc = plan.supportJdbc || 0
+  planForm.supportAi = plan.supportAi || 0
+  planForm.supportExport = plan.supportExport || 0
+  planForm.supportTeam = plan.supportTeam || 0
+  // 配额
+  planForm.quotas = (plan.quotas || []).map(q => ({
+    quotaType: q.quotaType,
+    quotaLimit: q.quotaLimit,
+    resetCycle: q.resetCycle || 'monthly',
+    description: q.description || ''
+  }))
+  // 权益
+  try {
+    planForm.benefits = plan.features ? JSON.parse(plan.features) : []
+    if (!Array.isArray(planForm.benefits)) planForm.benefits = plan.features ? [plan.features] : []
+  } catch (e) {
+    planForm.benefits = plan.features ? [plan.features] : []
+  }
   planForm.enabled = plan.status === 'active'
   showPlanModal.value = true
 }
@@ -142,10 +224,21 @@ const editPlan = (plan) => {
 const savePlan = async () => {
   saving.value = true
   try {
+    const payload = {
+      name: planForm.name,
+      price: planForm.price,
+      supportJdbc: planForm.supportJdbc,
+      supportAi: planForm.supportAi,
+      supportExport: planForm.supportExport,
+      supportTeam: planForm.supportTeam,
+      quotas: planForm.quotas.filter(q => q.quotaType),
+      benefits: JSON.stringify(planForm.benefits.filter(b => b && b.trim())),
+      enabled: planForm.enabled
+    }
     if (editingPlan.value) {
-      await api.put(`/api/admin/plans/${editingPlan.value.id}`, planForm)
+      await api.put(`/api/admin/plans/${editingPlan.value.id}`, payload)
     } else {
-      await api.post('/api/admin/plans', planForm)
+      await api.post('/api/admin/plans', payload)
     }
     message.success('保存成功')
     showPlanModal.value = false

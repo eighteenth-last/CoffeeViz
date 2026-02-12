@@ -26,7 +26,12 @@ public enum PaymentMethod {
     /**
      * 余额支付
      */
-    BALANCE("balance", "余额支付");
+    BALANCE("balance", "余额支付"),
+
+    /**
+     * 测试支付（模拟）
+     */
+    TEST("test", "测试支付");
     
     private final String code;
     private final String name;

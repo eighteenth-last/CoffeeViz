@@ -111,11 +111,10 @@ public class QuotaServiceImpl implements QuotaService {
             subscription != null ? subscription.getPlanCode() : "FREE"
         );
         
-        // 初始化各类配额
-        createQuotaIfNotExists(userId, "repository", plan.getMaxRepositories(), "never");
-        createQuotaIfNotExists(userId, "diagram", plan.getMaxDiagramsPerRepo(), "monthly");
-        createQuotaIfNotExists(userId, "sql_parse", 100, "daily");
-        createQuotaIfNotExists(userId, "ai_generate", plan.getSupportAi() == 1 ? 50 : 0, "monthly");
+        // 委托给 initializeUserQuotas 使用 PlanQuota 表
+        if (plan != null) {
+            initializeUserQuotas(userId, plan.getId());
+        }
     }
     
     /**
@@ -184,8 +183,7 @@ public class QuotaServiceImpl implements QuotaService {
     
     @Override
     public void initializeUserQuotas(Long userId, Long planId) {
-        // 使用旧方法实现
-        initUserQuota(userId);
+        log.warn("QuotaServiceImpl.initializeUserQuotas() 已废弃，请使用 QuotaServiceImplV2");
     }
     
     @Override

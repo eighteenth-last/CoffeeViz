@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-bg flex items-center justify-center">
     <div class="w-full max-w-sm">
       <div class="text-center mb-8">
-        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-xl mx-auto mb-4">C</div>
+        <img src="/logo.png" alt="CoffeeViz Admin" class="w-20 h-20 object-contain mx-auto mb-4" />
         <h1 class="text-2xl font-bold text-white">CoffeeViz Admin</h1>
         <p class="text-gray-500 text-sm mt-1">后台管理系统</p>
       </div>

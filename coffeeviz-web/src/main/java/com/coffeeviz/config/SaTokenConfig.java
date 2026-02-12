@@ -37,6 +37,9 @@ public class SaTokenConfig implements WebMvcConfigurer {
                     "/api/ai/generate/stream",  // SSE 流式接口，在 Controller 内部验证 token
                     "/api/team/join/*/info",  // 邀请链接信息（公开接口）
                     "/api/team/register-and-join",  // 注册并加入团队（公开接口）
+                    "/api/subscription/plans",  // 订阅计划列表（公开接口）
+                    "/api/payment/methods",  // 可用支付方式（公开接口）
+                    "/api/payment/callback/**",  // 支付回调（第三方调用）
                     "/error",
                     "/favicon.ico"
                 )

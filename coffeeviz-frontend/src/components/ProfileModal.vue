@@ -126,7 +126,7 @@
             <div class="text-[10px] text-neutral-500 space-y-1">
               <div class="flex items-center gap-2">
                 <i class="fas fa-info-circle"></i>
-                <span>配额重置周期：架构库永不重置，架构图和AI生成每月重置，SQL解析每日重置</span>
+                <span>配额重置周期：架构库永不重置，架构图和AI生成每月重置，SQL解析每月重置</span>
               </div>
             </div>
           </div>

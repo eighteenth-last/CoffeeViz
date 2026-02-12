@@ -1,14 +1,38 @@
 <template>
   <div class="space-y-6">
     <!-- Filters -->
-    <div class="flex justify-between items-center">
-      <n-space>
-        <n-button :type="filter === 'all' ? 'primary' : 'default'" size="small" @click="filter = 'all'; loadTeams()">全部 ({{ totalCount }})</n-button>
-        <n-button :type="filter === 'banned' ? 'error' : 'default'" size="small" @click="filter = 'banned'; loadTeams()">异常 ({{ bannedCount }})</n-button>
-      </n-space>
-      <n-input placeholder="搜索团队..." size="small" class="w-48" v-model:value="searchKey" @keyup.enter="loadTeams">
-        <template #prefix><n-icon><SearchOutline /></n-icon></template>
-      </n-input>
+    <div class="bg-bg-card p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex gap-2 bg-bg-input/50 p-1 rounded-lg">
+        <button 
+          class="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+          :class="filter === 'all' ? 'bg-primary-600 text-white shadow' : 'text-gray-400 hover:text-white'"
+          @click="filter = 'all'; loadTeams()"
+        >
+          全部 ({{ totalCount }})
+        </button>
+        <button 
+          class="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-200"
+          :class="filter === 'banned' ? 'bg-red-500/20 text-red-400 shadow ring-1 ring-red-500/20' : 'text-gray-400 hover:text-red-400'"
+          @click="filter = 'banned'; loadTeams()"
+        >
+          异常 ({{ bannedCount }})
+        </button>
+      </div>
+      
+      <div class="w-full sm:w-64">
+        <n-input 
+          v-model:value="searchKey" 
+          placeholder="搜索团队名称或ID..." 
+          size="small" 
+          round
+          class="!bg-bg-input"
+          @keyup.enter="loadTeams"
+        >
+          <template #prefix>
+            <n-icon class="text-gray-500"><SearchOutline /></n-icon>
+          </template>
+        </n-input>
+      </div>
     </div>
 
     <!-- Team Cards -->

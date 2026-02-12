@@ -33,8 +33,8 @@
                         <!-- Explanation -->
                         <div class="animate-slide-up">
                             <div class="flex items-start gap-4">
-                                <div class="w-8 h-8 rounded-full bg-white flex-shrink-0 flex items-center justify-center mt-1">
-                                    <i class="fas fa-star text-transparent bg-clip-text bg-gradient-to-tr from-blue-600 to-red-600 text-xs"></i>
+                                <div class="w-8 h-8 rounded-full bg-white flex-shrink-0 flex items-center justify-center mt-1 overflow-hidden">
+                                    <img src="/logo.png" alt="System Logo" class="w-full h-full object-cover" />
                                 </div>
                                 <div class="flex-1 text-[#E3E3E3] leading-7 text-[15px] markdown-body">
                                     <span v-html="renderedExplanation"></span><span v-if="streaming.explanation" class="cursor-blink"></span>

@@ -48,6 +48,18 @@ const routes = [
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),
         meta: { title: '系统全局设置' }
+      },
+      {
+        path: 'payment-settings',
+        name: 'PaymentSettings',
+        component: () => import('@/views/PaymentSettings.vue'),
+        meta: { title: '支付配置' }
+      },
+      {
+        path: 'email-settings',
+        name: 'EmailSettings',
+        component: () => import('@/views/EmailSettings.vue'),
+        meta: { title: '邮件配置' }
       }
     ]
   }

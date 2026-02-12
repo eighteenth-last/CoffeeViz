@@ -5,7 +5,7 @@
       <!-- Logo -->
       <div class="h-16 flex items-center px-6 border-b border-white/5">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold">C</div>
+          <img src="/logo.png" alt="CoffeeViz" class="w-8 h-8 object-contain" />
           <span class="text-lg font-bold tracking-tight text-white">CoffeeViz <span class="text-xs font-normal text-gray-500 ml-1">Admin</span></span>
         </div>
       </div>
@@ -33,14 +33,41 @@
         </router-link>
 
         <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">系统</div>
-        <router-link
-          v-for="item in systemMenus" :key="item.path"
-          :to="item.path"
-          :class="['group flex items-center px-6 py-3 transition-all', isActive(item.path) ? 'bg-bg-input border-l-[3px] border-primary-500 text-white' : 'text-gray-300 hover:bg-bg-hover hover:text-white border-l-[3px] border-transparent']"
-        >
-          <n-icon :size="16" class="mr-3"><component :is="item.icon" /></n-icon>
-          {{ item.label }}
-        </router-link>
+        <template v-for="item in systemMenus" :key="item.path || item.label">
+          <!-- Leaf Node -->
+          <router-link
+            v-if="!item.children"
+            :to="item.path"
+            :class="['group flex items-center px-6 py-3 transition-all', isActive(item.path) ? 'bg-bg-input border-l-[3px] border-primary-500 text-white' : 'text-gray-300 hover:bg-bg-hover hover:text-white border-l-[3px] border-transparent']"
+          >
+            <n-icon :size="16" class="mr-3"><component :is="item.icon" /></n-icon>
+            {{ item.label }}
+          </router-link>
+
+          <!-- Parent Node -->
+          <div v-else>
+            <div
+              @click="toggleMenu(item.label)"
+              class="group flex items-center px-6 py-3 cursor-pointer text-gray-300 hover:bg-bg-hover hover:text-white border-l-[3px] border-transparent transition-all"
+            >
+              <n-icon :size="16" class="mr-3"><component :is="item.icon" /></n-icon>
+              <span class="flex-1">{{ item.label }}</span>
+              <n-icon :size="14" class="text-gray-500">
+                <component :is="expandedMenus.includes(item.label) ? ChevronDownOutline : ChevronForwardOutline" />
+              </n-icon>
+            </div>
+            <!-- Children -->
+            <div v-show="expandedMenus.includes(item.label)" class="bg-black/20">
+              <router-link
+                v-for="child in item.children" :key="child.path"
+                :to="child.path"
+                :class="['group flex items-center pl-14 pr-6 py-2.5 text-xs transition-all', isActive(child.path) ? 'text-primary-400 font-medium' : 'text-gray-400 hover:text-white']"
+              >
+                {{ child.label }}
+              </router-link>
+            </div>
+          </div>
+        </template>
       </nav>
 
       <!-- User Profile -->
@@ -82,18 +109,30 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 import {
   StatsChartOutline, CubeOutline, PeopleOutline,
   PersonOutline, NotificationsOutline, SettingsOutline,
-  SearchOutline, LogOutOutline
+  SearchOutline, LogOutOutline, CardOutline, ChevronDownOutline, ChevronForwardOutline,
+  HardwareChipOutline
 } from '@vicons/ionicons5'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+const expandedMenus = ref(['系统设置']) // Default expand system settings
+
+const toggleMenu = (label) => {
+  const index = expandedMenus.value.indexOf(label)
+  if (index > -1) {
+    expandedMenus.value.splice(index, 1)
+  } else {
+    expandedMenus.value.push(label)
+  }
+}
 
 const overviewMenus = [
   { path: '/dashboard', label: '数据可视化', icon: StatsChartOutline }
@@ -105,7 +144,15 @@ const businessMenus = [
 ]
 const systemMenus = [
   { path: '/notifications', label: '消息通知', icon: NotificationsOutline },
-  { path: '/settings', label: '系统设置', icon: SettingsOutline }
+  {
+    label: '系统设置',
+    icon: SettingsOutline,
+    children: [
+      { path: '/payment-settings', label: '支付配置' },
+      { path: '/email-settings', label: '邮件配置' },
+      { path: '/settings', label: 'AI 模型配置' }
+    ]
+  }
 ]
 
 const currentTitle = computed(() => route.meta.title || 'Dashboard')

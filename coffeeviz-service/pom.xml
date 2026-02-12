@@ -43,6 +43,10 @@
             <groupId>com.coffeeviz</groupId>
             <artifactId>coffeeviz-export</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.coffeeviz</groupId>
+            <artifactId>coffeeviz-payment</artifactId>
+        </dependency>
 
         <!-- Lombok -->
         <dependency>

@@ -11,10 +11,10 @@ export const useSubscriptionStore = defineStore('subscription', {
   getters: {
     planName: (state) => state.currentSubscription?.planName || 'Free',
     planCode: (state) => state.currentSubscription?.planCode || 'FREE',
-    expiresAt: (state) => state.currentSubscription?.expiresAt,
+    expiresAt: (state) => state.currentSubscription?.endTime,
     isExpired: (state) => {
-      if (!state.currentSubscription?.expiresAt) return false
-      return new Date(state.currentSubscription.expiresAt) < new Date()
+      if (!state.currentSubscription?.endTime) return false
+      return new Date(state.currentSubscription.endTime) < new Date()
     },
     
     // 配额相关
@@ -27,22 +27,26 @@ export const useSubscriptionStore = defineStore('subscription', {
     repositoryUsagePercent: (state) => {
       const quota = state.quotas.repository
       if (!quota || quota.quotaLimit === -1) return 0
-      return Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      const percent = Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      return Math.min(percent, 100)
     },
     diagramUsagePercent: (state) => {
       const quota = state.quotas.diagram
       if (!quota || quota.quotaLimit === -1) return 0
-      return Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      const percent = Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      return Math.min(percent, 100)
     },
     sqlParseUsagePercent: (state) => {
       const quota = state.quotas.sql_parse
       if (!quota || quota.quotaLimit === -1) return 0
-      return Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      const percent = Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      return Math.min(percent, 100)
     },
     aiGenerateUsagePercent: (state) => {
       const quota = state.quotas.ai_generate
       if (!quota || quota.quotaLimit === -1) return 0
-      return Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      const percent = Math.round((quota.quotaUsed / quota.quotaLimit) * 100)
+      return Math.min(percent, 100)
     }
   },
   

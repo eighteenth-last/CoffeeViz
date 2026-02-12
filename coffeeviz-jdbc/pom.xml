@@ -63,6 +63,7 @@
 
         <!--
             Oracle / 达梦 / 人大金仓 驱动不在 Maven Central，需手动安装到本地仓库：
+            如需使用，请先执行对应的 mvn install:install-file 命令，然后取消注释。
 
             Oracle (ojdbc11.jar):
             mvn install:install-file -Dfile=ojdbc11.jar -DgroupId=com.oracle.database.jdbc -DartifactId=ojdbc11 -Dversion=23.3.0.23.09 -Dpackaging=jar
@@ -72,7 +73,7 @@
 
             人大金仓 (kingbase8-8.6.0.jar):
             mvn install:install-file -Dfile=kingbase8-8.6.0.jar -DgroupId=com.kingbase8 -DartifactId=kingbase8 -Dversion=8.6.0 -Dpackaging=jar
-        -->
+
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
             <artifactId>ojdbc11</artifactId>
@@ -91,6 +92,7 @@
             <version>8.6.0</version>
             <optional>true</optional>
         </dependency>
+        -->
 
         <!-- Druid 连接池 -->
         <dependency>

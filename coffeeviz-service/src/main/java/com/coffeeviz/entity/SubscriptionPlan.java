@@ -31,12 +31,6 @@ public class SubscriptionPlan {
     
     private BigDecimal priceYearly;
     
-    private Integer maxRepositories;
-    
-    private Integer maxDiagramsPerRepo;
-    
-    private Integer maxSqlSizeMb;
-    
     private Integer supportJdbc;
     
     private Integer supportAi;

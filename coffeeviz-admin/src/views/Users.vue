@@ -16,42 +16,61 @@
 
     <!-- User List -->
     <div class="space-y-3">
+      <!-- 列表表头 -->
+      <div class="px-4 text-gray-500 text-xs hidden md:grid grid-cols-12 gap-4">
+        <div class="col-span-4 pl-14">用户信息</div>
+        <div class="col-span-2">当前订阅</div>
+        <div class="col-span-2">注册时间</div>
+        <div class="col-span-2">状态</div>
+        <div class="col-span-2 text-right">操作</div>
+      </div>
+      
       <div v-for="user in users" :key="user.id"
-        class="bg-bg-card p-4 rounded-xl border border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 hover:bg-bg-hover transition-colors"
+        class="bg-bg-card p-4 rounded-xl border border-white/5 hover:bg-bg-hover transition-colors group"
       >
-        <div class="flex items-center gap-4 w-full md:w-auto">
-          <n-avatar :size="40" round :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`" />
-          <div>
-            <h4 class="text-white font-medium text-sm">{{ user.name }}</h4>
-            <p class="text-gray-500 text-xs">{{ user.email }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          <!-- 用户信息 -->
+          <div class="md:col-span-4 flex items-center gap-4">
+            <n-avatar :size="40" round :src="`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`" />
+            <div class="min-w-0">
+              <h4 class="text-white font-medium text-sm truncate" :title="user.name">{{ user.name }}</h4>
+              <p class="text-gray-500 text-xs truncate" :title="user.email">{{ user.email }}</p>
+            </div>
           </div>
-        </div>
-        <div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
-          <div class="text-center md:text-left">
-            <p class="text-gray-500 text-xs">当前订阅</p>
-            <n-tag :type="planTagType(user.plan)" size="small" class="mt-1">{{ user.plan }}</n-tag>
+          
+          <!-- 当前订阅 -->
+          <div class="md:col-span-2 flex md:block justify-between items-center">
+            <span class="md:hidden text-gray-500 text-xs">当前订阅</span>
+            <n-tag :type="planTagType(user.plan)" size="small" :bordered="false">{{ user.plan }}</n-tag>
           </div>
-          <div class="text-center md:text-left">
-            <p class="text-gray-500 text-xs">注册时间</p>
-            <p class="text-gray-300 text-xs mt-1">{{ formatDate(user.createdAt) }}</p>
+          
+          <!-- 注册时间 -->
+          <div class="md:col-span-2 flex md:block justify-between items-center">
+            <span class="md:hidden text-gray-500 text-xs">注册时间</span>
+            <p class="text-gray-300 text-sm">{{ formatDate(user.createdAt) }}</p>
           </div>
-          <div class="text-center md:text-left">
-            <p class="text-gray-500 text-xs">状态</p>
-            <span :class="user.status === 1 ? 'text-green-500' : 'text-red-500'" class="text-xs">
-              ● {{ user.status === 1 ? '正常' : '已封禁' }}
-            </span>
+          
+          <!-- 状态 -->
+          <div class="md:col-span-2 flex md:block justify-between items-center">
+            <span class="md:hidden text-gray-500 text-xs">状态</span>
+            <div class="flex items-center gap-1.5">
+              <span :class="['w-2 h-2 rounded-full', user.status === 1 ? 'bg-green-500' : 'bg-red-500']"></span>
+              <span :class="['text-sm', user.status === 1 ? 'text-green-500' : 'text-red-500']">{{ user.status === 1 ? '正常' : '已封禁' }}</span>
+            </div>
           </div>
-        </div>
-        <div class="flex gap-2 w-full md:w-auto">
-          <n-button size="small" type="primary" ghost @click="openGiftModal(user)">
-            <template #icon><n-icon><GiftOutline /></n-icon></template>
-            赠送订阅
-          </n-button>
-          <n-dropdown :options="userActions(user)" @select="(key) => handleUserAction(key, user)">
-            <n-button size="small" secondary>
-              <template #icon><n-icon><EllipsisHorizontalOutline /></n-icon></template>
+          
+          <!-- 操作按钮 -->
+          <div class="md:col-span-2 flex justify-end gap-2">
+            <n-button size="small" type="primary" ghost @click="openGiftModal(user)">
+              <template #icon><n-icon><GiftOutline /></n-icon></template>
+              赠送
             </n-button>
-          </n-dropdown>
+            <n-dropdown :options="userActions(user)" @select="(key) => handleUserAction(key, user)">
+              <n-button size="small" secondary>
+                <template #icon><n-icon><EllipsisHorizontalOutline /></n-icon></template>
+              </n-button>
+            </n-dropdown>
+          </div>
         </div>
       </div>
     </div>

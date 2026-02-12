@@ -42,6 +42,9 @@ public class UserService {
     @Autowired(required = false)
     private QuotaService quotaService;
     
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    
     /**
      * BCrypt 加密成本因子（默认为 12，范围 4-31）
      * 值越大，加密越安全，但计算时间越长
@@ -120,6 +123,14 @@ public class UserService {
             
             // 5. 为新用户创建免费订阅
             initUserSubscription(user.getId());
+            
+            // 6. 发布注册成功事件（触发欢迎邮件等）
+            try {
+                eventPublisher.publishEvent(new com.coffeeviz.event.UserRegisteredEvent(
+                        this, user.getId(), username, email));
+            } catch (Exception e) {
+                log.warn("发布注册事件失败，不影响注册流程: {}", e.getMessage());
+            }
             
             return user;
         } else {
