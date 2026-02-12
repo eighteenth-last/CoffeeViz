@@ -42,6 +42,10 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 )
                 .check(r -> StpUtil.checkLogin());
             
+            // 管理端接口 - 需要 admin 角色
+            SaRouter.match("/api/admin/**")
+                .check(r -> StpUtil.checkRole("admin"));
+            
         }))
         .addPathPatterns("/**")
         .excludePathPatterns("/static/**", "/public/**");

@@ -1,0 +1,93 @@
+# CoffeeViz Gateway 配置
+server:
+  port: 9090
+
+spring:
+  application:
+    name: coffeeviz-gateway
+  
+  # Spring Cloud Gateway 路由配置
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: localhost:8848
+    
+    gateway:
+      # 全局默认过滤器
+      default-filters:
+        # 去除一层路径前缀（如 /api/coffeeviz/xxx -> /xxx）
+        - StripPrefix=0
+      
+      # 路由规则
+      routes:
+        # CoffeeViz 主服务 - 所有 /api/** 请求转发到后端服务
+        - id: coffeeviz-service
+          uri: lb://coffeeviz
+          predicates:
+            - Path=/api/**
+      
+      # 全局跨域（备用，CorsGatewayConfig 已处理）
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+  
+  # Redis 配置（与后端服务共享，用于 Sa-Token 共享 Session）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: 
+      database: 0
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+# Sa-Token 配置（必须与后端服务一致，共享 Token 状态）
+sa-token:
+  token-name: Authorization
+  timeout: 2592000
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-log: false
+  # 读取 Token 的方式：header > cookie
+  is-read-header: true
+  is-read-cookie: false
+
+# 网关安全配置
+gateway:
+  security:
+    # IP 黑名单（逗号分隔）
+    ip-blacklist: []
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.coffeeviz.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+
+# Actuator 健康检查
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true

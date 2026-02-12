@@ -161,6 +161,133 @@ public class ArchitectureService {
     }
 
     /**
+     * 从上传文件生成功能结构图
+     * <p>
+     * 提取文件文本内容后，强制使用 AI 解析生成功能结构树。
+     * 支持 .txt / .md / .docx / .pdf 格式。
+     * </p>
+     *
+     * @param fileContent 从文件中提取的文本内容
+     * @param fileName    原始文件名（用于日志）
+     * @return 生成结果
+     */
+    public ArchResult generateFromFile(String fileContent, String fileName) {
+        log.info("从上传文件生成功能结构图: fileName={}, contentLength={}", fileName, fileContent.length());
+
+        if (fileContent.isBlank()) {
+            return ArchResult.builder().success(false).message("文件内容为空，无法提取功能结构").build();
+        }
+
+        List<String> warnings = new ArrayList<>();
+        warnings.add("来源: 上传文件 " + fileName);
+
+        // 先尝试规则提取（如果文件内容是 Markdown 格式）
+        TreeNode ruleTree = extractTreeByRules(fileContent);
+        if (ruleTree != null && !ruleTree.getChildren().isEmpty()
+                && ruleTree.getChildren().stream().anyMatch(c -> !c.getChildren().isEmpty())) {
+            log.info("文件内容规则提取成功，子系统数: {}", ruleTree.getChildren().size());
+            String mermaidCode = renderTreeToMermaid(ruleTree);
+            warnings.add("使用规则提取（零 AI）");
+            return ArchResult.builder()
+                    .success(true).message("生成成功")
+                    .tree(ruleTree).mermaidCode(mermaidCode)
+                    .warnings(warnings).extractMethod("rule")
+                    .nodeCount(countNodes(ruleTree))
+                    .build();
+        }
+
+        // 规则不足，使用 AI 解析
+        warnings.add("规则提取结果不足，使用 AI 解析文件内容");
+        return generateFromFileWithAi(fileContent, fileName, warnings);
+    }
+
+    /**
+     * AI 解析上传文件内容，生成功能结构树
+     */
+    private ArchResult generateFromFileWithAi(String fileContent, String fileName, List<String> warnings) {
+        if (openAiService == null || !openAiService.isAvailable()) {
+            return ArchResult.builder().success(false)
+                    .message("AI 服务不可用，且规则提取结果不足。请确保文件包含清晰的功能描述。")
+                    .build();
+        }
+
+        try {
+            loadOpenAiConfig();
+
+            String prompt = buildFileAnalysisPrompt(fileName) + "\n\n---\n\n"
+                    + "以下是文件内容：\n\n" + truncate(fileContent, 6000);
+
+            com.coffeeviz.llm.model.AiRequest request = com.coffeeviz.llm.model.AiRequest.builder()
+                    .prompt(prompt).build();
+
+            com.coffeeviz.llm.model.AiResponse aiResp = openAiService.generateSqlFromPrompt(request);
+
+            if (aiResp == null || !Boolean.TRUE.equals(aiResp.getSuccess())) {
+                String errMsg = aiResp != null ? aiResp.getErrorMessage() : "AI 调用失败";
+                return ArchResult.builder().success(false).message(errMsg).build();
+            }
+
+            String content = aiResp.getSqlDdl();
+            if (content == null || content.isEmpty()) content = aiResp.getExplanation();
+            if (content == null || content.isEmpty()) {
+                return ArchResult.builder().success(false).message("AI 返回内容为空").build();
+            }
+
+            warnings.add("使用 AI 解析文件内容");
+            return parseAiTreeResponse(content, warnings);
+
+        } catch (Exception e) {
+            log.error("AI 文件解析失败", e);
+            return ArchResult.builder().success(false)
+                    .message("AI 文件解析失败: " + e.getMessage()).build();
+        }
+    }
+
+    /**
+     * 构建文件分析专用 Prompt
+     */
+    private String buildFileAnalysisPrompt(String fileName) {
+        return """
+                你是一个专业的系统架构师。用户上传了一个项目文档文件（%s），请仔细阅读文件内容，
+                从中提取系统的功能结构层级。
+                
+                文件可能是需求文档、设计文档、README、产品说明书等任意格式。
+                请根据文件内容智能识别系统名称、子系统划分和功能模块。
+                
+                请严格按以下 JSON 格式返回（不要包含任何其他内容，只返回 JSON）：
+                
+                ```json
+                {
+                  "name": "系统名称",
+                  "children": [
+                    {
+                      "name": "子系统A",
+                      "children": [
+                        { "name": "功能模块1" },
+                        { "name": "功能模块2" }
+                      ]
+                    },
+                    {
+                      "name": "子系统B",
+                      "children": [
+                        { "name": "功能模块3" },
+                        { "name": "功能模块4" }
+                      ]
+                    }
+                  ]
+                }
+                ```
+                
+                要求：
+                1. 层级结构：系统 → 子系统 → 功能模块（最多3层）
+                2. 每个子系统下至少包含2个功能模块
+                3. 名称简洁明了，使用中文
+                4. 只提取核心功能，不要过于细化
+                5. 如果文件内容不够明确，请根据上下文合理推断
+                """.formatted(fileName);
+    }
+
+    /**
      * 混合模式：DDL + 文档
      */
     public ArchResult generateHybrid(String sqlText, String docContent) {

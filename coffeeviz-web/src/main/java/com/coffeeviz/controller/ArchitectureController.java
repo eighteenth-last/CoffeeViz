@@ -9,9 +9,11 @@ import com.coffeeviz.dto.ArchitectureResponse.TreeNodeDTO;
 import com.coffeeviz.service.ArchitectureService;
 import com.coffeeviz.service.ArchitectureService.ArchResult;
 import com.coffeeviz.service.ArchitectureService.TreeNode;
+import com.coffeeviz.service.util.FileContentExtractor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;
@@ -101,6 +103,73 @@ public class ArchitectureController {
 
         } catch (Exception e) {
             log.error("功能结构图生成失败", e);
+            return Result.error("生成失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 上传文件生成系统功能结构图
+     * <p>
+     * 支持 .txt / .md / .docx / .pdf 格式，由大模型解析文件内容后生成功能结构图。
+     * </p>
+     *
+     * @param file 上传的文档文件
+     * @return 功能结构图响应
+     */
+    @PostMapping("/generate/upload")
+    @RequireSubscription
+    @RateLimit(key = "arch_generate_file", time = 60, count = 10, limitType = RateLimit.LimitType.USER)
+    public Result<ArchitectureResponse> generateFromFile(@RequestParam("file") MultipartFile file) {
+        String filename = file.getOriginalFilename();
+        log.info("收到文件上传生成请求: filename={}, size={}KB", filename, file.getSize() / 1024);
+
+        try {
+            // 1. 校验文件
+            if (file.isEmpty()) {
+                return Result.error(400, "上传文件为空");
+            }
+
+            if (!FileContentExtractor.isSupported(filename)) {
+                return Result.error(400, "不支持的文件格式，支持: txt, md, docx, pdf");
+            }
+
+            // 2. 提取文件文本内容
+            String fileContent = FileContentExtractor.extract(file);
+
+            if (fileContent == null || fileContent.isBlank()) {
+                return Result.error(400, "文件内容为空，无法提取功能结构");
+            }
+
+            log.info("文件内容提取成功，文本长度: {}", fileContent.length());
+
+            // 3. 调用服务生成功能结构图
+            ArchResult result = architectureService.generateFromFile(fileContent, filename);
+
+            if (!result.isSuccess()) {
+                return Result.error(500, result.getMessage());
+            }
+
+            // 4. 构建响应
+            ArchitectureResponse response = new ArchitectureResponse();
+            response.setMermaidCode(result.getMermaidCode());
+            response.setWarnings(result.getWarnings());
+            response.setExtractMethod(result.getExtractMethod());
+            response.setNodeCount(result.getNodeCount());
+
+            if (result.getTree() != null) {
+                response.setTree(convertToDTO(result.getTree()));
+            }
+
+            log.info("文件上传生成功能结构图成功，节点数: {}, 方式: {}",
+                    response.getNodeCount(), response.getExtractMethod());
+
+            return Result.success("生成成功", response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("文件校验失败: {}", e.getMessage());
+            return Result.error(400, e.getMessage());
+        } catch (Exception e) {
+            log.error("文件上传生成功能结构图失败", e);
             return Result.error("生成失败: " + e.getMessage());
         }
     }

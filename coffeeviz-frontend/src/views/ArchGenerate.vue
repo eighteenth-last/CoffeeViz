@@ -20,6 +20,9 @@
                 <n-radio value="document">
                   <span class="text-neutral-300">项目文档</span>
                 </n-radio>
+                <n-radio value="file">
+                  <span class="text-neutral-300">上传文件</span>
+                </n-radio>
                 <n-radio value="hybrid">
                   <span class="text-neutral-300">混合模式</span>
                 </n-radio>
@@ -60,6 +63,39 @@
             :placeholder="docPlaceholder"
             :rows="mode === 'hybrid' ? 8 : 14"
           />
+        </n-card>
+
+        <!-- 文件上传 -->
+        <n-card
+          v-if="mode === 'file'"
+          title="上传文档文件"
+          class="bg-neutral-900/50 border-neutral-800"
+          :bordered="true" size="small"
+        >
+          <template #header-extra>
+            <n-tag type="info" size="small">支持 .txt .md .docx .pdf</n-tag>
+          </template>
+          <n-upload
+            :max="1"
+            :file-list="uploadFileList"
+            @update:file-list="handleFileListChange"
+            accept=".txt,.md,.markdown,.docx,.pdf"
+            :default-upload="false"
+            class="mb-3"
+          >
+            <n-upload-dragger>
+              <div class="py-4">
+                <n-icon size="36" class="text-neutral-500 mb-2">
+                  <CloudUploadOutline />
+                </n-icon>
+                <p class="text-neutral-400 text-sm">点击或拖拽文件到此区域</p>
+                <p class="text-neutral-600 text-xs mt-1">支持需求文档、设计文档、README 等，最大 10MB</p>
+              </div>
+            </n-upload-dragger>
+          </n-upload>
+          <div v-if="uploadFileList.length > 0" class="text-xs text-neutral-500">
+            已选择: {{ uploadFileList[0].name }} ({{ (uploadFileList[0].file?.size / 1024).toFixed(1) }}KB)
+          </div>
         </n-card>
 
         <!-- 生成按钮 -->
@@ -231,7 +267,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, reactive } from 'vue'
 import { useMessage } from 'naive-ui'
-import { FlashOutline, CopyOutline, SaveOutline, AddCircleOutline, CheckmarkCircleOutline } from '@vicons/ionicons5'
+import { FlashOutline, CopyOutline, SaveOutline, AddCircleOutline, CheckmarkCircleOutline, CloudUploadOutline } from '@vicons/ionicons5'
 import api from '@/api'
 
 const message = useMessage()
@@ -244,6 +280,13 @@ const loading = ref(false)
 const result = ref(null)
 const viewType = ref('diagram')
 const mermaidContainer = ref(null)
+
+// 文件上传相关
+const uploadFileList = ref([])
+
+const handleFileListChange = (fileList) => {
+  uploadFileList.value = fileList.slice(-1) // 只保留最后一个文件
+}
 
 // 保存到归档库相关
 const showSaveModal = ref(false)
@@ -271,14 +314,16 @@ const docPlaceholder = `粘贴 Markdown 项目文档，支持的格式：
 const canGenerate = computed(() => {
   if (mode.value === 'ddl') return sqlText.value.trim().length > 0
   if (mode.value === 'document') return docContent.value.trim().length > 0
+  if (mode.value === 'file') return uploadFileList.value.length > 0
   return sqlText.value.trim().length > 0 || docContent.value.trim().length > 0
 })
 
-const modeTagType = computed(() => ({ ddl: 'success', document: 'info', hybrid: 'warning' }[mode.value]))
+const modeTagType = computed(() => ({ ddl: 'success', document: 'info', file: 'warning', hybrid: 'warning' }[mode.value]))
 
 const modeDescription = computed(() => ({
   ddl: '零 AI · 按表名前缀自动聚类为子系统 → 功能模块',
   document: '规则优先 · 从标题层级提取结构，不足时降级 AI',
+  file: '上传文件 · 支持 txt/md/docx/pdf，由 AI 解析文件内容生成结构图',
   hybrid: '混合 · DDL + 文档合并生成'
 }[mode.value]))
 
@@ -313,12 +358,29 @@ const treeData = computed(() => {
 const handleGenerate = async () => {
   loading.value = true
   try {
-    const res = await api.post('/api/architecture/generate', {
-      mode: mode.value,
-      sqlText: sqlText.value || null,
-      docContent: docContent.value || null,
-      forceAi: forceAi.value
-    })
+    let res
+
+    if (mode.value === 'file') {
+      // 文件上传模式：使用 FormData 提交
+      if (uploadFileList.value.length === 0) {
+        message.warning('请先选择文件')
+        return
+      }
+      const formData = new FormData()
+      formData.append('file', uploadFileList.value[0].file)
+      res = await api.post('/api/architecture/generate/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    } else {
+      // 其他模式：JSON 提交
+      res = await api.post('/api/architecture/generate', {
+        mode: mode.value,
+        sqlText: sqlText.value || null,
+        docContent: docContent.value || null,
+        forceAi: forceAi.value
+      })
+    }
+
     result.value = res.data
     message.success(`生成成功，共 ${res.data.nodeCount} 个节点`)
     await nextTick()

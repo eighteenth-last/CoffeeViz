@@ -36,6 +36,13 @@ spring:
           max-idle: 8
           min-idle: 0
           max-wait: -1ms
+  
+  # Nacos 服务注册
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: localhost:8848
 
 # 服务器配置
 server:

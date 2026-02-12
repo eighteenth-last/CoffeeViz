@@ -558,6 +558,22 @@ INSERT INTO `sys_user` VALUES (4, '2703772950@qq.com', '$2a$12$4bnoZcppTnPR3eeaT
 INSERT INTO `sys_user` VALUES (5, '测试加入团队', '$2a$12$G5Fsc3tM68h/5DHvuIY0yeOw4tL7nHVehtDsZdMcLoUPgtlOVnfHm', '2525363658@qq.com', NULL, '神阁绘f70a27000e', NULL, NULL, 1, '2026-02-11 14:08:35', '2026-02-11 14:08:35');
 INSERT INTO `sys_user` VALUES (6, '测试订阅', '$2a$12$SKm/lsg6ejO6W1KY7t27JOv3tS/1eCUcrwJaOaiiCtucqoJ5mdc9m', '2323565689@qq.com', NULL, '神阁绘23d5bedc92', NULL, NULL, 1, '2026-02-11 15:20:55', '2026-02-11 15:20:55');
 
+-- 系统通知表
+CREATE TABLE IF NOT EXISTS `sys_notification` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `target` VARCHAR(50) NOT NULL DEFAULT 'all' COMMENT '发送目标: all, pro, team, specific',
+    `channels` VARCHAR(100) NOT NULL DEFAULT 'inbox' COMMENT '发送渠道: inbox,email,sms',
+    `title` VARCHAR(200) NOT NULL COMMENT '通知标题',
+    `content` TEXT COMMENT '通知内容',
+    `sender_id` BIGINT COMMENT '发送人ID',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'sent' COMMENT '状态: sent, failed',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_create_time` (`create_time`),
+    INDEX `idx_target` (`target`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统通知表';
+
+
 -- ----------------------------
 -- Triggers structure for table biz_diagram
 -- ----------------------------
