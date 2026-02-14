@@ -41,6 +41,7 @@ public class SaTokenGatewayConfig {
                                     "/api/auth/logout",
                                     "/api/auth/sms/send",
                                     "/api/auth/sms/login",
+                                    "/api/auth/email/send-code",
                                     "/api/auth/wechat/**",
                                     // ===== 公开资源 =====
                                     "/api/image/**",

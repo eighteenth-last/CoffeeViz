@@ -43,5 +43,14 @@ public interface OpenAiService {
      * @return 是否可用
      */
     boolean isAvailable();
+
+    /**
+     * 通用 AI 对话（不带 SQL 系统提示词）
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户提示词
+     * @return AI 返回的原始文本
+     */
+    String chat(String systemPrompt, String userPrompt);
 }
 

@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -150,40 +152,56 @@ public class UserService {
     public User login(String username, String password) {
         log.info("用户尝试登录，用户名/邮箱: {}", username);
         
-        // 1. 查询用户（支持用户名或邮箱登录）
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(User::getUsername, username)
-               .or()
-               .eq(User::getEmail, username);
-        User user = userMapper.selectOne(wrapper);
+        // 1. 收集所有可能匹配的用户（用户名匹配 + 邮箱匹配）
+        List<User> candidates = new ArrayList<>();
         
-        if (user == null) {
+        // 先查用户名匹配
+        LambdaQueryWrapper<User> usernameWrapper = new LambdaQueryWrapper<>();
+        usernameWrapper.eq(User::getUsername, username);
+        User byUsername = userMapper.selectOne(usernameWrapper);
+        if (byUsername != null) {
+            candidates.add(byUsername);
+        }
+        
+        // 再查邮箱匹配（排除已找到的）
+        LambdaQueryWrapper<User> emailWrapper = new LambdaQueryWrapper<>();
+        emailWrapper.eq(User::getEmail, username);
+        if (byUsername != null) {
+            emailWrapper.ne(User::getId, byUsername.getId());
+        }
+        List<User> byEmail = userMapper.selectList(emailWrapper);
+        candidates.addAll(byEmail);
+        
+        if (candidates.isEmpty()) {
             log.warn("用户不存在: {}", username);
             throw new IllegalArgumentException("用户名或密码错误");
         }
         
-        // 2. 检查用户状态
-        if (user.getStatus() == 0) {
-            log.warn("用户已被禁用: {}", username);
+        // 2. 逐个尝试密码验证，找到第一个匹配的
+        for (User candidate : candidates) {
+            if (candidate.getStatus() != null && candidate.getStatus() == 0) {
+                continue; // 跳过禁用用户
+            }
+            if (verifyPassword(password, candidate.getPassword())) {
+                // 密码匹配，登录成功
+                try {
+                    StpUtil.login(candidate.getId());
+                } catch (Exception e) {
+                    log.debug("Sa-Token 登录失败（可能是测试环境）: {}", e.getMessage());
+                }
+                log.info("用户登录成功，用户ID: {}, 用户名: {}", candidate.getId(), candidate.getUsername());
+                return candidate;
+            }
+        }
+        
+        // 检查是否所有匹配用户都被禁用
+        boolean allDisabled = candidates.stream().allMatch(u -> u.getStatus() != null && u.getStatus() == 0);
+        if (allDisabled) {
             throw new IllegalArgumentException("用户已被禁用");
         }
         
-        // 3. 验证密码
-        if (!verifyPassword(password, user.getPassword())) {
-            log.warn("密码错误，用户名: {}", username);
-            throw new IllegalArgumentException("用户名或密码错误");
-        }
-        
-        // 4. 登录成功，使用 Sa-Token 创建会话
-        try {
-            StpUtil.login(user.getId());
-        } catch (Exception e) {
-            // 在单元测试环境中，Sa-Token 可能没有上下文，这里捕获异常
-            log.debug("Sa-Token 登录失败（可能是测试环境）: {}", e.getMessage());
-        }
-        
-        log.info("用户登录成功，用户ID: {}, 用户名: {}", user.getId(), username);
-        return user;
+        log.warn("密码错误，用户名: {}", username);
+        throw new IllegalArgumentException("用户名或密码错误");
     }
     
     /**
@@ -195,6 +213,16 @@ public class UserService {
     public User getUserById(Long userId) {
         log.debug("查询用户信息，用户ID: {}", userId);
         return userMapper.selectById(userId);
+    }
+    
+    /**
+     * 根据邮箱查询用户
+     */
+    public User getUserByEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getEmail, email);
+        return userMapper.selectOne(wrapper);
     }
     
     /**

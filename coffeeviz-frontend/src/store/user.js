@@ -123,6 +123,15 @@ export const useUserStore = defineStore('user', {
       }
     },
     
+    async sendEmailCode(email) {
+      try {
+        const res = await api.post('/api/auth/email/send-code', { email })
+        return res
+      } catch (error) {
+        throw error
+      }
+    },
+    
     async loginWithSms(phone, code) {
       try {
         const res = await api.post('/api/auth/sms/login', { phone, code })

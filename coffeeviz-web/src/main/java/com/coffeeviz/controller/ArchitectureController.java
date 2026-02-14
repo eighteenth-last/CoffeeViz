@@ -9,7 +9,9 @@ import com.coffeeviz.dto.ArchitectureResponse.TreeNodeDTO;
 import com.coffeeviz.service.ArchitectureService;
 import com.coffeeviz.service.ArchitectureService.ArchResult;
 import com.coffeeviz.service.ArchitectureService.TreeNode;
+import com.coffeeviz.service.QuotaService;
 import com.coffeeviz.service.util.FileContentExtractor;
+import cn.dev33.satoken.stp.StpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,9 @@ public class ArchitectureController {
 
     @Autowired
     private ArchitectureService architectureService;
+
+    @Autowired
+    private QuotaService quotaService;
 
     /**
      * 生成系统功能结构图
@@ -83,6 +88,37 @@ public class ArchitectureController {
 
             if (!result.isSuccess()) {
                 return Result.error(500, result.getMessage());
+            }
+
+            // 按模式扣减配额
+            Long userId = StpUtil.getLoginIdAsLong();
+            String mode = request.getMode();
+            String extractMethod = result.getExtractMethod(); // rule / ai / hybrid
+            
+            switch (mode) {
+                case "ddl" -> {
+                    // DDL 解析：sql_parse + ai_generate
+                    consumeQuotaSafe(userId, "sql_parse");
+                    consumeQuotaSafe(userId, "ai_generate");
+                }
+                case "document" -> {
+                    // 项目文档：规则提取免费，AI 提取扣 ai_generate
+                    if ("ai".equals(extractMethod)) {
+                        consumeQuotaSafe(userId, "ai_generate");
+                    }
+                    // rule 模式免费，不扣配额
+                }
+                case "hybrid" -> {
+                    // 混合模式：有 DDL 扣 sql_parse，有 AI 扣 ai_generate
+                    boolean hasDdl = request.getSqlText() != null && !request.getSqlText().trim().isEmpty();
+                    boolean hasDoc = request.getDocContent() != null && !request.getDocContent().trim().isEmpty();
+                    if (hasDdl) {
+                        consumeQuotaSafe(userId, "sql_parse");
+                    }
+                    if (hasDdl || hasDoc) {
+                        consumeQuotaSafe(userId, "ai_generate");
+                    }
+                }
             }
 
             // 构建响应
@@ -149,6 +185,10 @@ public class ArchitectureController {
                 return Result.error(500, result.getMessage());
             }
 
+            // 上传文件生成成功，扣 ai_generate 配额
+            Long userId = StpUtil.getLoginIdAsLong();
+            consumeQuotaSafe(userId, "ai_generate");
+
             // 4. 构建响应
             ArchitectureResponse response = new ArchitectureResponse();
             response.setMermaidCode(result.getMermaidCode());
@@ -171,6 +211,22 @@ public class ArchitectureController {
         } catch (Exception e) {
             log.error("文件上传生成功能结构图失败", e);
             return Result.error("生成失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 安全扣减配额（失败不影响主流程）
+     */
+    private void consumeQuotaSafe(Long userId, String quotaType) {
+        try {
+            boolean used = quotaService.useQuota(userId, quotaType);
+            if (used) {
+                log.info("扣减配额成功: userId={}, quotaType={}", userId, quotaType);
+            } else {
+                log.warn("扣减配额失败（可能不足）: userId={}, quotaType={}", userId, quotaType);
+            }
+        } catch (Exception e) {
+            log.warn("扣减配额异常: userId={}, quotaType={}, error={}", userId, quotaType, e.getMessage());
         }
     }
 

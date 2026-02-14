@@ -86,6 +86,9 @@ public class AdminController {
     @Autowired
     private com.coffeeviz.service.EmailService emailService;
 
+    @Autowired
+    private com.coffeeviz.mapper.ApiCallLogMapper apiCallLogMapper;
+
     // ==================== Helper Methods ====================
 
     /**
@@ -221,6 +224,20 @@ public class AdminController {
             LocalDate today = LocalDate.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
             
+            // 预查询 7 天的 API 调用统计
+            LocalDate weekStart = today.minusDays(6);
+            List<java.util.Map<String, Object>> apiCallStats = apiCallLogMapper.countByDateRange(weekStart, today);
+            java.util.Map<LocalDate, Long> apiCallMap = new java.util.HashMap<>();
+            for (java.util.Map<String, Object> row : apiCallStats) {
+                Object dateObj = row.get("callDate");
+                Long cnt = ((Number) row.get("cnt")).longValue();
+                if (dateObj instanceof LocalDate ld) {
+                    apiCallMap.put(ld, cnt);
+                } else if (dateObj instanceof java.sql.Date sd) {
+                    apiCallMap.put(sd.toLocalDate(), cnt);
+                }
+            }
+            
             for (int i = 6; i >= 0; i--) {
                 LocalDate date = today.minusDays(i);
                 dates.add(date.format(formatter));
@@ -233,8 +250,8 @@ public class AdminController {
                         .lt(User::getCreateTime, end));
                 newUsers.add(count);
                 
-                // API Calls (Placeholder - 0 for now as no tracking table exists)
-                apiCalls.add(0L); 
+                // API Calls（从日志表统计）
+                apiCalls.add(apiCallMap.getOrDefault(date, 0L));
             }
             stats.setChartDates(dates);
             stats.setChartNewUsers(newUsers);
@@ -888,6 +905,26 @@ public class AdminController {
 
             notificationMapper.insert(notification);
             log.info("通知发送成功: id={}", notification.getId());
+            
+            // 如果渠道包含 email，实际发送邮件
+            if (request.getChannels() != null && request.getChannels().contains("email")) {
+                try {
+                    SendEmailRequest emailRequest = new SendEmailRequest();
+                    emailRequest.setTarget(request.getTarget());
+                    emailRequest.setSubject("来自 CoffeeViz 的通知：" + request.getTitle());
+                    emailRequest.setContent(
+                            "<div style='font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;'>"
+                            + "<h2 style='color:#d97706;'>" + request.getTitle() + "</h2>"
+                            + "<div style='padding:16px 0;line-height:1.8;'>" + request.getContent() + "</div>"
+                            + "<p style='color:#888;font-size:12px;margin-top:32px;'>— CoffeeViz 团队</p>"
+                            + "</div>");
+                    emailService.sendEmail(emailRequest);
+                    log.info("通知邮件已提交异步发送: target={}", request.getTarget());
+                } catch (Exception e) {
+                    log.error("通知邮件发送失败", e);
+                }
+            }
+            
             return Result.success("通知已发送", "success");
         } catch (Exception e) {
             log.error("发送通知失败", e);

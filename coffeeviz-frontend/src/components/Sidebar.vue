@@ -7,8 +7,8 @@
       <span class="text-xl font-black tracking-tight text-white uppercase italic">Coffee<span class="text-amber-500">Viz</span></span>
     </div>
 
-    <nav class="flex-1 px-4 space-y-1">
-      <div class="text-[10px] font-bold text-neutral-600 uppercase tracking-widest px-4 mb-2">主菜单</div>
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+      <div class="text-[10px] font-bold text-neutral-600 uppercase tracking-widest px-4 mb-2 pt-2">主菜单</div>
       
       <router-link to="/dashboard" custom v-slot="{ navigate, isActive }">
         <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
@@ -65,6 +65,13 @@
         <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
           <i class="fas fa-credit-card w-8 text-lg"></i>
           <span>订阅计划</span>
+        </a>
+      </router-link>
+
+      <router-link to="/quota-usage" custom v-slot="{ navigate, isActive }">
+        <a @click="navigate" :class="['sidebar-item flex items-center px-4 py-3 rounded-lg text-sm font-medium transition-all group cursor-pointer', isActive ? 'active' : 'text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/50']">
+          <i class="fas fa-chart-bar w-8 text-lg"></i>
+          <span>额度使用记录</span>
         </a>
       </router-link>
 

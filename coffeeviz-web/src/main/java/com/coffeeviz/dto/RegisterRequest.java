@@ -22,9 +22,14 @@ public class RegisterRequest {
     private String password;
     
     /**
-     * 邮箱
+     * 邮箱（必填）
      */
     private String email;
+    
+    /**
+     * 邮箱验证码（必填）
+     */
+    private String emailCode;
     
     /**
      * 手机号

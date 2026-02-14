@@ -93,7 +93,7 @@
       </div>
       
       <!-- 配额使用情况 -->
-      <div class="lg:col-span-1">
+      <div class="lg:col-span-1 h-fit">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-bold text-white flex items-center">
             <i class="fas fa-chart-pie text-amber-500 mr-2 text-sm"></i> 配额使用

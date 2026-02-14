@@ -33,6 +33,7 @@ public class QuotaServiceImplV2 implements QuotaService {
     private final SubscriptionService subscriptionService;
     private final com.coffeeviz.mapper.TeamMemberMapper teamMemberMapper;
     private final com.coffeeviz.mapper.TeamMapper teamMapper;
+    private final com.coffeeviz.mapper.QuotaUsageLogMapper quotaUsageLogMapper;
     
     // ========== 旧方法实现（使用新系统）==========
     
@@ -232,6 +233,19 @@ public class QuotaServiceImplV2 implements QuotaService {
         tracking.setQuotaUsed(newUsed);
         userQuotaTrackingMapper.updateById(tracking);
         
+        // 记录使用日志
+        try {
+            QuotaUsageLog usageLog = new QuotaUsageLog();
+            usageLog.setUserId(userId);
+            usageLog.setQuotaType(quotaType);
+            usageLog.setAmount(amount);
+            usageLog.setAction(getQuotaTypeName(quotaType));
+            usageLog.setCreateTime(LocalDateTime.now());
+            quotaUsageLogMapper.insert(usageLog);
+        } catch (Exception e) {
+            log.warn("记录配额使用日志失败: {}", e.getMessage());
+        }
+        
         log.info("消耗配额: userId={}, quotaType={}, amount={}, used={}/{}", 
             userId, quotaType, amount, newUsed, tracking.getQuotaLimit());
     }
@@ -306,5 +320,15 @@ public class QuotaServiceImplV2 implements QuotaService {
             log.warn("解析团队配额共享失败，使用原始用户ID: userId={}, error={}", userId, e.getMessage());
             return userId;
         }
+    }
+
+    private String getQuotaTypeName(String quotaType) {
+        return switch (quotaType) {
+            case "sql_parse" -> "SQL 解析";
+            case "ai_generate" -> "AI 生成";
+            case "repository" -> "创建架构库";
+            case "diagram" -> "创建架构图";
+            default -> quotaType;
+        };
     }
 }

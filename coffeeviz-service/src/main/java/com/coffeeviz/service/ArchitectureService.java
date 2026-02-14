@@ -138,6 +138,19 @@ public class ArchitectureService {
         log.info("从文档提取功能结构，文档长度: {}, 强制AI: {}", docContent.length(), forceAi);
         List<String> warnings = new ArrayList<>();
 
+        // 检测是否为项目设计文档（包含技术栈、数据模型、API 等综合内容）
+        boolean isProjectDoc = isProjectDesignDocument(docContent);
+        if (isProjectDoc) {
+            log.info("检测到项目设计文档，优先使用 AI 提取功能结构");
+            warnings.add("检测到项目设计文档，使用 AI 智能提取");
+            ArchResult aiResult = generateFromDocumentWithAi(docContent, warnings);
+            if (aiResult.isSuccess()) {
+                return aiResult;
+            }
+            // AI 失败则回退到规则提取
+            warnings.add("AI 提取失败，回退到规则提取");
+        }
+
         if (!forceAi) {
             // Layer 1: 规则提取
             TreeNode ruleTree = extractTreeByRules(docContent);
@@ -161,6 +174,25 @@ public class ArchitectureService {
     }
 
     /**
+     * 检测文档是否为项目设计文档（包含技术栈、数据模型、API 等综合内容）
+     * 这类文档需要 AI 理解语义才能提取出合理的功能结构
+     */
+    private boolean isProjectDesignDocument(String doc) {
+        String lower = doc.toLowerCase();
+        int score = 0;
+        if (lower.contains("技术栈") || lower.contains("tech stack")) score++;
+        if (lower.contains("数据模型") || lower.contains("data model")) score++;
+        if (lower.contains("api") || lower.contains("接口")) score++;
+        if (lower.contains("数据库") || lower.contains("database")) score++;
+        if (lower.contains("部署") || lower.contains("deploy")) score++;
+        if (lower.contains("非功能需求") || lower.contains("non-functional")) score++;
+        if (lower.contains("测试") || lower.contains("test")) score++;
+        if (lower.contains("前端") || lower.contains("后端") || lower.contains("frontend") || lower.contains("backend")) score++;
+        // 命中 3 个以上关键词，认为是项目设计文档
+        return score >= 3;
+    }
+
+    /**
      * 从上传文件生成功能结构图
      * <p>
      * 提取文件文本内容后，强制使用 AI 解析生成功能结构树。
@@ -180,6 +212,17 @@ public class ArchitectureService {
 
         List<String> warnings = new ArrayList<>();
         warnings.add("来源: 上传文件 " + fileName);
+
+        // 检测是否为项目设计文档，优先使用 AI
+        if (isProjectDesignDocument(fileContent)) {
+            log.info("上传文件检测到项目设计文档，优先使用 AI 提取");
+            warnings.add("检测到项目设计文档，使用 AI 智能提取");
+            ArchResult aiResult = generateFromFileWithAi(fileContent, fileName, warnings);
+            if (aiResult.isSuccess()) {
+                return aiResult;
+            }
+            warnings.add("AI 提取失败，回退到规则提取");
+        }
 
         // 先尝试规则提取（如果文件内容是 Markdown 格式）
         TreeNode ruleTree = extractTreeByRules(fileContent);
@@ -205,6 +248,9 @@ public class ArchitectureService {
      * AI 解析上传文件内容，生成功能结构树
      */
     private ArchResult generateFromFileWithAi(String fileContent, String fileName, List<String> warnings) {
+        // 先加载配置，再检查可用性
+        loadOpenAiConfig();
+        
         if (openAiService == null || !openAiService.isAvailable()) {
             return ArchResult.builder().success(false)
                     .message("AI 服务不可用，且规则提取结果不足。请确保文件包含清晰的功能描述。")
@@ -212,27 +258,16 @@ public class ArchitectureService {
         }
 
         try {
-            loadOpenAiConfig();
+            String systemPrompt = buildFileAnalysisPrompt(fileName);
+            String userPrompt = "以下是文件内容：\n\n" + truncate(fileContent, 8000);
 
-            String prompt = buildFileAnalysisPrompt(fileName) + "\n\n---\n\n"
-                    + "以下是文件内容：\n\n" + truncate(fileContent, 6000);
+            String content = openAiService.chat(systemPrompt, userPrompt);
 
-            com.coffeeviz.llm.model.AiRequest request = com.coffeeviz.llm.model.AiRequest.builder()
-                    .prompt(prompt).build();
-
-            com.coffeeviz.llm.model.AiResponse aiResp = openAiService.generateSqlFromPrompt(request);
-
-            if (aiResp == null || !Boolean.TRUE.equals(aiResp.getSuccess())) {
-                String errMsg = aiResp != null ? aiResp.getErrorMessage() : "AI 调用失败";
-                return ArchResult.builder().success(false).message(errMsg).build();
-            }
-
-            String content = aiResp.getSqlDdl();
-            if (content == null || content.isEmpty()) content = aiResp.getExplanation();
             if (content == null || content.isEmpty()) {
                 return ArchResult.builder().success(false).message("AI 返回内容为空").build();
             }
 
+            log.info("AI 文件解析响应长度: {}", content.length());
             warnings.add("使用 AI 解析文件内容");
             return parseAiTreeResponse(content, warnings);
 
@@ -441,12 +476,28 @@ public class ArchitectureService {
         String lower = heading.toLowerCase();
         return lower.contains("目录") || lower.contains("前言") || lower.contains("附录")
                 || lower.contains("参考") || lower.contains("changelog") || lower.contains("更新日志")
-                || lower.contains("table of contents") || lower.contains("license");
+                || lower.contains("table of contents") || lower.contains("license")
+                || lower.contains("技术栈") || lower.contains("数据模型") || lower.contains("数据库")
+                || lower.contains("非功能") || lower.contains("测试") || lower.contains("验收")
+                || lower.contains("部署") || lower.contains("输出要求") || lower.contains("交付")
+                || lower.contains("简要描述") || lower.contains("项目名") || lower.contains("概述")
+                || lower.contains("简介") || lower.contains("背景") || lower.contains("说明")
+                || lower.contains("额外提示") || lower.contains("开发建议") || lower.contains("备注")
+                || lower.contains("主题色") || lower.contains("主题") || lower.contains("配色")
+                || lower.contains("api 概览") || lower.contains("api概览") || lower.contains("接口")
+                || lower.contains("前端页面") || lower.contains("页面") || lower.contains("ui")
+                || lower.contains("关键字段") || lower.contains("字段摘要")
+                || lower.contains("隔离") || lower.contains("多租户") || lower.contains("tenant")
+                || lower.contains("architecture") || lower.contains("stack") || lower.contains("tech")
+                || lower.contains("requirement") || lower.contains("deploy") || lower.contains("test");
     }
 
     // ==================== Layer 2: AI 提取 ====================
 
     private ArchResult generateFromDocumentWithAi(String docContent, List<String> warnings) {
+        // 先加载配置，再检查可用性
+        loadOpenAiConfig();
+        
         if (openAiService == null || !openAiService.isAvailable()) {
             return ArchResult.builder().success(false)
                     .message("AI 服务不可用，且规则提取结果不足。请确保文档包含清晰的标题层级结构。")
@@ -454,28 +505,16 @@ public class ArchitectureService {
         }
 
         try {
-            loadOpenAiConfig();
+            String systemPrompt = buildArchitecturePrompt();
+            String userPrompt = "请分析以下项目文档，提取系统功能结构：\n\n" + truncate(docContent, 8000);
 
-            String combinedPrompt = buildArchitecturePrompt() + "\n\n---\n\n"
-                    + "请分析以下项目文档，提取系统功能结构：\n\n" + truncate(docContent, 4000);
+            String content = openAiService.chat(systemPrompt, userPrompt);
 
-            com.coffeeviz.llm.model.AiRequest request = com.coffeeviz.llm.model.AiRequest.builder()
-                    .prompt(combinedPrompt).build();
-
-            com.coffeeviz.llm.model.AiResponse aiResp = openAiService.generateSqlFromPrompt(request);
-
-            if (aiResp == null || !Boolean.TRUE.equals(aiResp.getSuccess())) {
-                String errMsg = aiResp != null ? aiResp.getErrorMessage() : "AI 调用失败";
-                return ArchResult.builder().success(false).message(errMsg).build();
-            }
-
-            // AI 返回的内容可能在 sqlDdl 或 explanation 字段
-            String content = aiResp.getSqlDdl();
-            if (content == null || content.isEmpty()) content = aiResp.getExplanation();
             if (content == null || content.isEmpty()) {
                 return ArchResult.builder().success(false).message("AI 返回内容为空").build();
             }
 
+            log.info("AI 架构提取响应长度: {}", content.length());
             return parseAiTreeResponse(content, warnings);
 
         } catch (Exception e) {
@@ -537,7 +576,15 @@ public class ArchitectureService {
                 }
             }
 
-            JSONObject obj = JSON.parseObject(json);
+            // 尝试修复截断的 JSON（补全缺失的括号）
+            JSONObject obj;
+            try {
+                obj = JSON.parseObject(json);
+            } catch (Exception parseEx) {
+                log.warn("JSON 解析失败，尝试修复截断的 JSON");
+                String fixed = fixTruncatedJson(json);
+                obj = JSON.parseObject(fixed);
+            }
             TreeNode root = parseJsonToTree(obj, 0);
 
             warnings.add("使用 AI 提取功能结构");
@@ -718,6 +765,42 @@ public class ArchitectureService {
 
     private String truncate(String text, int maxLen) {
         return text.length() > maxLen ? text.substring(0, maxLen) + "\n...(已截断)" : text;
+    }
+
+    /**
+     * 修复截断的 JSON：补全缺失的括号和引号
+     */
+    private String fixTruncatedJson(String json) {
+        // 去掉尾部不完整的键值对（从最后一个完整的 } 或 ] 截断）
+        int lastBrace = json.lastIndexOf('}');
+        int lastBracket = json.lastIndexOf(']');
+        int cutPoint = Math.max(lastBrace, lastBracket);
+        if (cutPoint > 0) {
+            json = json.substring(0, cutPoint + 1);
+        }
+        
+        // 统计未闭合的括号
+        int openBraces = 0, openBrackets = 0;
+        boolean inString = false;
+        char prev = 0;
+        for (char c : json.toCharArray()) {
+            if (c == '"' && prev != '\\') {
+                inString = !inString;
+            } else if (!inString) {
+                if (c == '{') openBraces++;
+                else if (c == '}') openBraces--;
+                else if (c == '[') openBrackets++;
+                else if (c == ']') openBrackets--;
+            }
+            prev = c;
+        }
+        
+        // 补全缺失的括号
+        StringBuilder sb = new StringBuilder(json);
+        for (int i = 0; i < openBrackets; i++) sb.append(']');
+        for (int i = 0; i < openBraces; i++) sb.append('}');
+        
+        return sb.toString();
     }
 
     private void loadOpenAiConfig() {

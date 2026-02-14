@@ -21,6 +21,7 @@ import java.util.Map;
 public class QuotaController {
     
     private final QuotaService quotaService;
+    private final com.coffeeviz.mapper.QuotaUsageLogMapper quotaUsageLogMapper;
     
     /**
      * 获取用户所有配额信息
@@ -85,6 +86,38 @@ public class QuotaController {
         } catch (Exception e) {
             log.error("检查配额失败", e);
             return Result.error("检查配额失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 额度使用记录（分页）
+     */
+    @GetMapping("/usage-logs")
+    public Result<com.baomidou.mybatisplus.core.metadata.IPage<com.coffeeviz.entity.QuotaUsageLog>> getUsageLogs(
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "20") Integer size,
+            @RequestParam(value = "quotaType", required = false) String quotaType) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        
+        try {
+            com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.coffeeviz.entity.QuotaUsageLog> wrapper =
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+            wrapper.eq(com.coffeeviz.entity.QuotaUsageLog::getUserId, userId);
+            if (quotaType != null && !quotaType.isEmpty()) {
+                wrapper.eq(com.coffeeviz.entity.QuotaUsageLog::getQuotaType, quotaType);
+            }
+            wrapper.orderByDesc(com.coffeeviz.entity.QuotaUsageLog::getCreateTime);
+            
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.coffeeviz.entity.QuotaUsageLog> pageParam =
+                    new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page, size);
+            
+            com.baomidou.mybatisplus.core.metadata.IPage<com.coffeeviz.entity.QuotaUsageLog> result =
+                    quotaUsageLogMapper.selectPage(pageParam, wrapper);
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取额度使用记录失败", e);
+            return Result.error("获取额度使用记录失败: " + e.getMessage());
         }
     }
 }

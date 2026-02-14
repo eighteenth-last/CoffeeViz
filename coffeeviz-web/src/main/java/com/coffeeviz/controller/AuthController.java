@@ -18,6 +18,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 认证授权 Controller
@@ -36,14 +39,133 @@ public class AuthController {
     @Autowired
     private WechatService wechatService;
     
+    @Autowired(required = false)
+    private com.coffeeviz.service.EmailService emailService;
+    
     /**
-     * 用户注册
+     * 邮箱验证码缓存（生产环境应使用 Redis）
+     */
+    private static final Map<String, EmailCodeData> EMAIL_CODE_CACHE = new ConcurrentHashMap<>();
+    private static final long EMAIL_CODE_EXPIRE = TimeUnit.MINUTES.toMillis(5);
+    private static final long EMAIL_CODE_SEND_INTERVAL = TimeUnit.SECONDS.toMillis(60);
+    
+    private static class EmailCodeData {
+        String code;
+        long expireTime;
+        long sendTime;
+        
+        EmailCodeData(String code, long expireTime, long sendTime) {
+            this.code = code;
+            this.expireTime = expireTime;
+            this.sendTime = sendTime;
+        }
+        
+        boolean isExpired() {
+            return System.currentTimeMillis() > expireTime;
+        }
+        
+        boolean canResend() {
+            return System.currentTimeMillis() - sendTime > EMAIL_CODE_SEND_INTERVAL;
+        }
+    }
+    
+    /**
+     * 发送邮箱验证码（注册用）
+     */
+    @PostMapping("/email/send-code")
+    public Result<String> sendEmailCode(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return Result.error("邮箱不能为空");
+        }
+        
+        // 简单邮箱格式校验
+        if (!email.matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+            return Result.error("邮箱格式不正确");
+        }
+        
+        // 检查邮箱是否已被注册
+        try {
+            User existingUser = userService.getUserByEmail(email);
+            if (existingUser != null) {
+                return Result.error("该邮箱已被注册");
+            }
+        } catch (Exception ignored) {}
+        
+        // 检查发送频率
+        EmailCodeData existing = EMAIL_CODE_CACHE.get(email);
+        if (existing != null && !existing.canResend()) {
+            return Result.error("发送过于频繁，请稍后再试");
+        }
+        
+        // 生成 6 位验证码
+        String code = String.format("%06d", new Random().nextInt(1000000));
+        long now = System.currentTimeMillis();
+        EMAIL_CODE_CACHE.put(email, new EmailCodeData(code, now + EMAIL_CODE_EXPIRE, now));
+        
+        // 发送验证码邮件
+        try {
+            if (emailService != null) {
+                String subject = "【CoffeeViz】邮箱验证码";
+                String content = "<div style='font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;'>"
+                        + "<h2 style='color:#d97706;'>CoffeeViz 邮箱验证</h2>"
+                        + "<p>您的验证码为：</p>"
+                        + "<div style='font-size:32px;font-weight:bold;letter-spacing:8px;color:#d97706;padding:16px 0;'>" + code + "</div>"
+                        + "<p style='color:#888;font-size:13px;'>验证码 5 分钟内有效，请勿泄露给他人。</p>"
+                        + "<p style='color:#888;font-size:13px;'>如非本人操作，请忽略此邮件。</p>"
+                        + "</div>";
+                emailService.sendSingleEmail(email, subject, content, "email_verify");
+                log.info("邮箱验证码已发送: email={}, code={}", email, code);
+            } else {
+                log.warn("邮件服务未配置，验证码: {} (邮箱: {})", code, email);
+            }
+        } catch (Exception e) {
+            log.error("发送邮箱验证码失败: email={}", email, e);
+            return Result.error("验证码发送失败，请稍后重试");
+        }
+        
+        return Result.success("验证码已发送", null);
+    }
+    
+    /**
+     * 用户注册（需要邮箱验证码）
      */
     @PostMapping("/register")
     public Result<Long> register(@RequestBody RegisterRequest request) {
-        log.info("用户注册: username={}", request.getUsername());
+        log.info("用户注册: username={}, email={}", request.getUsername(), request.getEmail());
         
         try {
+            // 1. 校验必填字段
+            if (request.getUsername() == null || request.getUsername().isBlank()) {
+                return Result.error("用户名不能为空");
+            }
+            if (request.getPassword() == null || request.getPassword().isBlank()) {
+                return Result.error("密码不能为空");
+            }
+            if (request.getEmail() == null || request.getEmail().isBlank()) {
+                return Result.error("邮箱不能为空");
+            }
+            if (request.getEmailCode() == null || request.getEmailCode().isBlank()) {
+                return Result.error("邮箱验证码不能为空");
+            }
+            
+            // 2. 验证邮箱验证码
+            EmailCodeData codeData = EMAIL_CODE_CACHE.get(request.getEmail());
+            if (codeData == null) {
+                return Result.error("请先获取邮箱验证码");
+            }
+            if (codeData.isExpired()) {
+                EMAIL_CODE_CACHE.remove(request.getEmail());
+                return Result.error("验证码已过期，请重新获取");
+            }
+            if (!codeData.code.equals(request.getEmailCode())) {
+                return Result.error("验证码错误");
+            }
+            
+            // 3. 验证通过，删除验证码
+            EMAIL_CODE_CACHE.remove(request.getEmail());
+            
+            // 4. 注册用户
             User user = userService.register(
                 request.getUsername(),
                 request.getPassword(),

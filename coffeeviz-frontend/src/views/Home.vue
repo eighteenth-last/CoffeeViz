@@ -104,7 +104,7 @@
         <div class="inline-flex items-center px-4 py-2 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-300 text-sm font-medium mb-8 hover:scale-105 transition-transform cursor-default">
           <span class="flex h-2 w-2 rounded-full bg-blue-400 mr-2 animate-ping"></span>
           <span class="flex h-2 w-2 rounded-full bg-blue-400 mr-2 absolute"></span>
-          v1.3 全新发布：系统功能结构图生成
+          v2.0 Kimi-2.5 深度驱动的架构生成
         </div>
         
         <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight mb-8 leading-tight">
@@ -311,19 +311,22 @@ const mobileMenuOpen = ref(false)
 // Typewriter Logic
 const fullCode = `
 <span class="text-purple-400">-- User Prompt:</span>
-<span class="text-green-400">-- "设计一个电商系统，包含用户、订单和商品。"</span>
+<span class="text-green-400">-- "设计一个高并发的电商秒杀系统，包含库存预扣减、订单异步处理。"</span>
 
-<span class="text-blue-400">CREATE TABLE</span> users (
+<span class="text-blue-400">CREATE TABLE</span> seckill_items (
   id <span class="text-yellow-400">BIGINT PRIMARY KEY</span>,
-  username <span class="text-yellow-400">VARCHAR(50)</span> NOT NULL,
-  email <span class="text-yellow-400">VARCHAR(100)</span>,
-  created_at <span class="text-yellow-400">DATETIME</span> DEFAULT NOW()
+  item_id <span class="text-yellow-400">BIGINT</span> NOT NULL,
+  stock_count <span class="text-yellow-400">INT</span> CHECK(stock_count >= 0),
+  start_time <span class="text-yellow-400">DATETIME</span>,
+  end_time <span class="text-yellow-400">DATETIME</span>,
+  version <span class="text-yellow-400">INT</span> DEFAULT 0
 );
 
-<span class="text-blue-400">CREATE TABLE</span> orders (
+<span class="text-blue-400">CREATE TABLE</span> seckill_orders (
   id <span class="text-yellow-400">BIGINT PRIMARY KEY</span>,
   user_id <span class="text-yellow-400">BIGINT</span>,
-  total <span class="text-yellow-400">DECIMAL(10,2)</span>
+  order_id <span class="text-yellow-400">BIGINT</span>,
+  status <span class="text-yellow-400">TINYINT</span> COMMENT '0:Creating 1:Paid'
 );`
 
 const highlightedCode = ref('')
@@ -393,16 +396,16 @@ onUnmounted(() => {
 })
 
 const stats = [
-  { label: '生成的图表', value: '10K+' },
-  { label: '注册用户', value: '5,000+' },
-  { label: '支持数据库', value: '12+' },
+  { label: '生成的图表', value: '50K+' },
+  { label: '注册用户', value: '10,000+' },
+  { label: '支持数据库', value: '15+' },
   { label: '好评率', value: '99%' },
 ]
 
 const features = [
   {
     title: 'SQL 智能解析',
-    description: '支持 MySQL, PostgreSQL 等主流数据库 SQL 脚本解析。自动识别建表语句、外键约束和索引信息。',
+    description: '支持 MySQL, PostgreSQL, Oracle, SQL Server 等主流数据库脚本解析。自动识别复杂约束与关系。',
     icon: 'fas fa-code'
   },
   {
@@ -412,7 +415,7 @@ const features = [
   },
   {
     title: 'AI 架构对话',
-    description: '集成 Kimi-2.5 模型，通过自然语言描述业务需求，AI 自动为您设计数据库模型并生成 SQL。',
+    description: '集成 DeepSeek R1 与 OpenAI o1 模型，通过自然语言描述业务需求，AI 自动为您设计数据库模型并生成 SQL。',
     icon: 'fas fa-robot'
   },
   {
@@ -436,21 +439,21 @@ const plans = [
   {
     name: 'Free',
     price: '¥0',
-    features: ['每月 10 次生成', '基础 SQL 解析', 'PNG 导出', '单人使用'],
+    features: ['3 个架构库', '每月 10 次架构图生成', '每月 50 次 SQL 解析', '基础 ER 图 & MySQL 支持', '社区支持'],
     cta: '免费开始',
     popular: false
   },
   {
     name: 'Pro',
     price: '¥29',
-    features: ['无限次生成', '系统功能结构图', '高级 JDBC 连接', 'SVG/Mermaid 导出', 'AI 智能辅助', '优先技术支持'],
+    features: ['20 个架构库', '每月 100 次架构图生成', '每月 40 次 AI 设计', 'JDBC 实时连接 & 多数据库', '高清导出 (SVG/PNG) & 优先支持'],
     cta: '立即升级',
     popular: true
   },
   {
     name: 'Team',
     price: '¥99',
-    features: ['包含 Pro 所有功能', '5 人团队协作', '项目共享库', '团队权限管理', '专属客户经理'],
+    features: ['无限架构库 & 无限架构图', '每月 150 次 AI 设计', '10 人团队协作 & 版本控制', 'API 集成 & 私有部署支持', '专属客户经理'],
     cta: '联系销售',
     popular: false
   }

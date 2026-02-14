@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Send Form -->
-    <div class="lg:col-span-1 bg-bg-card p-6 rounded-xl border border-white/5">
+    <div class="lg:col-span-1 bg-bg-card p-6 rounded-xl border border-white/5 h-fit">
       <h3 class="text-white font-semibold mb-6">发送通知</h3>
       <n-form :model="form" label-placement="top">
         <n-form-item label="接收对象">
@@ -27,9 +27,19 @@
 
     <!-- History -->
     <div class="lg:col-span-2 bg-bg-card p-6 rounded-xl border border-white/5">
-      <h3 class="text-white font-semibold mb-6">发送记录</h3>
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-white font-semibold">发送记录</h3>
+        <n-pagination
+          v-if="history.length > 0"
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :item-count="history.length"
+          :page-sizes="[10, 20, 50]"
+          size="small"
+        />
+      </div>
       <div class="space-y-4">
-        <div v-for="item in history" :key="item.id"
+        <div v-for="item in paginatedHistory" :key="item.id"
           class="flex items-start gap-4 p-4 rounded-lg bg-bg-input/50 border border-white/5"
         >
           <div :class="['w-8 h-8 rounded flex items-center justify-center shrink-0',
@@ -55,13 +65,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useMessage } from 'naive-ui'
 import { SendOutline, CheckmarkOutline } from '@vicons/ionicons5'
 import api from '@/api'
 
 const message = useMessage()
 const sending = ref(false)
+
+// 分页状态
+const page = ref(1)
+const pageSize = ref(10)
 
 const targetOptions = [
   { label: '所有用户', value: 'all' },
@@ -75,6 +89,12 @@ const form = reactive({
 })
 
 const history = ref([])
+
+const paginatedHistory = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return history.value.slice(start, end)
+})
 
 const loadHistory = async () => {
   try {

@@ -78,6 +78,12 @@ const routes = [
         meta: { title: '订阅计划' }
       },
       {
+        path: '/quota-usage',
+        name: 'QuotaUsage',
+        component: () => import('@/views/QuotaUsage.vue'),
+        meta: { title: '额度使用记录' }
+      },
+      {
         path: '/settings',
         name: 'Settings',
         component: () => import('@/views/Settings.vue'),

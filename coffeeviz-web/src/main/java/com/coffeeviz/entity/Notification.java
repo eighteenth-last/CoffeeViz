@@ -32,6 +32,9 @@ public class Notification {
     
     /** 状态: sent, failed */
     private String status;
+
+    /** 是否已读: 0未读, 1已读 */
+    private Integer isRead;
     
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

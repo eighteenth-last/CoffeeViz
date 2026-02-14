@@ -43,10 +43,21 @@ public class QuotaAspect {
         // 执行方法
         Object result = joinPoint.proceed();
         
-        // 方法执行成功后才使用配额
-        boolean used = quotaService.useQuota(userId, quotaType);
-        if (!used) {
-            log.error("使用配额失败: userId={}, quotaType={}", userId, quotaType);
+        // 方法执行成功后才使用配额（检查 Result 对象是否真正成功）
+        boolean shouldConsume = true;
+        if (result instanceof com.coffeeviz.common.util.Result<?> r) {
+            // 如果返回的是 Result 且 code 不是 200，说明业务失败，不扣配额
+            if (r.getCode() != 200) {
+                shouldConsume = false;
+                log.info("业务执行失败(code={})，不扣减配额: userId={}, quotaType={}", r.getCode(), userId, quotaType);
+            }
+        }
+        
+        if (shouldConsume) {
+            boolean used = quotaService.useQuota(userId, quotaType);
+            if (!used) {
+                log.error("使用配额失败: userId={}, quotaType={}", userId, quotaType);
+            }
         }
         
         return result;

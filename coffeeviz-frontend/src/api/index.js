@@ -8,7 +8,8 @@ const QUOTA_REFRESH_APIS = [
   '/api/er/connect-jdbc',        // JDBC 连接
   '/api/repository/create',      // 创建架构库
   '/api/diagram/create',         // 创建架构图
-  '/api/project/create'          // 创建项目
+  '/api/project/create',         // 创建项目
+  '/api/architecture/generate'   // 架构图生成
 ]
 
 // 创建 axios 实例

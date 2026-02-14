@@ -9,6 +9,7 @@ import com.coffeeviz.llm.model.AiResponse;
 import com.coffeeviz.llm.service.OpenAiService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -22,6 +23,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,10 +44,17 @@ public class OpenAiServiceImpl implements OpenAiService {
     @Autowired
     private RestTemplate restTemplate;
     
-    // 运行时配置（优先级高于 openAiConfig）
-    private String runtimeApiKey;
-    private String runtimeBaseUrl;
-    private String runtimeModel;
+    @Autowired(required = false)
+    @Qualifier("aiTaskExecutor")
+    private Executor aiTaskExecutor;
+    
+    // 全局并发限制：最多 20 个 AI 请求同时调用 OpenAI API
+    private static final Semaphore AI_CONCURRENCY_LIMITER = new Semaphore(20);
+    
+    // 运行时配置（volatile 保证多线程可见性）
+    private volatile String runtimeApiKey;
+    private volatile String runtimeBaseUrl;
+    private volatile String runtimeModel;
     
     /**
      * 设置运行时 API Key（用于从数据库动态加载配置）
@@ -110,9 +120,23 @@ public class OpenAiServiceImpl implements OpenAiService {
     public void generateSqlFromPromptStream(AiRequest request, SseEmitter emitter, java.util.function.Consumer<String> onComplete) {
         log.info("开始流式 AI 生成 SQL，提示词: {}", request.getPrompt());
         
-        // 异步处理，避免阻塞主线程
+        // 使用专用 AI 线程池（如果可用），否则回退到 ForkJoinPool
+        Executor executor = aiTaskExecutor != null ? aiTaskExecutor : CompletableFuture.completedFuture(null).defaultExecutor();
+        
         CompletableFuture.runAsync(() -> {
+            boolean acquired = false;
             try {
+                // 尝试获取并发许可，最多等待 30 秒
+                acquired = AI_CONCURRENCY_LIMITER.tryAcquire(30, java.util.concurrent.TimeUnit.SECONDS);
+                if (!acquired) {
+                    log.warn("AI 并发请求过多，当前等待队列已满");
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("{\"message\":\"当前 AI 请求繁忙，请稍后再试\"}"));
+                    emitter.complete();
+                    return;
+                }
+                
                 // 1. 检查配置
                 if (!isAvailable()) {
                     emitter.send(SseEmitter.event()
@@ -129,6 +153,17 @@ public class OpenAiServiceImpl implements OpenAiService {
                 // 3. 流式调用 OpenAI API
                 callOpenAiApiStream(systemPrompt, userPrompt, emitter, onComplete);
                 
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("等待 AI 并发许可被中断", e);
+                try {
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("{\"message\":\"请求被中断，请重试\"}"));
+                    emitter.completeWithError(e);
+                } catch (Exception ex) {
+                    log.error("发送错误消息失败", ex);
+                }
             } catch (Exception e) {
                 log.error("流式 AI 生成失败", e);
                 try {
@@ -139,14 +174,25 @@ public class OpenAiServiceImpl implements OpenAiService {
                 } catch (Exception ex) {
                     log.error("发送错误消息失败", ex);
                 }
+            } finally {
+                if (acquired) {
+                    AI_CONCURRENCY_LIMITER.release();
+                }
             }
-        });
+        }, executor);
     }
     
     @Override
     public boolean isAvailable() {
         String apiKey = getApiKey();
         return apiKey != null && !apiKey.isEmpty();
+    }
+
+    @Override
+    public String chat(String systemPrompt, String userPrompt) {
+        log.info("通用 AI 对话，系统提示词长度: {}, 用户提示词长度: {}", 
+                systemPrompt.length(), userPrompt.length());
+        return callOpenAiApi(systemPrompt, userPrompt);
     }
     
     /**
